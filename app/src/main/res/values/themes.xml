@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Shorashim" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/forest_green</item>
+        <item name="android:navigationBarColor">@color/warm_cream</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+        <item name="android:windowBackground">@color/warm_cream</item>
+    </style>
+</resources>

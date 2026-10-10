@@ -1,0 +1,95 @@
+<resources>
+    <string name="app_name">שורשים</string>
+    <string name="nav_family_tree">עץ משפחה</string>
+    <string name="nav_memorials">אזכרות</string>
+    <string name="nav_tehillim">תהילים</string>
+    <string name="nav_settings">הגדרות</string>
+
+    <string name="loading">טוען…</string>
+    <string name="retry">ניסיון חוזר</string>
+    <string name="error_generic">אירעה שגיאה. נסו שוב מאוחר יותר.</string>
+    <string name="confirm">אישור</string>
+    <string name="cancel">ביטול</string>
+
+    <string name="family_tree_empty_title">אין עץ משפחה עדיין</string>
+    <string name="family_tree_empty_message">כאן יוצג עץ המשפחה אחרי יצירתו. שמירת נתונים והזמנת בני משפחה יתווספו בשלבים הבאים — המסך הזה אינו מחובר לשרת.</string>
+
+    <string name="memorials_empty_title">אין אזכרות להצגה</string>
+    <string name="memorials_empty_message">לוח האזכרות יופיע כאן אחרי שיתווספו בני משפחה שנפטרו ותאריכים מאומתים. חישוב עברי ולועזי ותזכורות עדיין לא פעילים.</string>
+
+    <string name="tehillim_empty_title">תהילים טרם שולב</string>
+    <string name="tehillim_empty_message">רשימת 150 הפרקים וטקסט עברי מאומת יתווספו בשלב ייעודי. אין כאן טקסט מקראי זמני, כדי שלא יוצג נוסח לא מאומת.</string>
+
+    <string name="settings_title">הגדרות</string>
+    <string name="settings_about_title">אודות</string>
+    <string name="settings_about_body">שורשים מיועד לשימור אילן יוחסין משפחתי, זיכרון קרובים, שיתוף מבוקר בין בני משפחה, וקריאת תהילים.</string>
+    <string name="settings_auth_title">חשבון</string>
+    <string name="settings_auth_body">הרשמה, התחברות ואיפוס סיסמה פעילים באמצעות אימות Supabase.</string>
+    <string name="settings_privacy_title">פרטיות</string>
+    <string name="settings_privacy_body">נתוני משפחה יהיו זמינים רק לחברים מורשים. מדיניות ייצוא ומחיקת חשבון תתועד ותיושם בשלב ההגדרות.</string>
+    <string name="settings_notifications_title">התראות</string>
+    <string name="settings_notifications_body">תזכורות מקומיות ומשפחתיות יתווספו בשלב ההתראות, ורק אחרי הסכמה מפורשת.</string>
+    <string name="settings_language_label">שפה</string>
+    <string name="settings_language_value">עברית</string>
+    <string name="settings_version_label">גרסה</string>
+
+    <!-- Phase 2: Authentication -->
+    <string name="auth_subtitle">הזיכרון המשפחתי נשאר חי</string>
+    <string name="auth_login_title">התחברות</string>
+    <string name="auth_email_label">כתובת אימייל</string>
+    <string name="auth_email_hint">name@example.com</string>
+    <string name="auth_password_label">סיסמה</string>
+    <string name="auth_login_button">התחברות</string>
+    <string name="auth_forgot_password_link">שכחתי סיסמה</string>
+    <string name="auth_no_account_link">אין לך חשבון? הרשמה</string>
+    <string name="auth_show_password">הצג סיסמה</string>
+    <string name="auth_hide_password">הסתר סיסמה</string>
+
+    <string name="auth_register_title">יצירת חשבון</string>
+    <string name="auth_full_name_label">שם מלא</string>
+    <string name="auth_confirm_password_label">אימות סיסמה</string>
+    <string name="auth_terms_checkbox">קראתי ואני מסכים/ה לתנאי השימוש ומדיניות הפרטיות</string>
+    <string name="auth_terms_link">עיון בתנאים</string>
+    <string name="auth_terms_dialog_title">תנאי שימוש ומדיניות פרטיות</string>
+    <string name="auth_terms_dialog_body">אפליקציית שורשים מיועדת לשימור עצי משפחה, הנצחת קרובים וקריאת תהילים. המידע האישי שלכם מאובטח ולא יימסר לצד שלישי ללא הסכמתכם. הרשאות הצפייה והעריכה מוגבלות לבני משפחה מורשים בלבד.</string>
+    <string name="auth_close">סגור</string>
+    <string name="auth_register_button">יצירת חשבון</string>
+    <string name="auth_already_have_account_link">כבר יש לך חשבון? התחברות</string>
+
+    <string name="auth_forgot_password_title">איפוס סיסמה</string>
+    <string name="auth_forgot_password_description">הזינו את כתובת האימייל שלכם ונשלח אליכם קישור לאיפוס הסיסמה.</string>
+    <string name="auth_send_reset_link_button">שליחת קישור לאיפוס</string>
+    <string name="auth_back_to_login">חזרה להתחברות</string>
+    <string name="auth_reset_email_sent_title">הקישור נשלח</string>
+    <string name="auth_reset_email_sent_message">אם כתובת האימייל קיימת במערכת, נשלח אליה קישור לאיפוס סיסמה. אנא בדקו את תיבת הדואר הנכנס.</string>
+
+    <!-- Validation messages -->
+    <string name="validation_name_empty">יש להזין שם מלא</string>
+    <string name="validation_name_too_short">השם קצר מדי (לפחות 2 תווים)</string>
+    <string name="validation_email_empty">יש להזין כתובת אימייל</string>
+    <string name="validation_email_invalid">כתובת אימייל לא תקינה</string>
+    <string name="validation_password_empty">יש להזין סיסמה</string>
+    <string name="validation_password_too_short">הסיסמה חייבת להכיל לפחות 6 תווים</string>
+    <string name="validation_confirm_password_empty">יש לאמת את הסיסמה</string>
+    <string name="validation_passwords_do_not_match">הסיסמאות אינן תואמות</string>
+    <string name="validation_terms_required">יש לאשר את תנאי השימוש ומדיניות הפרטיות</string>
+
+    <!-- Firebase error messages -->
+    <string name="auth_error_invalid_credentials">כתובת האימייל או הסיסמה אינם נכונים</string>
+    <string name="auth_error_email_already_in_use">כתובת האימייל כבר רשומה במערכת</string>
+    <string name="auth_error_user_disabled">חשבון זה הושבת על ידי המערכת</string>
+    <string name="auth_error_too_many_requests">בוצעו יותר מדי ניסיונות. אנא נסו שוב מאוחר יותר</string>
+    <string name="auth_error_network">בעיית תקשורת. אנא בדקו את החיבור לאינטרנט</string>
+    <string name="auth_error_weak_password">הסיסמה חלשה מדי. נדרשים לפחות 6 תווים</string>
+    <string name="auth_error_not_configured">הגדרות Supabase חסרות (יש לבדוק את קובץ .env)</string>
+    <string name="auth_error_generic">אירעה שגיאה בתהליך האימות. נסו שוב.</string>
+
+    <!-- Account & Logout -->
+    <string name="settings_account_name">שם משתמש:</string>
+    <string name="settings_account_email">אימייל:</string>
+    <string name="settings_account_status">סטטוס:</string>
+    <string name="settings_account_status_active">מחובר</string>
+    <string name="settings_logout_button">התנתקות מהחשבון</string>
+    <string name="settings_logout_confirm_title">התנתקות</string>
+    <string name="settings_logout_confirm_message">האם ברצונך להתנתק מהחשבון? הנתונים שלך יישמרו במערכת.</string>
+</resources>
