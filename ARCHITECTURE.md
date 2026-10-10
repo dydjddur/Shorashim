@@ -43,9 +43,27 @@ app/src/main/java/com/shorashim/
 
 `ShorashimApplication` holds `AppContainer` with repository implementations:
 - `authRepository`: `SupabaseAuthRepository` (uses official Supabase Auth SDK `io.github.jan-tennert.supabase:auth-kt:3.1.1`, observes `client.auth.sessionStatus`, returns Coroutines `Result`, handles missing `.env` gracefully)
-- `familyRepository`: `InMemoryFamilyRepository` (persisted in Phase 3 via Supabase PostgREST)
-- `memorialRepository`: `InMemoryMemorialRepository` (persisted in Phase 3 via Supabase PostgREST)
+- `familyRepository`: `SupabaseFamilyRepository` (persisted via Supabase PostgREST with Draft/Publish lifecycle, multi-tree switching, and RBAC member management)
+- `personRepository`: `SupabasePersonRepository` (persisted via Supabase PostgREST with life status, partial dates, and canvas coordinates)
+- `relationshipRepository`: `SupabaseRelationshipRepository` (persisted via Supabase PostgREST with PARENT_CHILD and SPOUSE undirected enforcement)
+- `memorialRepository`: `InMemoryMemorialRepository` (Phase 7)
 - `psalmsRepository`: `UnavailablePsalmsRepository` (Phase 9)
+
+## Database, Family Trees & Interactive Workflow Canvas (Phase 3)
+
+- **PostgreSQL Database & RLS**:
+  - `families`: Supports Draft & Publish lifecycle (`status: DRAFT / PUBLISHED`), ownership, and metadata.
+  - `family_members`: Role-Based Access Control (`OWNER`, `ADMIN`, `CONTRIBUTOR`, `VIEWER`).
+  - `people`: Comprehensive person records with precision dates and canvas coordinates (`canvas_x`, `canvas_y`).
+  - `relationships`: Parent-child and spouse relationships with cycle prevention and undirected spouse constraints.
+- **Interactive Workflow Canvas**:
+  - Engine: `TreeLayoutEngine` calculates generational levels and connector lines (Bezier drops for parent-child, dashed links for spouses).
+  - UI: `FamilyTreeCanvas` supports smooth Pan & Zoom gestures (0.2x to 2.5x) and overlay controls.
+  - Nodes: `FamilyTreeNodeCard` with quick relative creation ("הוספת ילד/ה", "הוספת הורה", "הוספת בן/בת זוג").
+- **Tree Management & RBAC**:
+  - `TreeSwitcherDropdown`: Seamless header switcher between multiple trees.
+  - `TreeManagementBottomSheet`: Publish/unpublish, renaming, members, and owner-only tree deletion.
+  - `FamilyMembersDialog`: Granular permissions management, email invites, and role promotion/demotion.
 
 ## Authentication & Session Gate (Phase 2)
 

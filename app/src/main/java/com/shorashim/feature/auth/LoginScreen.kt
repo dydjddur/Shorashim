@@ -1,45 +1,33 @@
 package com.shorashim.feature.auth
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -85,210 +73,158 @@ fun LoginScreen(
 ) {
     val focusManager = LocalFocusManager.current
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.xl),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        // App Logo & Branding
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Park,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(44.dp),
-            )
-        }
-
-        Spacer(Modifier.height(Spacing.md))
-
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.displaySmall,
-            color = MaterialTheme.colorScheme.primary,
+    AuthScreenBackground(modifier = modifier) {
+        // App Logo & Branding Header
+        AuthHeader(
+            title = stringResource(R.string.app_name),
+            subtitle = stringResource(R.string.auth_subtitle),
         )
-
-        Spacer(Modifier.height(Spacing.xs))
-
-        Text(
-            text = stringResource(R.string.auth_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
-            textAlign = TextAlign.Center,
-        )
-
-        Spacer(Modifier.height(Spacing.xl))
-
-        // General Error Banner
-        if (uiState.generalError != null) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = Spacing.md),
-            ) {
-                Text(
-                    text = stringResource(uiState.generalError),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(Spacing.md),
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-
-        // Email Field
-        OutlinedTextField(
-            value = uiState.email,
-            onValueChange = onEmailChanged,
-            label = { Text(stringResource(R.string.auth_email_label)) },
-            placeholder = { Text(stringResource(R.string.auth_email_hint)) },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Outlined.Email,
-                    contentDescription = null,
-                )
-            },
-            isError = uiState.emailError != null,
-            supportingText = uiState.emailError?.let {
-                { Text(stringResource(it)) }
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next,
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            ),
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(Modifier.height(Spacing.sm))
-
-        // Password Field
-        OutlinedTextField(
-            value = uiState.password,
-            onValueChange = onPasswordChanged,
-            label = { Text(stringResource(R.string.auth_password_label)) },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Outlined.Lock,
-                    contentDescription = null,
-                )
-            },
-            trailingIcon = {
-                IconButton(onClick = onTogglePasswordVisibility) {
-                    Icon(
-                        imageVector = if (uiState.isPasswordVisible) {
-                            Icons.Outlined.VisibilityOff
-                        } else {
-                            Icons.Outlined.Visibility
-                        },
-                        contentDescription = stringResource(
-                            if (uiState.isPasswordVisible) {
-                                R.string.auth_hide_password
-                            } else {
-                                R.string.auth_show_password
-                            },
-                        ),
-                    )
-                }
-            },
-            visualTransformation = if (uiState.isPasswordVisible) {
-                VisualTransformation.None
-            } else {
-                PasswordVisualTransformation()
-            },
-            isError = uiState.passwordError != null,
-            supportingText = uiState.passwordError?.let {
-                { Text(stringResource(it)) }
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done,
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    focusManager.clearFocus()
-                    onLoginClicked()
-                },
-            ),
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        // Forgot Password link
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            TextButton(
-                onClick = onNavigateToForgotPassword,
-                enabled = !uiState.isLoading,
-            ) {
-                Text(
-                    text = stringResource(R.string.auth_forgot_password_link),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(Spacing.md))
-
-        // Login Button
-        Button(
-            onClick = {
-                focusManager.clearFocus()
-                onLoginClicked()
-            },
-            enabled = !uiState.isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-        ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.auth_login_button),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
-        }
 
         Spacer(Modifier.height(Spacing.lg))
 
-        // Navigation to Register
-        TextButton(
-            onClick = onNavigateToRegister,
-            enabled = !uiState.isLoading,
-        ) {
+        // Elevated Form Card
+        AuthCard {
             Text(
-                text = stringResource(R.string.auth_no_account_link),
-                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(R.string.auth_login_title),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = Spacing.md),
+            )
+
+            // General Error Banner
+            if (uiState.generalError != null) {
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Spacing.md),
+                ) {
+                    Text(
+                        text = stringResource(uiState.generalError),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        modifier = Modifier.padding(Spacing.md),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            // Email Field
+            AuthTextField(
+                value = uiState.email,
+                onValueChange = onEmailChanged,
+                label = stringResource(R.string.auth_email_label),
+                placeholder = stringResource(R.string.auth_email_hint),
+                leadingIcon = Icons.Outlined.Email,
+                isError = uiState.emailError != null,
+                errorMessage = uiState.emailError?.let { stringResource(it) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next,
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                ),
+                enabled = !uiState.isLoading,
+            )
+
+            Spacer(Modifier.height(Spacing.sm))
+
+            // Password Field
+            AuthTextField(
+                value = uiState.password,
+                onValueChange = onPasswordChanged,
+                label = stringResource(R.string.auth_password_label),
+                leadingIcon = Icons.Outlined.Lock,
+                trailingIcon = {
+                    IconButton(onClick = onTogglePasswordVisibility) {
+                        Icon(
+                            imageVector = if (uiState.isPasswordVisible) {
+                                Icons.Outlined.VisibilityOff
+                            } else {
+                                Icons.Outlined.Visibility
+                            },
+                            contentDescription = stringResource(
+                                if (uiState.isPasswordVisible) {
+                                    R.string.auth_hide_password
+                                } else {
+                                    R.string.auth_show_password
+                                },
+                            ),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                visualTransformation = if (uiState.isPasswordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                isError = uiState.passwordError != null,
+                errorMessage = uiState.passwordError?.let { stringResource(it) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        onLoginClicked()
+                    },
+                ),
+                enabled = !uiState.isLoading,
+            )
+
+            // Forgot Password link
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                TextButton(
+                    onClick = onNavigateToForgotPassword,
+                    enabled = !uiState.isLoading,
+                ) {
+                    Text(
+                        text = stringResource(R.string.auth_forgot_password_link),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(Spacing.sm))
+
+            // Login Button
+            AuthPrimaryButton(
+                text = stringResource(R.string.auth_login_button),
+                onClick = {
+                    focusManager.clearFocus()
+                    onLoginClicked()
+                },
+                isLoading = uiState.isLoading,
+                enabled = !uiState.isLoading,
             )
         }
+
+        Spacer(Modifier.height(Spacing.md))
+
+        // Navigation to Register
+        AuthFooterSwitcher(
+            prefixText = "אין לך חשבון?",
+            actionText = "הרשמה",
+            onActionClick = onNavigateToRegister,
+            enabled = !uiState.isLoading,
+        )
     }
 }

@@ -93,4 +93,124 @@
     <string name="settings_logout_button">התנתקות מהחשבון</string>
     <string name="settings_logout_confirm_title">התנתקות</string>
     <string name="settings_logout_confirm_message">האם ברצונך להתנתק מהחשבון? הנתונים שלך יישמרו במערכת.</string>
+
+    <!-- Phase 3: Family Trees, People, and Relationships -->
+    <string name="families_title">המשפחות שלי</string>
+    <string name="families_empty_title">אין עצי משפחה עדיין</string>
+    <string name="families_empty_message">צרו את עץ המשפחה הראשון שלכם והתחילו לתעד את המורשת והקרובים.</string>
+    <string name="families_create_first_button">יצירת עץ משפחה ראשון</string>
+    <string name="families_create_button">יצירת עץ משפחה</string>
+    <string name="family_create_title">יצירת עץ משפחה</string>
+    <string name="family_name_label">שם עץ המשפחה</string>
+    <string name="family_name_hint">לדוגמה: משפחת כהן</string>
+    <string name="family_create_submit">יצירת עץ</string>
+    <string name="family_rename_title">שינוי שם העץ</string>
+    <string name="family_rename_submit">עדכון שם</string>
+    <string name="family_delete_title">מחיקת עץ משפחה</string>
+    <string name="family_delete_message">האם למחוק את עץ המשפחה \"%1$s\" וכל האנשים והקשרים שבו? פעולה זו אינה ניתנת לביטול.</string>
+    <string name="family_members_count">%1$d אנשים בעץ</string>
+    <string name="family_created_at">נוצר ב-%1$s</string>
+
+    <!-- Family Management -->
+    <string name="family_manage_title">ניהול עץ משפחה</string>
+    <string name="family_search_hint">חיפוש קרובים בעץ…</string>
+    <string name="family_add_person">הוספת אדם</string>
+    <string name="family_add_relationship">הוספת קשר</string>
+    <string name="family_people_section">קרובי משפחה</string>
+    <string name="family_people_empty">אין אנשים בעץ זה עדיין. הוסיפו את האדם הראשון!</string>
+    <string name="family_relationships_count">%1$d קשרים</string>
+
+    <!-- Person Add & Edit -->
+    <string name="person_add_title">הוספת אדם לעץ</string>
+    <string name="person_edit_title">עריכת פרטי אדם</string>
+    <string name="person_first_name_label">שם פרטי *</string>
+    <string name="person_last_name_label">שם משפחה</string>
+    <string name="person_additional_names_label">שמות נוספים / כינויים</string>
+    <string name="person_life_status_label">סטטוס</string>
+    <string name="person_status_living">חי/ה</string>
+    <string name="person_status_deceased">נפטר/ת 🕯️</string>
+    <string name="person_birth_date_label">תאריך לידה</string>
+    <string name="person_death_date_label">תאריך פטירה</string>
+    <string name="person_date_precision_label">רמת דיוק התאריך</string>
+    <string name="person_date_precision_full">תאריך מלא (יום, חודש ושנה)</string>
+    <string name="person_date_precision_year_month">חודש ושנה</string>
+    <string name="person_date_precision_year_only">שנה בלבד</string>
+    <string name="person_date_precision_unknown">לא ידוע</string>
+    <string name="person_biography_label">ביוגרפיה וסיפור חיים</string>
+    <string name="person_biography_hint">ספרו על פועלו, מורשתו וזיכרונות משפחתיים…</string>
+    <string name="person_save_button">שמירת פרטים</string>
+    <string name="person_delete_button">מחיקת אדם</string>
+    <string name="person_delete_dialog_title">מחיקת אדם מהעץ</string>
+    <string name="person_delete_dialog_message">האם למחוק את %1$s? הקשרים המשפחתיים של אדם זה יוסרו מהעץ.</string>
+
+    <!-- Relationships -->
+    <string name="relationship_dialog_title">הוספת קשר משפחתי</string>
+    <string name="relationship_type_label">סוג הקשר</string>
+    <string name="relationship_type_parent_child">הורה ➔ ילד</string>
+    <string name="relationship_type_spouse">בני זוג</string>
+    <string name="relationship_parent_label">הורה</string>
+    <string name="relationship_child_label">ילד/ה</string>
+    <string name="relationship_spouse_1_label">בן/בת זוג 1</string>
+    <string name="relationship_spouse_2_label">בן/בת זוג 2</string>
+    <string name="relationship_select_person_placeholder">יש לבחור אדם</string>
+    <string name="relationship_submit_button">הוספת הקשר</string>
+    <string name="relationship_delete_confirm">האם להסיר קשר זה?</string>
+    <string name="relationship_parent_child_desc">%1$s הוא/היא הורה של %2$s</string>
+    <string name="relationship_spouse_desc">%1$s ו-%2$s נשואים / בני זוג</string>
+
+    <!-- Phase 3 Validations -->
+    <string name="validation_family_name_empty">יש להזין שם עץ משפחה</string>
+    <string name="validation_family_name_too_short">שם עץ המשפחה חייב להכיל לפחות 2 תווים</string>
+    <string name="validation_first_name_empty">יש להזין שם פרטי</string>
+    <string name="validation_relationship_same_person">לא ניתן ליצור קשר בין אדם לעצמו</string>
+    <string name="validation_relationship_already_exists">קשר זה כבר קיים במערכת</string>
+    <string name="validation_relationship_cycle">לא ניתן ליצור קשר זה מכיוון שהוא יוצר מעגל שושלת בלתי חוקי (צאצא אינו יכול להיות הורה של אבותיו)</string>
+    <string name="validation_death_before_birth">תאריך הפטירה אינו יכול להקדים את תאריך הלידה</string>
+    <string name="validation_year_invalid">שנה לא תקינה</string>
+    <string name="validation_select_both_people">יש לבחור שני אנשים לקשר</string>
+
+    <!-- Workflow Map, Draft/Publish & RBAC additions -->
+    <string name="tree_status_draft">טיוטה</string>
+    <string name="tree_status_published">פורסם</string>
+    <string name="tree_publish_action">העלאה ופרסום עץ</string>
+    <string name="tree_unpublish_action">החזרה לטיוטה</string>
+    <string name="tree_publish_confirm_title">העלאה ופרסום עץ</string>
+    <string name="tree_publish_confirm_message">פרסום העץ יאפשר שיתוף עם משתתפים אחרים ועבודה משותפת. האם להעלות ולפרסם כעת?</string>
+    <string name="tree_publish_success">העץ פורסם בהצלחה!</string>
+    <string name="tree_management_sheet_title">ניהול עץ משפחה</string>
+    <string name="tree_manage_members">ניהול משתתפים והרשאות</string>
+    <string name="tree_export">ייצוא נתוני עץ</string>
+    <string name="tree_switch_title">עצי המשפחה שלי</string>
+    <string name="tree_switch_new_draft">+ עץ חדש (טיוטה)</string>
+    <string name="tree_zoom_in">התקרבות</string>
+    <string name="tree_zoom_out">התרחקות</string>
+    <string name="tree_reset_view">מיקוד למרכז</string>
+    <string name="tree_add_child">הוספת ילד/ה</string>
+    <string name="tree_add_parent">הוספת הורה</string>
+    <string name="tree_add_spouse">הוספת בן/בת זוג</string>
+    <string name="tree_quick_edit">עריכת פרטים</string>
+    <string name="tree_empty_add_first">העץ ריק כרגע. לחצו להוספת האדם הראשון!</string>
+
+    <!-- Members & Roles -->
+    <string name="members_title">משתתפים והרשאות</string>
+    <string name="members_invite_button">הזמנת משתתף</string>
+    <string name="members_email_label">כתובת אימייל</string>
+    <string name="members_role_label">תפקיד</string>
+    <string name="role_owner">מנהל-על (בעלים)</string>
+    <string name="role_admin">מנהל</string>
+    <string name="role_contributor">משתתף (עריכת תוכן בלבד)</string>
+    <string name="role_viewer">צופה (קריאה בלבד)</string>
+    <string name="members_role_change_title">שינוי תפקיד משתתף</string>
+    <string name="members_remove_confirm">האם להסיר משתתף זה מהעץ?</string>
+    <string name="members_no_permission_delete">רק מנהל-העל (הבעלים) יכול למחוק את העץ.</string>
+    <string name="members_no_permission_roles">רק מנהלים ומנהל-העל יכולים לשנות הרשאות משתתפים.</string>
+
+    <!-- General actions & aliases -->
+    <string name="delete">מחיקה</string>
+    <string name="close">סגירה</string>
+    <string name="family_people_add">הוספת אדם</string>
+    <string name="family_delete_action">מחיקת עץ משפחה</string>
+    <string name="family_delete_dialog_title">מחיקת עץ משפחה</string>
+    <string name="family_delete_dialog_message">האם למחוק את עץ המשפחה \"%1$s\" וכל האנשים והקשרים שבו? פעולה זו אינה ניתנת לביטול.</string>
+    <string name="family_rename_dialog_title">שינוי שם העץ</string>
 </resources>

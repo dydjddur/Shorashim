@@ -5,7 +5,11 @@ import com.shorashim.BuildConfig
 import com.shorashim.data.auth.AuthRepository
 import com.shorashim.data.auth.SupabaseAuthRepository
 import com.shorashim.data.family.FamilyRepository
-import com.shorashim.data.family.InMemoryFamilyRepository
+import com.shorashim.data.family.PersonRepository
+import com.shorashim.data.family.RelationshipRepository
+import com.shorashim.data.family.SupabaseFamilyRepository
+import com.shorashim.data.family.SupabasePersonRepository
+import com.shorashim.data.family.SupabaseRelationshipRepository
 import com.shorashim.data.memorials.InMemoryMemorialRepository
 import com.shorashim.data.memorials.MemorialRepository
 import com.shorashim.data.psalms.PsalmsRepository
@@ -50,7 +54,9 @@ class AppContainer {
     }
 
     val authRepository: AuthRepository = SupabaseAuthRepository(supabaseClient)
-    val familyRepository: FamilyRepository = InMemoryFamilyRepository()
+    val familyRepository: FamilyRepository = SupabaseFamilyRepository(supabaseClient)
+    val personRepository: PersonRepository = SupabasePersonRepository(supabaseClient)
+    val relationshipRepository: RelationshipRepository = SupabaseRelationshipRepository(supabaseClient)
     val memorialRepository: MemorialRepository = InMemoryMemorialRepository()
     val psalmsRepository: PsalmsRepository = UnavailablePsalmsRepository()
 }
