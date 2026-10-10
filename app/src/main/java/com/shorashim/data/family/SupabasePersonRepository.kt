@@ -32,6 +32,19 @@ class SupabasePersonRepository(
         }
     }
 
+    override suspend fun getAllAccessiblePeople(): Result<List<Person>> {
+        val supabase = client ?: return Result.failure(IllegalStateException("Supabase client not initialized"))
+        return runCatching {
+            val dtos = supabase.from("people")
+                .select()
+                .decodeList<PersonDto>()
+
+            dtos.map { it.toDomain() }
+        }.onFailure { e ->
+            Log.e("PersonRepo", "Failed to fetch all accessible people", e)
+        }
+    }
+
     override suspend fun getPerson(personId: String): Result<Person> {
         val supabase = client ?: return Result.failure(IllegalStateException("Supabase client not initialized"))
         return runCatching {

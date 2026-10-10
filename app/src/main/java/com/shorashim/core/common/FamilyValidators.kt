@@ -40,11 +40,40 @@ object FamilyValidators {
      * - If living, death date must not be set.
      * - If deceased with both birth and death years known, death year cannot precede birth year.
      */
+    fun validateSingleDate(date: PartialDate?): Int? {
+        if (date == null || date.precision == DatePrecision.UNKNOWN) return null
+        val y = date.year
+        if (y != null && (y < 1 || y > 3000)) {
+            return R.string.validation_year_invalid
+        }
+        val m = date.month
+        if (m != null && (m < 1 || m > 12)) {
+            return R.string.validation_date_invalid
+        }
+        val d = date.day
+        if (d != null) {
+            if (d < 1 || d > 31) return R.string.validation_date_invalid
+            if (m != null && y != null) {
+                try {
+                    java.time.LocalDate.of(y, m, d)
+                } catch (e: Exception) {
+                    return R.string.validation_date_invalid
+                }
+            }
+        }
+        return null
+    }
+
     fun validatePersonDates(
         lifeStatus: LifeStatus,
         birthDate: PartialDate?,
         deathDate: PartialDate?,
     ): Int? {
+        val bErr = validateSingleDate(birthDate)
+        if (bErr != null) return bErr
+        val dErr = validateSingleDate(deathDate)
+        if (dErr != null) return dErr
+
         if (lifeStatus == LifeStatus.LIVING) {
             if (deathDate != null && deathDate.precision != DatePrecision.UNKNOWN) {
                 return R.string.validation_death_before_birth

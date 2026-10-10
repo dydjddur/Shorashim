@@ -73,6 +73,28 @@ class FamilyValidatorsTest {
                 deathDate = PartialDate(precision = DatePrecision.UNKNOWN),
             ),
         )
+
+        // Invalid month (e.g. 25) is rejected
+        val invalidMonth = PartialDate(year = 1980, month = 25, day = 12, precision = DatePrecision.FULL_DATE)
+        assertEquals(
+            R.string.validation_date_invalid,
+            FamilyValidators.validatePersonDates(
+                lifeStatus = LifeStatus.LIVING,
+                birthDate = invalidMonth,
+                deathDate = null,
+            ),
+        )
+
+        // Invalid day (e.g. 35) is rejected
+        val invalidDay = PartialDate(year = 1980, month = 12, day = 35, precision = DatePrecision.FULL_DATE)
+        assertEquals(
+            R.string.validation_date_invalid,
+            FamilyValidators.validatePersonDates(
+                lifeStatus = LifeStatus.LIVING,
+                birthDate = invalidDay,
+                deathDate = null,
+            ),
+        )
     }
 
     @Test

@@ -15,7 +15,14 @@ object ShorashimRoutes {
     fun editPerson(familyId: String, personId: String) = "add_edit_person/$familyId?personId=$personId"
 
     const val MEMORIALS = "memorials"
+    const val EVENTS = "memorials"
     const val TEHILLIM = "tehillim"
+    const val TEHILLIM_WITH_PARAMS = "tehillim?deceasedName={deceasedName}"
+    fun tehillim(deceasedName: String? = null): String {
+        return if (deceasedName.isNullOrBlank()) TEHILLIM
+        else "tehillim?deceasedName=${java.net.URLEncoder.encode(deceasedName, "UTF-8")}"
+    }
+
     const val SETTINGS = "settings"
 
     val bottomBarRoutes: List<String> = listOf(

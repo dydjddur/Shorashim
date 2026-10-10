@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">שורשים</string>
     <string name="nav_family_tree">עץ משפחה</string>
-    <string name="nav_memorials">אזכרות</string>
+    <string name="nav_memorials">אירועים</string>
+    <string name="nav_events">אירועים</string>
     <string name="nav_tehillim">תהילים</string>
     <string name="nav_settings">הגדרות</string>
 
@@ -167,6 +168,7 @@
     <string name="validation_relationship_cycle">לא ניתן ליצור קשר זה מכיוון שהוא יוצר מעגל שושלת בלתי חוקי (צאצא אינו יכול להיות הורה של אבותיו)</string>
     <string name="validation_death_before_birth">תאריך הפטירה אינו יכול להקדים את תאריך הלידה</string>
     <string name="validation_year_invalid">שנה לא תקינה</string>
+    <string name="validation_date_invalid">תאריך אינו תקין (יש לבדוק יום וחודש)</string>
     <string name="validation_select_both_people">יש לבחור שני אנשים לקשר</string>
 
     <!-- Workflow Map, Draft/Publish & RBAC additions -->
@@ -213,4 +215,43 @@
     <string name="family_delete_dialog_title">מחיקת עץ משפחה</string>
     <string name="family_delete_dialog_message">האם למחוק את עץ המשפחה \"%1$s\" וכל האנשים והקשרים שבו? פעולה זו אינה ניתנת לביטול.</string>
     <string name="family_rename_dialog_title">שינוי שם העץ</string>
+
+    <!-- Phase 4: Events (אירועים) -->
+    <string name="events_title">אירועים ומועדים</string>
+    <string name="events_empty_title">אין אירועים קרובים</string>
+    <string name="events_empty_message">כאן יוצגו ימי הולדת של בני המשפחה מכלל העצים ואזכרות שנשמרו. לחצו על הכפתור כדי להוסיף אזכרה ראשונה.</string>
+    <string name="events_birthday_tag">יום הולדת</string>
+    <string name="events_memorial_tag">אזכרה</string>
+    <string name="events_add_memorial_button">הוספת אזכרה</string>
+    <string name="events_create_memorial_title">הוספת אזכרה משפחתית</string>
+    <string name="events_edit_memorial_title">עריכת אזכרה</string>
+    <string name="events_person_name_label">שם הנפטר/ת *</string>
+    <string name="events_date_label">תאריך לועזי (YYYY-MM-DD) *</string>
+    <string name="events_hebrew_date_label">תאריך עברי (אופציונלי)</string>
+    <string name="events_select_family_label">עץ משפחה משויך *</string>
+    <string name="events_associate_person_label">שיוך לקרוב בעץ (אופציונלי)</string>
+    <string name="events_description_label">תיאור / הערות לאזכרה</string>
+    <string name="events_save_button">שמירת אזכרה</string>
+    <string name="events_read_tehillim_button">קריאת תהילים לעילוי נשמה</string>
+    <string name="events_delete_memorial_confirm_title">מחיקת אזכרה</string>
+    <string name="events_delete_memorial_confirm_msg">האם אתם בטוחים שברצונכם למחוק אזכרה זו? פעולה זו תבטל גם את התזכורות המתוזמנות.</string>
+    <string name="events_family_prefix">עץ:</string>
+
+    <!-- Phase 4: Tehillim (תהילים) -->
+    <string name="tehillim_title">ספר תהילים</string>
+    <string name="tehillim_select_chapter">בחירת פרק (1–150)</string>
+    <string name="tehillim_memorial_item">תהילים לעילוי נשמה</string>
+    <string name="tehillim_memorial_heading">תהילים לעילוי נשמת</string>
+    <string name="tehillim_memorial_back_button">חזרה לכל 150 הפרקים</string>
+    <string name="tehillim_previous_chapter">פרק קודם</string>
+    <string name="tehillim_next_chapter">פרק הבא</string>
+    <string name="tehillim_chapter_prefix">פרק</string>
+
+    <!-- Phase 4: User Profile (פרופיל משתמש) -->
+    <string name="profile_edit_button">עריכת פרופיל</string>
+    <string name="profile_edit_dialog_title">עריכת פרטי חשבון</string>
+    <string name="profile_display_name_label">כינוי / שם תצוגה</string>
+    <string name="profile_save_button">שמירת שינויים</string>
+    <string name="profile_save_success">הפרופיל עודכן בהצלחה!</string>
 </resources>
+

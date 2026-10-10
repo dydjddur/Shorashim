@@ -348,3 +348,82 @@ data class TehillimCatalogStatus(
     val verifiedTextAvailable: Boolean = false,
     val chapterCount: Int = 0,
 )
+
+// ---------------------------------------------------------------------------
+// Phase 4: Memorial Events & Profiles
+// ---------------------------------------------------------------------------
+
+@Serializable
+data class MemorialEventInsertDto(
+    @SerialName("family_id")
+    val familyId: String,
+    @SerialName("person_id")
+    val personId: String? = null,
+    @SerialName("person_name")
+    val personName: String,
+    @SerialName("event_date")
+    val eventDate: String,
+    @SerialName("hebrew_date")
+    val hebrewDate: String? = null,
+    val description: String? = null,
+    @SerialName("created_by")
+    val createdBy: String? = null,
+)
+
+@Serializable
+data class MemorialEventDto(
+    val id: String = "",
+    @SerialName("family_id")
+    val familyId: String = "",
+    @SerialName("person_id")
+    val personId: String? = null,
+    @SerialName("person_name")
+    val personName: String = "",
+    @SerialName("event_date")
+    val eventDate: String = "",
+    @SerialName("hebrew_date")
+    val hebrewDate: String? = null,
+    val description: String? = null,
+    @SerialName("created_by")
+    val createdBy: String? = null,
+    @SerialName("created_at")
+    val createdAt: String? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null,
+)
+
+@Serializable
+data class MemorialEvent(
+    val id: String,
+    val familyId: String,
+    val familyName: String = "",
+    val personId: String? = null,
+    val personName: String,
+    val eventDate: String,
+    val hebrewDate: String? = null,
+    val description: String? = null,
+    val createdBy: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null,
+)
+
+@Serializable
+data class UserProfileDto(
+    val id: String = "",
+    @SerialName("full_name")
+    val fullName: String = "",
+    @SerialName("display_name")
+    val displayName: String = "",
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null,
+)
+
+@Serializable
+data class UserProfile(
+    val id: String,
+    val fullName: String,
+    val displayName: String = "",
+    val avatarUrl: String? = null,
+)

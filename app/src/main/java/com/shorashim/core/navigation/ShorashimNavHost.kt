@@ -142,16 +142,52 @@ fun ShorashimNavHost(
         }
 
         composable(ShorashimDestination.Memorials.route) {
-            val viewModel: MemorialsViewModel = viewModel(
+            val viewModel: com.shorashim.feature.events.EventsViewModel = viewModel(
                 factory = shorashimViewModelFactory {
-                    MemorialsViewModel(appContainer.memorialRepository)
+                    com.shorashim.feature.events.EventsViewModel(
+                        eventsRepository = appContainer.eventsRepository,
+                        familyRepository = appContainer.familyRepository,
+                        personRepository = appContainer.personRepository,
+                        notificationScheduler = appContainer.notificationScheduler,
+                    )
                 },
             )
-            MemorialsRoute(viewModel = viewModel)
+            com.shorashim.feature.events.EventsRoute(
+                viewModel = viewModel,
+                onNavigateToMemorialTehillim = { deceasedName ->
+                    navController.navigate(ShorashimRoutes.tehillim(deceasedName)) {
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
+
+        composable(
+            route = ShorashimRoutes.TEHILLIM_WITH_PARAMS,
+            arguments = listOf(
+                navArgument("deceasedName") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            val deceasedName = backStackEntry.arguments?.getString("deceasedName")
+            val viewModel: TehillimViewModel = viewModel(
+                key = "Tehillim_${deceasedName.orEmpty()}",
+                factory = shorashimViewModelFactory {
+                    TehillimViewModel(
+                        psalmsRepository = appContainer.psalmsRepository,
+                        initialDeceasedName = deceasedName,
+                    )
+                },
+            )
+            TehillimRoute(viewModel = viewModel)
         }
 
         composable(ShorashimDestination.Tehillim.route) {
             val viewModel: TehillimViewModel = viewModel(
+                key = "Tehillim_default",
                 factory = shorashimViewModelFactory {
                     TehillimViewModel(appContainer.psalmsRepository)
                 },
@@ -162,8 +198,10 @@ fun ShorashimNavHost(
         composable(ShorashimDestination.Settings.route) {
             SettingsRoute(
                 authState = authState,
+                profileRepository = appContainer.profileRepository,
                 onLogout = onLogout,
             )
         }
     }
 }
+

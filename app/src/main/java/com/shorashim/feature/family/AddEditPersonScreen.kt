@@ -403,17 +403,19 @@ fun DateInputSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                // Year field
-                OutlinedTextField(
-                    value = year,
-                    onValueChange = onYearChange,
-                    label = { Text("שנה") },
-                    placeholder = { Text("1950") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f),
-                )
+                // Day field (if FULL_DATE)
+                if (precision == DatePrecision.FULL_DATE) {
+                    OutlinedTextField(
+                        value = day,
+                        onValueChange = onDayChange,
+                        label = { Text("יום") },
+                        placeholder = { Text("15") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(0.8f),
+                    )
+                }
 
                 // Month field (if YEAR_MONTH or FULL_DATE)
                 if (precision == DatePrecision.YEAR_MONTH || precision == DatePrecision.FULL_DATE) {
@@ -429,19 +431,17 @@ fun DateInputSection(
                     )
                 }
 
-                // Day field (if FULL_DATE)
-                if (precision == DatePrecision.FULL_DATE) {
-                    OutlinedTextField(
-                        value = day,
-                        onValueChange = onDayChange,
-                        label = { Text("יום") },
-                        placeholder = { Text("15") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(0.8f),
-                    )
-                }
+                // Year field
+                OutlinedTextField(
+                    value = year,
+                    onValueChange = onYearChange,
+                    label = { Text("שנה") },
+                    placeholder = { Text("1980") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }

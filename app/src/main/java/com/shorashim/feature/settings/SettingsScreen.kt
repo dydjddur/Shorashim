@@ -35,9 +35,20 @@ import com.shorashim.R
 import com.shorashim.core.model.AuthState
 import com.shorashim.core.ui.component.Spacing
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.unit.dp
+import com.shorashim.data.profile.ProfileRepository
+import kotlinx.coroutines.launch
+
 @Composable
 fun SettingsRoute(
     authState: AuthState = AuthState.Unauthenticated,
+    profileRepository: ProfileRepository? = null,
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -50,6 +61,7 @@ fun SettingsRoute(
     SettingsScreen(
         versionName = versionName,
         authState = authState,
+        profileRepository = profileRepository,
         onLogout = onLogout,
         modifier = modifier,
     )
@@ -59,10 +71,16 @@ fun SettingsRoute(
 fun SettingsScreen(
     versionName: String,
     authState: AuthState = AuthState.Unauthenticated,
+    profileRepository: ProfileRepository? = null,
     onLogout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+    var isSavingProfile by remember { mutableStateOf(false) }
+    var profileErrorMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     if (showLogoutDialog) {
         AlertDialog(
@@ -116,8 +134,11 @@ fun SettingsScreen(
         // Account Card
         AccountCard(
             authState = authState,
+            onEditProfileClicked = { showEditProfileDialog = true },
             onLogoutClicked = { showLogoutDialog = true },
         )
+
+        SnackbarHost(hostState = snackbarHostState)
 
         SettingsInfoCard(
             title = stringResource(R.string.settings_about_title),
@@ -142,11 +163,40 @@ fun SettingsScreen(
         )
         Spacer(Modifier.height(Spacing.lg))
     }
+
+    if (showEditProfileDialog && authState is AuthState.Authenticated) {
+        val successMessage = stringResource(R.string.profile_save_success)
+        EditProfileDialog(
+            initialFullName = authState.user.displayName,
+            initialDisplayName = authState.user.displayName,
+            isSaving = isSavingProfile,
+            errorMessage = profileErrorMessage,
+            onDismiss = {
+                showEditProfileDialog = false
+                profileErrorMessage = null
+            },
+            onSave = { fullName, displayName ->
+                scope.launch {
+                    isSavingProfile = true
+                    profileErrorMessage = null
+                    val res = profileRepository?.updateProfile(fullName, displayName)
+                    isSavingProfile = false
+                    if (res != null && res.isSuccess) {
+                        showEditProfileDialog = false
+                        snackbarHostState.showSnackbar(successMessage)
+                    } else {
+                        profileErrorMessage = res?.exceptionOrNull()?.message ?: "שגיאה בשמירת הפרופיל"
+                    }
+                }
+            },
+        )
+    }
 }
 
 @Composable
 private fun AccountCard(
     authState: AuthState,
+    onEditProfileClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
 ) {
     Card(
@@ -184,6 +234,19 @@ private fun AccountCard(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.height(Spacing.md))
+                    Button(
+                        onClick = onEditProfileClicked,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = null,
+                        )
+                        Spacer(Modifier.width(Spacing.sm))
+                        Text(stringResource(R.string.profile_edit_button))
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
                     OutlinedButton(
                         onClick = onLogoutClicked,
                         colors = ButtonDefaults.outlinedButtonColors(

@@ -5,40 +5,36 @@
 - **Phase 1 — Project foundation:** Completed.
 - **Phase 2 — Authentication & User Accounts:** Completed with **Supabase**. Verified live on physical Samsung Galaxy A54 5G.
 - **Phase 3 — Supabase Database, Family Trees, People, Relationships & Interactive Workflow Canvas:** Completed and verified live on physical Samsung Galaxy A54 5G.
+- **Phase 4 — Events Tab, 150 Offline Psalms, Memorial Mode, User Profile Editing & Notifications:** Completed and verified live on physical Samsung Galaxy A54 5G.
 
 ---
 
-## Phase 3 Checklist
+## Phase 4 Checklist
 
-- [x] **PostgreSQL Schema & Security Migration (`supabase/migrations/20261011_phase3_schema.sql`):**
-  - `families`: `id`, `name`, `description`, `owner_id`, `status` ('DRAFT', 'PUBLISHED', 'ARCHIVED'), `schema_version`.
-  - `family_members`: `family_id`, `user_id`, `role` ('OWNER', 'ADMIN', 'CONTRIBUTOR', 'VIEWER'), `invited_by`.
-  - `people`: `id`, `family_id`, `first_name`, `last_name`, `additional_names`, `life_status`, `birth_date`, `birth_date_precision`, `death_date`, `death_date_precision`, `biography`, `canvas_x`, `canvas_y`.
-  - `relationships`: `PARENT_CHILD`, `SPOUSE` (undirected unique constraint).
-  - Row Level Security (RLS) policies enforcing view/edit/delete permissions based on member roles.
-  - Database functions: `create_family` (atomic family + owner membership with status 'DRAFT') and `validate_relationship_integrity` (cycle prevention).
-- [x] **Draft & Publish Lifecycle:**
-  - Trees are created by default in `DRAFT` status ("טיוטה").
-  - Prominent "העלאה / פרסום" button and status banner in the tree view to publish live.
-  - Option to revert published trees back to draft.
-- [x] **Role-Based Access Control (RBAC):**
-  - `OWNER` (מנהל-על / יוצר): Full control, exclusively can delete tree and promote/demote admins.
-  - `ADMIN` (מנהל): Can invite members, edit tree metadata, and manage family relatives.
-  - `CONTRIBUTOR` (משתתף): Default permission for invited members. Can add and edit relatives (spouses, children, parents, grandparents) and relationships, but cannot delete tree or manage member roles.
-  - `VIEWER` (צופה): Read-only view of the tree.
-  - Dedicated `FamilyMembersDialog` for viewing members, inviting via email, and changing roles.
-- [x] **Interactive Workflow Canvas (`TreeLayoutEngine`, `FamilyTreeCanvas`, `FamilyTreeNodeCard`):**
-  - Smooth Pan & Zoom navigation (gesture-based and overlay controls: +, -, fit center).
-  - Generational layout engine grouping root ancestors, spouses side-by-side, and descendants.
-  - Connectors: Bezier drop lines for parent-child relations and dashed links for spouses.
-  - Person Node cards displaying photo/avatar, Hebrew names, living/deceased indicators (🕯️), and life dates.
-  - Node action menu on tap: "הוספת ילד/ה", "הוספת הורה", "הוספת בן/בת זוג", "עריכת פרטים", and "מחיקת אדם".
-- [x] **Multi-Tree Switcher & View Modes:**
-  - `TreeSwitcherDropdown`: Quick header switcher between all user's trees with status chips (טיוטה / פורסם) and "+ צור עץ חדש".
-  - Tab switcher between "מפת שושלת" (Interactive Workflow Map) and "רשימה וחיפוש" (Member search and list).
-- [x] **Unit Tests & Quality Verification:**
-  - 23 unit tests pass cleanly in ~5s (`TreeLayoutEngineTest`, `FamilyValidatorsTest`, `AuthValidatorTest`, `AuthErrorMapperTest`, etc.).
-  - APK compiled and verified via ADB install and live screen capture on Samsung Galaxy A54 5G.
+- [x] **Events Tab ("אירועים"):**
+  - Replaced Memorials tab with unified chronological list of upcoming Birthdays and Memorials.
+  - Calculated next birthdays with `Asia/Jerusalem` timezone, leap-year handling (Feb 29 -> Feb 28 fallback), and deduplication across multiple trees.
+  - Full CRUD operations for Memorial events with family tree and deceased person association.
+  - Memorial card details dialog with 1-tap navigation to read Tehillim for deceased relative.
+- [x] **Complete 150 Psalms ("ספר תהילים") Offline:**
+  - Bundled authentic Masoretic vocalized Hebrew text of all 150 chapters (`assets/tehillim_150.json`).
+  - Chapter selector bottom sheet with Hebrew gematria numerals (including ט"ו and ט"ז).
+  - Special highlighted yellow item **"תהילים לעילוי נשמה"** with 7 prescribed chapters: 33, 16, 17, 72, 91, 104, 130.
+  - Dedication banner formatting: `"לעילוי נשמת {שם מלא}, {שם מלא} בן/בת {שם האם}"`.
+  - Font size controls (`א+`, `א-`) and next/previous chapter navigation.
+- [x] **User Profile Editing:**
+  - "עריכת פרופיל" button on Settings account card.
+  - Full name and display name validation and updates to Supabase GoTrue `user_metadata` and `public.profiles`.
+- [x] **Date Validation & RTL Layout Improvements:**
+  - Day, Month, Year input fields reordered for natural Hebrew RTL flow (DD/MM/YYYY).
+  - Pre-submission range and calendar validation preventing invalid date inputs (e.g. month 25) and PostgreSQL out of range errors.
+- [x] **Notifications & Background Scheduling:**
+  - 7 days before reminder for memorials at 09:00 AM (Israel time).
+  - Same-day reminder for birthdays at 09:00 AM (Israel time).
+  - `AlarmManager.setExactAndAllowWhileIdle` with `EventReminderReceiver` and `BootCompletedReceiver`.
+- [x] **Automated Tests:**
+  - 36 unit tests passed, 0 failures (`EventDateCalculatorTest`, `TehillimRepositoryTest`, `FamilyValidatorsTest`, etc.).
+  - Verified live on physical Samsung Galaxy A54 5G.
 
 ---
 
@@ -51,13 +47,16 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'; .\gradlew.bat te
 $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'; .\gradlew.bat assembleDebug
 ```
 
-- **testDebugUnitTest:** 23 tests passed, 0 failures, 0 errors
+- **testDebugUnitTest:** 36 tests passed, 0 failures, 0 errors
+  - `EventDateCalculatorTest`: 6 tests
+  - `TehillimRepositoryTest`: 3 tests
   - `TreeLayoutEngineTest`: 5 tests
-  - `FamilyValidatorsTest`: 5 tests
+  - `FamilyValidatorsTest`: 7 tests
   - `AuthValidatorTest`: 5 tests
   - `AuthErrorMapperTest`: 2 tests
   - `AuthViewModelTest`: 3 tests
   - `FamilyTreeMappingTest`: 2 tests
+  - `PersonRelationshipCalculatorTest`: 3 tests
   - `ShorashimDestinationTest`: 1 test
 - **assembleDebug:** BUILD SUCCESSFUL
 - **APK output:** `app/build/outputs/apk/debug/app-debug.apk`
