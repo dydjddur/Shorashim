@@ -78,6 +78,7 @@ class SupabaseAuthRepository(
                 ),
             )
         } catch (e: Throwable) {
+            android.util.Log.e("SupabaseAuth", "Login failed: ${e::class.qualifiedName} | message: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -105,6 +106,7 @@ class SupabaseAuthRepository(
                 ),
             )
         } catch (e: Throwable) {
+            android.util.Log.e("SupabaseAuth", "Register failed: ${e::class.qualifiedName} | message: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -115,6 +117,7 @@ class SupabaseAuthRepository(
             auth.resetPasswordForEmail(email.trim())
             Result.success(Unit)
         } catch (e: Throwable) {
+            android.util.Log.e("SupabaseAuth", "Reset password failed: ${e::class.qualifiedName} | message: ${e.message}", e)
             Result.failure(e)
         }
     }

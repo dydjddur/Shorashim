@@ -72,6 +72,7 @@ class AuthViewModel(
                     onSuccess()
                 },
                 onFailure = { error ->
+                    android.util.Log.e("AuthViewModel", "Login error: ${error::class.qualifiedName} | ${error.message}", error)
                     _loginUiState.update {
                         it.copy(
                             isLoading = false,

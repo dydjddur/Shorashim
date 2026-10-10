@@ -18,6 +18,10 @@ class AuthErrorMapperTest {
             AuthErrorMapper.mapErrorMessage("invalid_grant"),
         )
         assertEquals(
+            R.string.auth_error_email_not_confirmed,
+            AuthErrorMapper.mapErrorMessage("Email not confirmed"),
+        )
+        assertEquals(
             R.string.auth_error_email_already_in_use,
             AuthErrorMapper.mapErrorMessage("User already registered"),
         )
