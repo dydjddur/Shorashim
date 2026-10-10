@@ -131,6 +131,37 @@ data class FamilyMember(
 )
 
 @Serializable
+data class PersonInsertDto(
+    @SerialName("family_id")
+    val familyId: String,
+    @SerialName("first_name")
+    val firstName: String,
+    @SerialName("last_name")
+    val lastName: String? = null,
+    @SerialName("additional_names")
+    val additionalNames: String? = null,
+    @SerialName("photo_path")
+    val photoPath: String? = null,
+    @SerialName("life_status")
+    val lifeStatus: LifeStatus,
+    @SerialName("birth_date")
+    val birthDate: String? = null,
+    @SerialName("birth_date_precision")
+    val birthDatePrecision: DatePrecision? = null,
+    @SerialName("death_date")
+    val deathDate: String? = null,
+    @SerialName("death_date_precision")
+    val deathDatePrecision: DatePrecision? = null,
+    val biography: String? = null,
+    @SerialName("canvas_x")
+    val canvasX: Double = 0.0,
+    @SerialName("canvas_y")
+    val canvasY: Double = 0.0,
+    @SerialName("created_by")
+    val createdBy: String? = null,
+)
+
+@Serializable
 data class PersonDto(
     val id: String = "",
     @SerialName("family_id")
@@ -187,6 +218,20 @@ data class Person(
     val fullName: String
         get() = if (lastName.isNullOrBlank()) firstName else "$firstName $lastName"
 }
+
+@Serializable
+data class RelationshipInsertDto(
+    @SerialName("family_id")
+    val familyId: String,
+    @SerialName("person_id")
+    val personId: String,
+    @SerialName("related_person_id")
+    val relatedPersonId: String,
+    @SerialName("relationship_type")
+    val relationshipType: RelationshipType,
+    @SerialName("created_by")
+    val createdBy: String? = null,
+)
 
 @Serializable
 data class RelationshipDto(

@@ -43,7 +43,7 @@ class SupabaseRelationshipRepository(
         val userId = getCurrentUserId()
 
         return runCatching {
-            val dto = RelationshipDto(
+            val insertDto = com.shorashim.core.model.RelationshipInsertDto(
                 familyId = familyId,
                 personId = personId,
                 relatedPersonId = relatedPersonId,
@@ -51,7 +51,7 @@ class SupabaseRelationshipRepository(
                 createdBy = userId,
             )
 
-            val created = supabase.from("relationships").insert(dto) {
+            val created = supabase.from("relationships").insert(insertDto) {
                 select()
             }.decodeSingle<RelationshipDto>()
 

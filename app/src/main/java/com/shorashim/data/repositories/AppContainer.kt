@@ -44,6 +44,13 @@ class AppContainer {
                 install(Auth)
                 install(Postgrest)
                 install(Storage)
+                defaultSerializer = io.github.jan.supabase.serializer.KotlinXSerializer(
+                    kotlinx.serialization.json.Json {
+                        ignoreUnknownKeys = true
+                        encodeDefaults = true
+                        isLenient = true
+                    }
+                )
             }
         } catch (e: Throwable) {
             Log.e("AppContainer", "Failed to create SupabaseClient", e)
