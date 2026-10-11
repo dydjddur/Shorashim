@@ -21,12 +21,12 @@
   ],
   "rewrites": [
     {
-      "source": "/invite/:token*",
-      "destination": "/index.html"
+      "source": "/invite/:token",
+      "destination": "/"
     },
     {
-      "source": "/:path*",
-      "destination": "/index.html"
+      "source": "/invite",
+      "destination": "/"
     }
   ]
 }
