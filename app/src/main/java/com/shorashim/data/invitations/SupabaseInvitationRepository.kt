@@ -80,17 +80,21 @@ class SupabaseInvitationRepository(
             val user = client.auth.currentUserOrNull()
                 ?: error("User not authenticated")
 
-            // RLS will filter to rows where invitee_user_id = auth.uid()
-            // OR invitee_email = user's email
-            // We fetch both and union them client-side via RLS
-            client.postgrest[TABLE]
-                .select {
-                    filter {
-                        eq("status", "PENDING")
+            try {
+                client.postgrest.rpc("get_my_pending_invitations")
+                    .decodeList<FamilyInvitationDto>()
+                    .map { it.toDomain() }
+            } catch (t: Throwable) {
+                Log.w(TAG, "get_my_pending_invitations RPC failed, fallback to table select: ${t.message}")
+                client.postgrest[TABLE]
+                    .select {
+                        filter {
+                            eq("status", "PENDING")
+                        }
                     }
-                }
-                .decodeList<FamilyInvitationDto>()
-                .map { it.toDomain() }
+                    .decodeList<FamilyInvitationDto>()
+                    .map { it.toDomain() }
+            }
         }.also { if (it.isFailure) Log.e(TAG, "getMyPendingInvitations failed", it.exceptionOrNull()) }
 
     override suspend fun getFamilyInvitations(familyId: String): Result<List<FamilyInvitation>> =

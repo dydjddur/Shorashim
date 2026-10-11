@@ -45,17 +45,32 @@ CREATE TRIGGER trg_invitation_updated_at
 -- ============================================================
 ALTER TABLE public.family_invitations ENABLE ROW LEVEL SECURITY;
 
--- OWNER / ADMIN of the family can SELECT all invitations for their family
+-- Helper function to get current user's email safely
+CREATE OR REPLACE FUNCTION public.current_user_email()
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT COALESCE(
+        auth.jwt() ->> 'email',
+        current_setting('request.jwt.claims', true)::jsonb ->> 'email'
+    );
+$$;
+
+-- OWNER / ADMIN of the family can SELECT all invitations for their family,
+-- or invitee can SELECT invitations addressed to them
+DROP POLICY IF EXISTS "family_admins_can_select_invitations" ON public.family_invitations;
 CREATE POLICY "family_admins_can_select_invitations"
     ON public.family_invitations
     FOR SELECT
     USING (
         public.has_family_role(family_id, ARRAY['OWNER','ADMIN'])
         OR invitee_user_id = auth.uid()
-        OR invitee_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        OR (invitee_email IS NOT NULL AND LOWER(invitee_email) = LOWER(public.current_user_email()))
     );
 
 -- OWNER / ADMIN can INSERT invitations for their family
+DROP POLICY IF EXISTS "family_admins_can_insert_invitations" ON public.family_invitations;
 CREATE POLICY "family_admins_can_insert_invitations"
     ON public.family_invitations
     FOR INSERT
@@ -65,6 +80,7 @@ CREATE POLICY "family_admins_can_insert_invitations"
     );
 
 -- OWNER / ADMIN can UPDATE (revoke) invitations for their family
+DROP POLICY IF EXISTS "family_admins_can_update_invitations" ON public.family_invitations;
 CREATE POLICY "family_admins_can_update_invitations"
     ON public.family_invitations
     FOR UPDATE
@@ -72,17 +88,43 @@ CREATE POLICY "family_admins_can_update_invitations"
     WITH CHECK (public.has_family_role(family_id, ARRAY['OWNER','ADMIN']));
 
 -- Invitee can UPDATE their own invitation (to accept/decline)
+DROP POLICY IF EXISTS "invitee_can_update_own_invitation" ON public.family_invitations;
 CREATE POLICY "invitee_can_update_own_invitation"
     ON public.family_invitations
     FOR UPDATE
     USING (
         invitee_user_id = auth.uid()
-        OR invitee_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        OR (invitee_email IS NOT NULL AND LOWER(invitee_email) = LOWER(public.current_user_email()))
     )
     WITH CHECK (
         invitee_user_id = auth.uid()
-        OR invitee_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+        OR (invitee_email IS NOT NULL AND LOWER(invitee_email) = LOWER(public.current_user_email()))
     );
+
+-- RPC for fetching current user's pending invitations with SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.get_my_pending_invitations()
+RETURNS SETOF public.family_invitations
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_email   TEXT := LOWER(COALESCE(auth.jwt() ->> 'email', ''));
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM public.family_invitations
+    WHERE status = 'PENDING'
+      AND expires_at > NOW()
+      AND (
+          invitee_user_id = v_user_id
+          OR (invitee_email IS NOT NULL AND LOWER(invitee_email) = v_email)
+      );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_my_pending_invitations() TO authenticated;
 
 -- ============================================================
 -- 3. accept_invitation RPC – atomic, backend-validated
@@ -91,7 +133,7 @@ CREATE OR REPLACE FUNCTION public.accept_invitation(p_token TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth, pg_temp
 AS $$
 DECLARE
     v_invitation    public.family_invitations%ROWTYPE;
@@ -171,7 +213,7 @@ CREATE OR REPLACE FUNCTION public.resolve_invitation(p_token TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth, pg_temp
 AS $$
 DECLARE
     v_inv   public.family_invitations%ROWTYPE;
