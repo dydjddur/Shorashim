@@ -21,8 +21,10 @@ import com.shorashim.feature.family.FamilyManagementRoute
 import com.shorashim.feature.family.FamilyManagementViewModel
 import com.shorashim.feature.family.MyFamiliesRoute
 import com.shorashim.feature.family.MyFamiliesViewModel
-import com.shorashim.feature.memorials.MemorialsRoute
-import com.shorashim.feature.memorials.MemorialsViewModel
+import com.shorashim.feature.invitations.InvitationDeepLinkRoute
+import com.shorashim.feature.invitations.InvitationDeepLinkViewModel
+import com.shorashim.feature.invitations.InvitationsRoute
+import com.shorashim.feature.invitations.InvitationsViewModel
 import com.shorashim.feature.settings.SettingsRoute
 import com.shorashim.feature.tehillim.TehillimRoute
 import com.shorashim.feature.tehillim.TehillimViewModel
@@ -55,6 +57,9 @@ fun ShorashimNavHost(
                 },
                 onNavigateToFamilyManagement = { familyId ->
                     navController.navigate(ShorashimRoutes.familyManagement(familyId))
+                },
+                onNavigateToInvitations = {
+                    navController.navigate(ShorashimRoutes.INVITATIONS)
                 },
             )
         }
@@ -108,6 +113,7 @@ fun ShorashimNavHost(
                 onNavigateToCreateFamily = {
                     navController.navigate(ShorashimRoutes.CREATE_FAMILY)
                 },
+                invitationRepository = appContainer.invitationRepository,
             )
         }
 
@@ -202,6 +208,58 @@ fun ShorashimNavHost(
                 onLogout = onLogout,
             )
         }
+
+        // Phase 5: Pending Invitations list screen
+        composable(ShorashimRoutes.INVITATIONS) {
+            val viewModel: InvitationsViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    InvitationsViewModel(
+                        invitationRepository = appContainer.invitationRepository,
+                        familyRepository = appContainer.familyRepository,
+                    )
+                },
+            )
+            InvitationsRoute(
+                viewModel = viewModel,
+                onNavigateToFamily = { familyId ->
+                    navController.navigate(ShorashimRoutes.familyManagement(familyId)) {
+                        popUpTo(ShorashimDestination.FamilyTree.route)
+                    }
+                },
+            )
+        }
+
+        // Phase 5: Invitation deep-link screen (shown after App Link opens the app)
+        composable(
+            route = ShorashimRoutes.INVITATION_DEEP_LINK,
+            arguments = listOf(
+                navArgument("token") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val token = backStackEntry.arguments?.getString("token").orEmpty()
+            val viewModel: InvitationDeepLinkViewModel = viewModel(
+                key = "InviteDeepLink_$token",
+                factory = shorashimViewModelFactory {
+                    InvitationDeepLinkViewModel(
+                        token = token,
+                        invitationRepository = appContainer.invitationRepository,
+                    )
+                },
+            )
+            InvitationDeepLinkRoute(
+                viewModel = viewModel,
+                onAccepted = { familyId ->
+                    navController.navigate(ShorashimRoutes.familyManagement(familyId)) {
+                        popUpTo(ShorashimDestination.FamilyTree.route)
+                    }
+                },
+                onDeclined = { navController.popBackStack() },
+                onNavigateHome = {
+                    navController.navigate(ShorashimDestination.FamilyTree.route) {
+                        popUpTo(ShorashimDestination.FamilyTree.route) { inclusive = true }
+                    }
+                },
+            )
+        }
     }
 }
-

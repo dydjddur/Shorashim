@@ -29,8 +29,34 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(LocaleHelper.wrap(newBase))
     }
 
+    private var pendingInviteToken: String? = null
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        extractInviteToken(intent)
+    }
+
+    private fun extractInviteToken(intent: android.content.Intent?) {
+        val uri = intent?.data ?: return
+        // https://shorashim.app/invite/{token} OR shorashim://invite/{token}
+        val token = when {
+            uri.scheme == "https" && uri.host == "shorashim.app" && uri.pathSegments.size >= 2 -> {
+                if (uri.pathSegments[0] == "invite") uri.pathSegments[1] else null
+            }
+            uri.scheme == "shorashim" && uri.host == "invite" -> {
+                uri.pathSegments.firstOrNull() ?: uri.lastPathSegment
+            }
+            else -> null
+        }
+        if (!token.isNullOrBlank()) {
+            pendingInviteToken = token
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        extractInviteToken(intent)
         enableEdgeToEdge()
         val appContainer = (application as ShorashimApplication).container
         setContent {
@@ -50,6 +76,15 @@ class MainActivity : ComponentActivity() {
                         val navController = rememberNavController()
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentRoute = navBackStackEntry?.destination?.route
+
+                        androidx.compose.runtime.LaunchedEffect(pendingInviteToken) {
+                            val token = pendingInviteToken
+                            if (token != null) {
+                                pendingInviteToken = null
+                                navController.navigate(com.shorashim.core.navigation.ShorashimRoutes.invitationDeepLink(token))
+                            }
+                        }
+
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
                             bottomBar = {

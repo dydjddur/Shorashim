@@ -25,6 +25,11 @@ object ShorashimRoutes {
 
     const val SETTINGS = "settings"
 
+    // Phase 5: Invitations
+    const val INVITATIONS = "invitations"
+    const val INVITATION_DEEP_LINK = "invitation/{token}"
+    fun invitationDeepLink(token: String) = "invitation/$token"
+
     val bottomBarRoutes: List<String> = listOf(
         FAMILY_TREE,
         MEMORIALS,
@@ -32,3 +37,4 @@ object ShorashimRoutes {
         SETTINGS,
     )
 }
+

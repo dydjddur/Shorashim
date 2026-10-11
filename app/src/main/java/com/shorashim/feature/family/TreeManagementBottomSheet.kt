@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material3.Button
@@ -49,6 +50,7 @@ fun TreeManagementBottomSheet(
     onPublish: () -> Unit,
     onUnpublish: () -> Unit,
     onOpenMembers: () -> Unit,
+    onShareInvite: () -> Unit = {},
     onRenameClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onDismiss: () -> Unit,
@@ -197,6 +199,23 @@ fun TreeManagementBottomSheet(
             Spacer(Modifier.height(16.dp))
 
             // Management Action Buttons
+            if (family.canManageMembers) {
+                Button(
+                    onClick = onShareInvite,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                    ),
+                ) {
+                    Icon(Icons.Outlined.Share, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.invitation_share_action), fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(Modifier.height(10.dp))
+            }
+
             OutlinedButton(
                 onClick = onOpenMembers,
                 modifier = Modifier.fillMaxWidth(),

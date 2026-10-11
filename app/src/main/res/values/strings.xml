@@ -253,5 +253,21 @@
     <string name="profile_display_name_label">כינוי / שם תצוגה</string>
     <string name="profile_save_button">שמירת שינויים</string>
     <string name="profile_save_success">הפרופיל עודכן בהצלחה!</string>
+
+    <!-- Phase 5: Invitations -->
+    <string name="invitations_title">הזמנות לעץ משפחתי</string>
+    <string name="invitations_see_all">צפייה בהזמנות</string>
+    <string name="invitations_empty_title">אין הזמנות ממתינות</string>
+    <string name="invitations_empty_message">כאן יופיעו הזמנות שתקבל/י לעצי משפחה של אחרים</string>
+    <string name="invitation_card_invited_prefix">הוזמנת לעץ משפחה:</string>
+    <string name="invitation_card_role_prefix">תפקיד:</string>
+    <string name="invitation_card_valid_until">בתוקף עד:</string>
+    <string name="invitation_accept_button">אישור הצטרפות</string>
+    <string name="invitation_decline_button">דחיית ההזמנה</string>
+    <string name="invitation_share_title">הזמנת שותפים לעץ</string>
+    <string name="invitation_share_action">שיתוף קישור הצטרפות</string>
+    <string name="invitation_share_subject">הזמנה לאפליקציית שורשים</string>
+    <string name="invitation_share_copied">הקישור הועתק ללוח</string>
+    <string name="invitation_copy_link">העתקת קישור</string>
 </resources>
 

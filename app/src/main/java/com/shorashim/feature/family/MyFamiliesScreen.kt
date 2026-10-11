@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -57,6 +58,7 @@ fun MyFamiliesRoute(
     viewModel: MyFamiliesViewModel,
     onNavigateToCreateFamily: () -> Unit,
     onNavigateToFamilyManagement: (String) -> Unit,
+    onNavigateToInvitations: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,9 +72,11 @@ fun MyFamiliesRoute(
         onRefresh = viewModel::loadFamilies,
         onCreateFamilyClick = onNavigateToCreateFamily,
         onFamilyClick = onNavigateToFamilyManagement,
+        onNavigateToInvitations = onNavigateToInvitations,
         modifier = modifier,
     )
 }
+
 
 @Composable
 fun MyFamiliesScreen(
@@ -80,6 +84,7 @@ fun MyFamiliesScreen(
     onRefresh: () -> Unit,
     onCreateFamilyClick: () -> Unit,
     onFamilyClick: (String) -> Unit,
+    onNavigateToInvitations: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -183,6 +188,16 @@ fun MyFamiliesScreen(
                                 ),
                             )
                         }
+
+                        // Show "pending invitations" link even with no own trees
+                        Spacer(Modifier.height(Spacing.md))
+                        TextButton(onClick = onNavigateToInvitations) {
+                            Text(
+                                text = "הזמנות לעצי משפחה (${stringResource(R.string.invitations_see_all)})",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
@@ -194,6 +209,11 @@ fun MyFamiliesScreen(
                     contentPadding = PaddingValues(Spacing.md),
                     verticalArrangement = Arrangement.spacedBy(Spacing.md),
                 ) {
+                    // Pending Invitations section (shown above "המשפחות שלי")
+                    item {
+                        InvitationsBannerButton(onClick = onNavigateToInvitations)
+                    }
+
                     item {
                         Text(
                             text = stringResource(R.string.families_title),
@@ -216,6 +236,58 @@ fun MyFamiliesScreen(
         }
     }
 }
+
+@Composable
+private fun InvitationsBannerButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    androidx.compose.material3.OutlinedCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(
+            1.dp,
+            androidx.compose.ui.graphics.Color(0xFF4CAF50).copy(alpha = 0.6f),
+        ),
+        colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
+            containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50).copy(alpha = 0.06f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.md, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Groups,
+                    contentDescription = null,
+                    tint = androidx.compose.ui.graphics.Color(0xFF43A047),
+                    modifier = Modifier.size(22.dp),
+                )
+                Text(
+                    text = "הזמנות לעץ משפחתי",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    color = androidx.compose.ui.graphics.Color(0xFF2E7D32),
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+
 
 @Composable
 fun FamilyCard(

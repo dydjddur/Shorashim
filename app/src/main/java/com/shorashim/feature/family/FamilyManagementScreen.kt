@@ -74,6 +74,10 @@ import com.shorashim.core.ui.component.ShorashimLoadingState
 import com.shorashim.core.ui.component.Spacing
 import com.shorashim.feature.familytree.canvas.FamilyTreeCanvas
 
+import androidx.compose.ui.platform.LocalContext
+import com.shorashim.data.invitations.InvitationRepository
+import com.shorashim.feature.invitations.ShareInviteViewModel
+
 @Composable
 fun FamilyManagementRoute(
     viewModel: FamilyManagementViewModel,
@@ -81,10 +85,18 @@ fun FamilyManagementRoute(
     onNavigateToAddPerson: (familyId: String) -> Unit,
     onNavigateToEditPerson: (familyId: String, personId: String) -> Unit,
     onNavigateToCreateFamily: () -> Unit = {},
+    invitationRepository: InvitationRepository? = null,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    val shareInviteViewModel: ShareInviteViewModel? = invitationRepository?.let {
+        remember(uiState.currentFamilyId) {
+            ShareInviteViewModel(uiState.currentFamilyId, it)
+        }
+    }
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         viewModel.loadData()
@@ -150,6 +162,9 @@ fun FamilyManagementRoute(
         onAddSpouseClick = { spouse ->
             onNavigateToAddPerson(uiState.currentFamilyId)
         },
+        onShareInvite = {
+            shareInviteViewModel?.createAndShare(context)
+        },
         onRefresh = viewModel::loadData,
         modifier = modifier,
     )
@@ -189,6 +204,7 @@ fun FamilyManagementScreen(
     onAddChildClick: (Person) -> Unit,
     onAddParentClick: (Person) -> Unit,
     onAddSpouseClick: (Person) -> Unit,
+    onShareInvite: () -> Unit = {},
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -245,6 +261,10 @@ fun FamilyManagementScreen(
             onPublish = onPublish,
             onUnpublish = onUnpublish,
             onOpenMembers = onOpenMembersDialog,
+            onShareInvite = {
+                onCloseManagementSheet()
+                onShareInvite()
+            },
             onRenameClick = {
                 onCloseManagementSheet()
                 onRenameClicked()

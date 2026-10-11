@@ -427,3 +427,63 @@ data class UserProfile(
     val displayName: String = "",
     val avatarUrl: String? = null,
 )
+
+// ---------------------------------------------------------------------------
+// Phase 5: Family Tree Invitations
+// ---------------------------------------------------------------------------
+
+@Serializable
+enum class InvitationStatus {
+    @SerialName("PENDING")  PENDING,
+    @SerialName("ACCEPTED") ACCEPTED,
+    @SerialName("DECLINED") DECLINED,
+    @SerialName("REVOKED")  REVOKED,
+}
+
+@Serializable
+data class FamilyInvitationDto(
+    val id: String = "",
+    @SerialName("family_id")       val familyId: String = "",
+    val token: String = "",
+    @SerialName("created_by")      val createdBy: String = "",
+    @SerialName("invitee_email")   val inviteeEmail: String? = null,
+    @SerialName("invitee_user_id") val inviteeUserId: String? = null,
+    val status: InvitationStatus = InvitationStatus.PENDING,
+    val role: MembershipRole = MembershipRole.CONTRIBUTOR,
+    @SerialName("expires_at")  val expiresAt: String? = null,
+    @SerialName("created_at")  val createdAt: String? = null,
+    @SerialName("updated_at")  val updatedAt: String? = null,
+)
+
+data class FamilyInvitation(
+    val id: String,
+    val familyId: String,
+    val familyName: String = "",   // enriched client-side
+    val token: String,
+    val createdBy: String,
+    val inviteeEmail: String? = null,
+    val inviteeUserId: String? = null,
+    val status: InvitationStatus,
+    val role: MembershipRole,
+    val expiresAt: String? = null,
+    val createdAt: String? = null,
+) {
+    /** Deep-link URL that can be shared */
+    val shareUrl: String get() = "https://shorashim.app/invite/$token"
+
+    val isPending: Boolean get() = status == InvitationStatus.PENDING
+}
+
+/** Result from resolve_invitation / accept_invitation RPCs */
+data class InvitationResolution(
+    val ok: Boolean,
+    val error: String? = null,           // error code from the RPC
+    val invitationId: String? = null,
+    val familyId: String? = null,
+    val familyName: String? = null,
+    val invitedBy: String? = null,
+    val role: String? = null,
+    val status: String? = null,
+    val expiresAt: String? = null,
+    val alreadyMember: Boolean = false,
+)

@@ -12,6 +12,8 @@ import com.shorashim.data.family.RelationshipRepository
 import com.shorashim.data.family.SupabaseFamilyRepository
 import com.shorashim.data.family.SupabasePersonRepository
 import com.shorashim.data.family.SupabaseRelationshipRepository
+import com.shorashim.data.invitations.InvitationRepository
+import com.shorashim.data.invitations.SupabaseInvitationRepository
 import com.shorashim.data.memorials.MemorialRepository
 import com.shorashim.data.memorials.SupabaseMemorialRepository
 import com.shorashim.data.profile.ProfileRepository
@@ -79,6 +81,6 @@ class AppContainer(
     )
     val psalmsRepository: PsalmsRepository = if (context != null) LocalPsalmsRepository(context) else UnavailablePsalmsRepository()
     val profileRepository: ProfileRepository = SupabaseProfileRepository(supabaseClient)
+    val invitationRepository: InvitationRepository = SupabaseInvitationRepository(supabaseClient)
     val notificationScheduler: EventNotificationScheduler? = context?.let { EventNotificationScheduler(it) }
 }
-
