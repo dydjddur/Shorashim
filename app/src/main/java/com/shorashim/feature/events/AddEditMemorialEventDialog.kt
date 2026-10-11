@@ -55,7 +55,8 @@ fun AddEditMemorialEventDialog(
     }
     var selectedPersonId by remember { mutableStateOf(editingMemorial?.personId) }
     var personName by remember { mutableStateOf(editingMemorial?.personName.orEmpty()) }
-    var eventDate by remember { mutableStateOf(editingMemorial?.originalDateStr.orEmpty()) }
+    // Memorial cards carry the date as dd/MM/yyyy; the form (and the server) use ISO yyyy-MM-dd.
+    var eventDate by remember { mutableStateOf(displayDateToIso(editingMemorial?.originalDateStr.orEmpty())) }
     var hebrewDate by remember { mutableStateOf(editingMemorial?.hebrewDate.orEmpty()) }
     var description by remember { mutableStateOf(editingMemorial?.description.orEmpty()) }
 
@@ -201,13 +202,13 @@ fun AddEditMemorialEventDialog(
                     value = eventDate,
                     onValueChange = {
                         eventDate = it
-                        dateError = it.isBlank()
+                        dateError = false
                     },
                     label = { Text(stringResource(R.string.events_date_label)) },
                     placeholder = { Text("לדוגמה: 2024-05-15") },
                     isError = dateError,
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -235,7 +236,7 @@ fun AddEditMemorialEventDialog(
             Button(
                 onClick = {
                     val validName = personName.isNotBlank()
-                    val validDate = eventDate.isNotBlank()
+                    val validDate = runCatching { java.time.LocalDate.parse(eventDate.trim()) }.isSuccess
                     nameError = !validName
                     dateError = !validDate
 
@@ -269,4 +270,10 @@ fun AddEditMemorialEventDialog(
             }
         },
     )
+}
+
+/** Converts "dd/MM/yyyy" to "yyyy-MM-dd"; any other input is returned unchanged. */
+internal fun displayDateToIso(value: String): String {
+    val parts = value.trim().split("/")
+    return if (parts.size == 3 && parts[2].length == 4) "${parts[2]}-${parts[1]}-${parts[0]}" else value
 }

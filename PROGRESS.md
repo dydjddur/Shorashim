@@ -7,6 +7,18 @@
 - **Phase 3 — Supabase Database, Family Trees, People, Relationships & Interactive Workflow Canvas:** Completed and verified live on physical Samsung Galaxy A54 5G.
 - **Phase 4 — Events Tab, 150 Offline Psalms, Memorial Mode, User Profile Editing & Notifications:** Completed and verified live on physical Samsung Galaxy A54 5G.
 
+- **Phase 4.5 — Events calendar, static smart tree layout, new logo, bug-fix pass:** Completed in code (unit tests + lint green; **not yet verified visually on a device**). See README "החלטות עיצוב קריטיות".
+
+---
+
+## Phase 4.5 Checklist
+
+- [x] Events tab: month-grid calendar (default) / list toggle, Hebrew day per cell, day sheet, swipe between months.
+- [x] Family tree map is static (pan/zoom only); `TreeLayoutEngine` rewritten (household bands, no overlaps, birth-order children, shared couple origin, orthogonal connectors, fit-to-screen).
+- [x] New launcher icon (adaptive + legacy + monochrome) and monochrome notification icon.
+- [x] Core library desugaring (java.time on API 24-25); memorial add/edit/delete wired up; date-format bug fixed.
+- [x] Tests: 56 unit tests, 0 failures (`./gradlew testDebugUnitTest`); `lintDebug`: 0 errors.
+
 ---
 
 ## Phase 4 Checklist

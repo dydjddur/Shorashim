@@ -1,11 +1,13 @@
 package com.shorashim.feature.familytree.canvas
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,9 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -28,11 +31,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,15 +43,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -59,8 +64,18 @@ import com.shorashim.core.model.Family
 import com.shorashim.core.model.Person
 import com.shorashim.core.model.Relationship
 import com.shorashim.core.model.RelationshipType
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
+private const val MIN_SCALE = 0.12f
+private const val MAX_SCALE = 2.5f
+private const val CONTENT_PADDING = 120f
+private const val CORNER_RADIUS = 18f
+
+/**
+ * Static family tree map. The layout is computed automatically by [TreeLayoutEngine]; the user can
+ * pan and zoom the whole map (pinch / drag / buttons) but cannot move individual cards.
+ */
 @Composable
 fun FamilyTreeCanvas(
     family: Family,
@@ -75,24 +90,69 @@ fun FamilyTreeCanvas(
     onEmptyAddPersonClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Zoom and pan state
     var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset(0f, 100f)) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var hasInitialView by remember { mutableStateOf(false) }
 
     val (nodes, connections) = remember(people, relationships) {
         TreeLayoutEngine.calculateLayout(people, relationships)
     }
+    val bounds = remember(nodes) { TreeLayoutEngine.contentBounds(nodes) }
+
+    // Canvas coordinates are normalised so that the content starts at (CONTENT_PADDING, CONTENT_PADDING);
+    // everything stays in positive space, which keeps hit-testing of the cards reliable.
+    val shiftX = CONTENT_PADDING - bounds.left
+    val shiftY = CONTENT_PADDING - bounds.top
+    val contentWidth = bounds.width + CONTENT_PADDING * 2
+    val contentHeight = bounds.height + CONTENT_PADDING * 2
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        val centerX = constraints.maxWidth / 2f
-        val centerY = constraints.maxHeight / 3f
+        val viewportW = constraints.maxWidth.toFloat()
+        val viewportH = constraints.maxHeight.toFloat()
+        val density = LocalDensity.current
+
+        fun clampOffset(candidate: Offset, atScale: Float): Offset {
+            val margin = 80f
+            val minX = margin - contentWidth * atScale
+            val maxX = viewportW - margin
+            val minY = margin - contentHeight * atScale
+            val maxY = viewportH - margin
+            return Offset(
+                candidate.x.coerceIn(minOf(minX, maxX), maxOf(minX, maxX)),
+                candidate.y.coerceIn(minOf(minY, maxY), maxOf(minY, maxY)),
+            )
+        }
+
+        fun fitToScreen() {
+            if (nodes.isEmpty() || viewportW <= 0f || viewportH <= 0f) return
+            val fit = minOf(viewportW / contentWidth, viewportH / contentHeight)
+            val s = fit.coerceIn(MIN_SCALE, 1f)
+            scale = s
+            offset = Offset(
+                (viewportW - contentWidth * s) / 2f,
+                ((viewportH - contentHeight * s) / 2f).coerceAtLeast(0f),
+            )
+        }
+
+        fun zoomBy(factor: Float, focus: Offset) {
+            val newScale = (scale * factor).coerceIn(MIN_SCALE, MAX_SCALE)
+            val ratio = newScale / scale
+            offset = clampOffset(focus - (focus - offset) * ratio, newScale)
+            scale = newScale
+        }
+
+        LaunchedEffect(nodes.isNotEmpty(), viewportW, viewportH) {
+            if (nodes.isNotEmpty() && !hasInitialView && viewportW > 0f) {
+                fitToScreen()
+                hasInitialView = true
+            }
+        }
 
         if (people.isEmpty()) {
-            // Empty state on canvas
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -133,99 +193,85 @@ fun FamilyTreeCanvas(
                 }
             }
         } else {
-            // Interactive Pan & Zoom Area
+            val connectorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+            val spouseColor = Color(0xFFC48B47)
+
+            // Pan & zoom surface. Cards cannot be dragged: only the whole map moves.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(0.2f, 2.5f)
-                            offset += pan
+                    .pointerInput(contentWidth, contentHeight, viewportW, viewportH) {
+                        detectTransformGestures { centroid, pan, zoom, _ ->
+                            val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
+                            val ratio = newScale / scale
+                            val zoomed = centroid - (centroid - offset) * ratio
+                            offset = clampOffset(zoomed + pan, newScale)
+                            scale = newScale
                         }
                     },
             ) {
-                // Background Connection Lines
-                Canvas(
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .wrapContentSize(align = Alignment.TopStart, unbounded = true)
+                        .requiredSize(
+                            width = with(density) { contentWidth.toDp() },
+                            height = with(density) { contentHeight.toDp() },
+                        )
                         .graphicsLayer {
+                            transformOrigin = TransformOrigin(0f, 0f)
                             scaleX = scale
                             scaleY = scale
-                            translationX = offset.x + centerX
-                            translationY = offset.y + centerY
+                            translationX = offset.x
+                            translationY = offset.y
                         },
                 ) {
-                    val primaryColor = Color(0xFF6C7C59) // Olive accent
-                    val spouseColor = Color(0xFFC48B47) // Warm amber
+                    // Connection lines
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val parentStroke = Stroke(
+                            width = 2.5.dp.toPx(),
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round,
+                        )
+                        val spouseStroke = Stroke(
+                            width = 2.5.dp.toPx(),
+                            cap = StrokeCap.Round,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f),
+                        )
+                        val shift = Offset(shiftX, shiftY)
 
-                    for (conn in connections) {
-                        when (conn.type) {
-                            RelationshipType.PARENT_CHILD -> {
-                                val path = Path().apply {
-                                    moveTo(conn.start.x, conn.start.y)
-                                    val midY = (conn.start.y + conn.end.y) / 2f
-                                    cubicTo(
-                                        conn.start.x, midY,
-                                        conn.end.x, midY,
-                                        conn.end.x, conn.end.y,
+                        for (conn in connections) {
+                            val start = conn.start + shift
+                            val end = conn.end + shift
+                            when (conn.type) {
+                                RelationshipType.PARENT_CHILD -> {
+                                    drawPath(
+                                        path = elbowPath(start, end),
+                                        color = connectorColor,
+                                        style = parentStroke,
+                                    )
+                                    drawCircle(
+                                        color = connectorColor,
+                                        radius = 4.dp.toPx(),
+                                        center = end,
                                     )
                                 }
-                                drawPath(
-                                    path = path,
-                                    color = primaryColor,
-                                    style = Stroke(
-                                        width = 3.dp.toPx(),
-                                        cap = StrokeCap.Round,
-                                    ),
-                                )
-                                // Arrow or dot at child top
-                                drawCircle(
-                                    color = primaryColor,
-                                    radius = 4.dp.toPx(),
-                                    center = conn.end,
-                                )
-                            }
-                            RelationshipType.SPOUSE -> {
-                                val path = Path().apply {
-                                    moveTo(conn.start.x, conn.start.y)
-                                    lineTo(conn.end.x, conn.end.y)
+                                RelationshipType.SPOUSE -> {
+                                    val path = Path().apply {
+                                        moveTo(start.x, start.y)
+                                        lineTo(end.x, end.y)
+                                    }
+                                    drawPath(path = path, color = spouseColor, style = spouseStroke)
+                                    drawCircle(
+                                        color = spouseColor,
+                                        radius = 5.dp.toPx(),
+                                        center = Offset((start.x + end.x) / 2f, (start.y + end.y) / 2f),
+                                    )
                                 }
-                                drawPath(
-                                    path = path,
-                                    color = spouseColor,
-                                    style = Stroke(
-                                        width = 2.5.dp.toPx(),
-                                        cap = StrokeCap.Round,
-                                        pathEffect = PathEffect.dashPathEffect(
-                                            floatArrayOf(12f, 8f),
-                                            0f,
-                                        ),
-                                    ),
-                                )
-                                // Double ring indicator in middle
-                                val midX = (conn.start.x + conn.end.x) / 2f
-                                val midY = (conn.start.y + conn.end.y) / 2f
-                                drawCircle(
-                                    color = spouseColor,
-                                    radius = 5.dp.toPx(),
-                                    center = Offset(midX, midY),
-                                )
                             }
                         }
                     }
-                }
 
-                // Interactive Nodes Layer
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                            translationX = offset.x + centerX
-                            translationY = offset.y + centerY
-                        },
-                ) {
+                    // Person cards
                     for (node in nodes) {
                         FamilyTreeNodeCard(
                             node = node,
@@ -237,8 +283,8 @@ fun FamilyTreeCanvas(
                             onDeletePersonClick = onDeletePersonClick,
                             modifier = Modifier.offset {
                                 IntOffset(
-                                    x = node.x.roundToInt(),
-                                    y = node.y.roundToInt(),
+                                    x = (node.x + shiftX).roundToInt(),
+                                    y = (node.y + shiftY).roundToInt(),
                                 )
                             },
                         )
@@ -247,7 +293,7 @@ fun FamilyTreeCanvas(
             }
         }
 
-        // Top Status Banner: Draft Notice & Publish CTA
+        // Draft notice & publish CTA
         if (family.isDraft) {
             Surface(
                 modifier = Modifier
@@ -256,7 +302,7 @@ fun FamilyTreeCanvas(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFFF9A825).copy(alpha = 0.15f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF9A825)),
+                border = BorderStroke(1.dp, Color(0xFFF9A825)),
             ) {
                 Row(
                     modifier = Modifier
@@ -264,10 +310,7 @@ fun FamilyTreeCanvas(
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "📝",
-                        fontSize = 18.sp,
-                    )
+                    Text(text = "📝", fontSize = 18.sp)
                     Spacer(Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -290,10 +333,7 @@ fun FamilyTreeCanvas(
                                 containerColor = Color(0xFF43A047),
                             ),
                             shape = RoundedCornerShape(8.dp),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                horizontal = 12.dp,
-                                vertical = 6.dp,
-                            ),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         ) {
                             Icon(
                                 Icons.Outlined.CloudUpload,
@@ -312,59 +352,79 @@ fun FamilyTreeCanvas(
             }
         }
 
-        // Floating Zoom Controls (Overlay at Bottom Left / Bottom Start)
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-            shadowElevation = 8.dp,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant,
-            ),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+        // Zoom controls
+        if (people.isNotEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                shadowElevation = 8.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                IconButton(
-                    onClick = { scale = (scale + 0.2f).coerceAtMost(2.5f) },
-                    modifier = Modifier.size(38.dp),
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Add,
-                        contentDescription = stringResource(R.string.tree_zoom_in),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        scale = 1f
-                        offset = Offset(0f, 100f)
-                    },
-                    modifier = Modifier.size(38.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.CenterFocusStrong,
-                        contentDescription = stringResource(R.string.tree_reset_view),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                IconButton(
-                    onClick = { scale = (scale - 0.2f).coerceAtLeast(0.25f) },
-                    modifier = Modifier.size(38.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Remove,
-                        contentDescription = stringResource(R.string.tree_zoom_out),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                    val viewportCenter = Offset(viewportW / 2f, viewportH / 2f)
+                    IconButton(
+                        onClick = { zoomBy(1.25f, viewportCenter) },
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = stringResource(R.string.tree_zoom_in),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(
+                        onClick = { fitToScreen() },
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CenterFocusStrong,
+                            contentDescription = stringResource(R.string.tree_reset_view),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(
+                        onClick = { zoomBy(0.8f, viewportCenter) },
+                        modifier = Modifier.size(38.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Remove,
+                            contentDescription = stringResource(R.string.tree_zoom_out),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+/**
+ * Orthogonal "org-chart" connector with rounded corners: straight down from the parent, across on a
+ * shared bus line, and straight down into the child. All children of one origin share the same bus
+ * height, so a couple's children hang from one clean horizontal rail.
+ */
+private fun elbowPath(start: Offset, end: Offset): Path {
+    val path = Path()
+    path.moveTo(start.x, start.y)
+    val dx = end.x - start.x
+    if (abs(dx) < 1f) {
+        path.lineTo(end.x, end.y)
+        return path
+    }
+    val busY = start.y + (TreeLayoutEngine.VERTICAL_SPACING / 2f).coerceAtMost((end.y - start.y) / 2f)
+    val r = minOf(CORNER_RADIUS, abs(dx) / 2f, (busY - start.y).coerceAtLeast(1f), (end.y - busY).coerceAtLeast(1f))
+    val dir = if (dx > 0) 1f else -1f
+
+    path.lineTo(start.x, busY - r)
+    path.quadraticTo(start.x, busY, start.x + dir * r, busY)
+    path.lineTo(end.x - dir * r, busY)
+    path.quadraticTo(end.x, busY, end.x, busY + r)
+    path.lineTo(end.x, end.y)
+    return path
 }

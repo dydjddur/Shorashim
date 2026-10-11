@@ -236,6 +236,13 @@
     <string name="events_delete_memorial_confirm_title">מחיקת אזכרה</string>
     <string name="events_delete_memorial_confirm_msg">האם אתם בטוחים שברצונכם למחוק אזכרה זו? פעולה זו תבטל גם את התזכורות המתוזמנות.</string>
     <string name="events_family_prefix">עץ:</string>
+    <string name="events_view_calendar">לוח שנה</string>
+    <string name="events_view_list">רשימה</string>
+    <string name="events_calendar_today">היום</string>
+    <string name="events_calendar_previous_month">החודש הקודם</string>
+    <string name="events_calendar_next_month">החודש הבא</string>
+    <string name="events_edit_action">עריכה</string>
+    <string name="events_delete_action">מחיקה</string>
 
     <!-- Phase 4: Tehillim (תהילים) -->
     <string name="tehillim_title">ספר תהילים</string>

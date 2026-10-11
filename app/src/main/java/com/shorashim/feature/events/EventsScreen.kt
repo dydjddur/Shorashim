@@ -20,21 +20,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.ViewList
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Cake
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +73,7 @@ fun EventsRoute(
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         viewModel.loadEvents()
+        viewModel.loadFamiliesAndPeople()
     }
 
     EventsScreen(
@@ -68,10 +81,20 @@ fun EventsRoute(
         onRetry = { viewModel.loadEvents() },
         onSelectEvent = { viewModel.onSelectEvent(it) },
         onNavigateToMemorialTehillim = onNavigateToMemorialTehillim,
+        onAddMemorial = { viewModel.onOpenAddDialog() },
+        onEditMemorial = { viewModel.onOpenEditDialog(it) },
+        onDeleteMemorial = { viewModel.deleteMemorialEvent(it.memorialId) },
+        onDismissAddEdit = { viewModel.onCloseAddEditDialog() },
+        onSaveMemorial = { familyId, personId, name, date, hebrew, description ->
+            viewModel.saveMemorialEvent(familyId, personId, name, date, hebrew, description)
+        },
         modifier = modifier,
     )
 }
 
+private enum class EventsViewMode { LIST, CALENDAR }
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventsScreen(
     uiState: EventsUiState,
@@ -79,60 +102,120 @@ fun EventsScreen(
     onSelectEvent: (CalendarEvent?) -> Unit,
     onNavigateToMemorialTehillim: (deceasedName: String) -> Unit,
     modifier: Modifier = Modifier,
+    onAddMemorial: () -> Unit = {},
+    onEditMemorial: (CalendarEvent.Memorial) -> Unit = {},
+    onDeleteMemorial: (CalendarEvent.Memorial) -> Unit = {},
+    onDismissAddEdit: () -> Unit = {},
+    onSaveMemorial: (String, String?, String, String, String?, String?) -> Unit = { _, _, _, _, _, _ -> },
 ) {
+    var viewMode by rememberSaveable { mutableStateOf(EventsViewMode.CALENDAR) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            if (uiState.families.isNotEmpty()) {
+                ExtendedFloatingActionButton(
+                    onClick = onAddMemorial,
+                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.events_add_memorial_button)) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        },
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            when {
-                uiState.isLoading && uiState.events.isEmpty() -> {
-                    ShorashimLoadingState()
-                }
-                uiState.errorMessage != null && uiState.events.isEmpty() -> {
-                    ShorashimErrorState(
-                        message = uiState.errorMessage,
-                        onRetry = onRetry,
-                    )
-                }
-                uiState.events.isEmpty() -> {
-                    ShorashimEmptyState(
-                        title = stringResource(R.string.events_empty_title),
-                        message = stringResource(R.string.events_empty_message),
-                    )
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            start = Spacing.md,
-                            end = Spacing.md,
-                            top = Spacing.md,
-                            bottom = 80.dp, // Space for FAB
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.events_title),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                )
+                SingleChoiceSegmentedButtonRow {
+                    SegmentedButton(
+                        selected = viewMode == EventsViewMode.CALENDAR,
+                        onClick = { viewMode = EventsViewMode.CALENDAR },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        icon = {},
                     ) {
-                        item {
-                            Text(
-                                text = stringResource(R.string.events_title),
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(vertical = Spacing.xs),
-                            )
-                        }
+                        Icon(
+                            Icons.Outlined.CalendarMonth,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.events_view_calendar), fontSize = 12.sp)
+                    }
+                    SegmentedButton(
+                        selected = viewMode == EventsViewMode.LIST,
+                        onClick = { viewMode = EventsViewMode.LIST },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        icon = {},
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ViewList,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.events_view_list), fontSize = 12.sp)
+                    }
+                }
+            }
 
-                        items(uiState.events, key = { it.id }) { event ->
-                            when (event) {
-                                is CalendarEvent.Birthday -> {
-                                    BirthdayCard(event = event)
-                                }
-                                is CalendarEvent.Memorial -> {
-                                    MemorialCard(
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            ) {
+                when {
+                    uiState.isLoading && uiState.events.isEmpty() -> {
+                        ShorashimLoadingState()
+                    }
+                    uiState.errorMessage != null && uiState.events.isEmpty() -> {
+                        ShorashimErrorState(
+                            message = uiState.errorMessage,
+                            onRetry = onRetry,
+                        )
+                    }
+                    viewMode == EventsViewMode.CALENDAR -> {
+                        EventsCalendarView(
+                            events = uiState.events,
+                            onMemorialClick = { onSelectEvent(it) },
+                        )
+                    }
+                    uiState.events.isEmpty() -> {
+                        ShorashimEmptyState(
+                            title = stringResource(R.string.events_empty_title),
+                            message = stringResource(R.string.events_empty_message),
+                        )
+                    }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = Spacing.md,
+                                end = Spacing.md,
+                                top = Spacing.xs,
+                                bottom = 88.dp, // Space for FAB
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                        ) {
+                            items(uiState.events, key = { it.id }) { event ->
+                                when (event) {
+                                    is CalendarEvent.Birthday -> BirthdayCard(event = event)
+                                    is CalendarEvent.Memorial -> MemorialCard(
                                         event = event,
                                         onClick = { onSelectEvent(event) },
                                     )
@@ -155,12 +238,25 @@ fun EventsScreen(
                 onSelectEvent(null)
                 onNavigateToMemorialTehillim(selected.personName)
             },
+            onEdit = { onEditMemorial(selected) },
+            onDelete = { onDeleteMemorial(selected) },
+        )
+    }
+
+    if (uiState.isAddEditOpen) {
+        AddEditMemorialEventDialog(
+            families = uiState.families,
+            deceasedPeople = uiState.deceasedPeople,
+            editingMemorial = uiState.editingMemorial,
+            isSaving = uiState.isSaving,
+            onDismiss = onDismissAddEdit,
+            onSave = onSaveMemorial,
         )
     }
 }
 
 @Composable
-private fun BirthdayCard(
+internal fun BirthdayCard(
     event: CalendarEvent.Birthday,
     modifier: Modifier = Modifier,
 ) {
@@ -245,7 +341,7 @@ private fun BirthdayCard(
 }
 
 @Composable
-private fun MemorialCard(
+internal fun MemorialCard(
     event: CalendarEvent.Memorial,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -344,7 +440,30 @@ private fun MemorialDetailsDialog(
     memorial: CalendarEvent.Memorial,
     onDismiss: () -> Unit,
     onReadTehillim: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
+    var confirmDelete by remember { mutableStateOf(false) }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.events_delete_memorial_confirm_title)) },
+            text = { Text(stringResource(R.string.events_delete_memorial_confirm_msg)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    onDelete()
+                }) {
+                    Text(stringResource(R.string.events_delete_action), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            },
+        )
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -415,6 +534,18 @@ private fun MemorialDetailsDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.close))
             }
+        },
+        dismissButton = if (memorial.canEdit) {
+            {
+                Row {
+                    TextButton(onClick = onEdit) { Text(stringResource(R.string.events_edit_action)) }
+                    TextButton(onClick = { confirmDelete = true }) {
+                        Text(stringResource(R.string.events_delete_action), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        } else {
+            null
         },
     )
 }
