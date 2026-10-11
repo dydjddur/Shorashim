@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shorashim.R
 import com.shorashim.core.common.FamilyValidators
+import com.shorashim.core.common.LastNameDefaults
+import com.shorashim.data.family.FamilyRepository
 import com.shorashim.core.model.DatePrecision
 import com.shorashim.core.model.LifeStatus
 import com.shorashim.core.model.NewPersonRelation
@@ -57,9 +59,19 @@ class AddEditPersonViewModel(
     private val relationshipRepository: RelationshipRepository? = null,
     private val relation: NewPersonRelation? = null,
     private val anchorId: String? = null,
+    private val familyRepository: FamilyRepository? = null,
 ) : ViewModel() {
 
     private var anchorParentIds: List<String> = emptyList()
+
+    // Context for the suggested family name.
+    private var treeName: String? = null
+    private var anchorPerson: Person? = null
+    private var anchorHasParents = false
+    private var peopleWithParents: Set<String> = emptySet()
+
+    /** Once the user typed a family name themselves we stop suggesting one. */
+    private var lastNameEditedByUser = false
 
     private val _uiState = MutableStateFlow(AddEditPersonUiState(isEditing = personId != null))
     val uiState: StateFlow<AddEditPersonUiState> = _uiState.asStateFlow()
@@ -69,7 +81,33 @@ class AddEditPersonViewModel(
             loadPerson(personId)
         } else if (relation != null && anchorId != null) {
             loadAnchorContext(relation, anchorId)
+        } else {
+            loadTreeNameDefault()
         }
+    }
+
+    /** A loose person (no relative picked) defaults to the tree's family name. */
+    private fun loadTreeNameDefault() {
+        viewModelScope.launch {
+            treeName = familyRepository?.getFamily(familyId)?.getOrNull()?.name
+            applySuggestedLastName()
+        }
+    }
+
+    private fun applySuggestedLastName() {
+        if (lastNameEditedByUser || personId != null) return
+        val s = _uiState.value
+        val coParent = s.coParentOptions.firstOrNull { it.id == s.selectedCoParentId }
+        val suggestion = LastNameDefaults.suggest(
+            relation = relation,
+            treeName = treeName,
+            anchor = anchorPerson,
+            anchorHasParents = anchorHasParents,
+            coParent = coParent,
+            coParentHasParents = coParent?.id in peopleWithParents,
+            existingParent = s.existingParent,
+        )
+        _uiState.value = s.copy(lastName = suggestion)
     }
 
     private fun loadAnchorContext(relation: NewPersonRelation, anchorId: String) {
@@ -79,6 +117,13 @@ class AddEditPersonViewModel(
             val rels = relationshipRepository?.getRelationships(familyId)?.getOrElse { emptyList() }.orEmpty()
             val byId = people.associateBy { it.id }
             val anchor = byId[anchorId] ?: return@launch
+            treeName = familyRepository?.getFamily(familyId)?.getOrNull()?.name
+            anchorPerson = anchor
+            peopleWithParents = rels
+                .filter { it.relationshipType == RelationshipType.PARENT_CHILD }
+                .map { it.relatedPersonId }
+                .toSet()
+            anchorHasParents = anchorId in peopleWithParents
 
             val parents = rels
                 .filter { it.relationshipType == RelationshipType.PARENT_CHILD && it.relatedPersonId == anchorId }
@@ -95,20 +140,14 @@ class AddEditPersonViewModel(
                 selectedCoParentId = if (relation == NewPersonRelation.CHILD) spouses.singleOrNull()?.id else null,
                 existingParent = if (relation == NewPersonRelation.PARENT) parents.singleOrNull() else null,
                 siblingBlocked = relation == NewPersonRelation.SIBLING && parents.isEmpty(),
-                // Children and siblings usually share the family name.
-                lastName = if ((relation == NewPersonRelation.CHILD || relation == NewPersonRelation.SIBLING) &&
-                    _uiState.value.lastName.isBlank()
-                ) {
-                    anchor.lastName.orEmpty()
-                } else {
-                    _uiState.value.lastName
-                },
             )
+            applySuggestedLastName()
         }
     }
 
     fun onCoParentSelected(id: String?) {
         _uiState.value = _uiState.value.copy(selectedCoParentId = id)
+        applySuggestedLastName()
     }
 
     fun onLinkToExistingParentChanged(link: Boolean) {
@@ -189,6 +228,7 @@ class AddEditPersonViewModel(
     }
 
     fun onLastNameChanged(v: String) {
+        lastNameEditedByUser = true
         _uiState.value = _uiState.value.copy(lastName = v)
     }
 
