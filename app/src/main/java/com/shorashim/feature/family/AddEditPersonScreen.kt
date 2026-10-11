@@ -469,7 +469,7 @@ fun DateInputSection(
 }
 
 /** Extra choices shown when the person is added as a relative of someone on the tree. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun RelationOptions(
     uiState: AddEditPersonUiState,
