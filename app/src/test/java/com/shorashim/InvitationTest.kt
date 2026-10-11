@@ -49,7 +49,7 @@ class InvitationTest {
             role = MembershipRole.CONTRIBUTOR,
         )
 
-        assertEquals("https://shorashim.app/invite/abc123token", invitation.shareUrl)
+        assertEquals("https://shorashim-invite.vercel.app/invite/abc123token", invitation.shareUrl)
         assertTrue(invitation.isPending)
     }
 

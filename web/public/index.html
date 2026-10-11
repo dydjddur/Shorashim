@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>שורשים - הזמנה לעץ משפחה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Heebo', sans-serif;
+    }
+    body {
+      background: linear-gradient(135deg, #f0f7f2 0%, #e6f0e9 100%);
+      color: #1e3a2f;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      max-width: 480px;
+      width: 100%;
+      border-radius: 24px;
+      box-shadow: 0 12px 40px rgba(46, 125, 50, 0.12);
+      padding: 36px 28px;
+      text-align: center;
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+    .icon-wrap {
+      width: 84px;
+      height: 84px;
+      background: #e8f5e9;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 42px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #2e7d32;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      font-size: 16px;
+      color: #557264;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin-bottom: 12px;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: #2e7d32;
+      color: white;
+      box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
+    }
+    .btn-primary:hover {
+      background: #256628;
+    }
+    .btn-secondary {
+      background: #f1f8f4;
+      color: #2e7d32;
+      border: 1px solid rgba(46, 125, 50, 0.3);
+    }
+    .btn-secondary:hover {
+      background: #e3f0e8;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 13px;
+      color: #889e93;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">🌳</div>
+    <h1>הוזמנת לעץ משפחה!</h1>
+    <p class="subtitle">
+      אחד מבני המשפחה שלך הזמין אותך להצטרף לעץ המשפחה באפליקציית <strong>שורשים</strong>.
+    </p>
+
+    <a id="openAppBtn" href="#" class="btn btn-primary">
+      פתיחה באפליקציית שורשים
+    </a>
+
+    <a href="https://github.com/dydjddur/Shorashim/releases" class="btn btn-secondary">
+      הורדת האפליקציה (APK)
+    </a>
+
+    <div class="footer">
+      שורשים — אפליקציה לשימור אילן יוחסין משפחתי וזיכרון קרובים
+    </div>
+  </div>
+
+  <script>
+    // Extract token from URL path: /invite/{token}
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const token = pathParts.length >= 2 && pathParts[0] === 'invite' ? pathParts[1] : '';
+
+    const openAppBtn = document.getElementById('openAppBtn');
+    if (token) {
+      openAppBtn.href = `shorashim://invite/${token}`;
+      // Auto redirect to custom scheme if on mobile device
+      setTimeout(() => {
+        window.location.href = `shorashim://invite/${token}`;
+      }, 300);
+    } else {
+      openAppBtn.href = 'shorashim://invite/';
+    }
+  </script>
+</body>
+</html>

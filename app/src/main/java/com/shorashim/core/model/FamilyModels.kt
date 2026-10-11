@@ -469,7 +469,7 @@ data class FamilyInvitation(
     val createdAt: String? = null,
 ) {
     /** Deep-link URL that can be shared */
-    val shareUrl: String get() = "https://shorashim.app/invite/$token"
+    val shareUrl: String get() = "https://shorashim-invite.vercel.app/invite/$token"
 
     val isPending: Boolean get() = status == InvitationStatus.PENDING
 }

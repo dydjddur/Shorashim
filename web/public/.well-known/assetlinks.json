@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.remember_me",
+      "sha256_cert_fingerprints": [
+        "32:ED:8A:F1:2E:F2:64:AD:5F:20:D7:C7:84:BE:6F:5F:03:C7:A7:24:0A:46:86:21:1C:72:BD:35:B6:DA:6F:04"
+      ]
+    }
+  }
+]

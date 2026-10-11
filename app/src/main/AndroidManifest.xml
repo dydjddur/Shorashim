@@ -29,14 +29,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Android App Links: https://shorashim.app/invite/{token} -->
+            <!-- Android App Links: https://shorashim-invite.vercel.app/invite/{token} -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="shorashim.app"
+                    android:host="shorashim-invite.vercel.app"
                     android:pathPrefix="/invite" />
             </intent-filter>
 
