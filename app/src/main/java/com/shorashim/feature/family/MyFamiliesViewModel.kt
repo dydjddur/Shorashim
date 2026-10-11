@@ -27,9 +27,11 @@ class MyFamiliesViewModel(
         loadFamilies()
     }
 
-    fun loadFamilies() {
+    fun loadFamilies(isSilent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = MyFamiliesUiState.Loading
+            if (!isSilent || _uiState.value !is MyFamiliesUiState.Success) {
+                _uiState.value = MyFamiliesUiState.Loading
+            }
             familyRepository.getMyFamilies()
                 .onSuccess { list ->
                     if (list.isEmpty()) {
@@ -39,6 +41,10 @@ class MyFamiliesViewModel(
                     }
                 }
                 .onFailure { error ->
+                    // If we already have families and it's a silent refresh, don't destroy the screen
+                    if (isSilent && _uiState.value is MyFamiliesUiState.Success) {
+                        return@onFailure
+                    }
                     val rawMsg = error.localizedMessage.orEmpty()
                     val friendlyMsg = when {
                         rawMsg.contains("Could not find the table", ignoreCase = true) ->

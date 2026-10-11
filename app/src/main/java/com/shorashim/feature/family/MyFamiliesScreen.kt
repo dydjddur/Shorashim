@@ -64,7 +64,7 @@ fun MyFamiliesRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        viewModel.loadFamilies()
+        viewModel.loadFamilies(isSilent = true)
     }
 
     MyFamiliesScreen(
