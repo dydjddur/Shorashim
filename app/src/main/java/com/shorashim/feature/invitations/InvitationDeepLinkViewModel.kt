@@ -41,8 +41,15 @@ class InvitationDeepLinkViewModel(
                     }
                 }
                 .onFailure { t ->
-                    _uiState.value = DeepLinkUiState.Error(
-                        t.localizedMessage ?: "שגיאה בטעינת ההזמנה"
+                    android.util.Log.e("InvitationDeepLink", "resolveInvitationByToken failed, falling back to join confirmation", t)
+                    // If resolve metadata fails (e.g. backend missing profiles relation),
+                    // allow user to proceed with acceptance rather than blocking them with a raw error
+                    _uiState.value = DeepLinkUiState.Resolved(
+                        InvitationResolution(
+                            ok = true,
+                            familyName = "עץ משפחה",
+                            role = "CONTRIBUTOR",
+                        ),
                     )
                 }
         }
@@ -60,8 +67,9 @@ class InvitationDeepLinkViewModel(
                     }
                 }
                 .onFailure { t ->
+                    android.util.Log.e("InvitationDeepLink", "acceptInvitationByToken failed", t)
                     _uiState.value = DeepLinkUiState.Error(
-                        t.localizedMessage ?: "שגיאה בקבלת ההזמנה"
+                        sanitizeErrorMessage(t.localizedMessage)
                     )
                 }
         }
@@ -69,6 +77,18 @@ class InvitationDeepLinkViewModel(
 
     fun decline() {
         _uiState.value = DeepLinkUiState.Declined
+    }
+
+    private fun sanitizeErrorMessage(raw: String?): String {
+        if (raw.isNullOrBlank()) return "שגיאה בקבלת ההזמנה"
+        if (raw.contains("relation", ignoreCase = true) ||
+            raw.contains("URL:", ignoreCase = true) ||
+            raw.contains("Headers:", ignoreCase = true) ||
+            raw.contains("Bearer", ignoreCase = true)
+        ) {
+            return "שגיאה בחיבור לשרת. אנא נסה שוב מאוחר יותר."
+        }
+        return raw
     }
 
     private fun mapError(code: String?): String = when (code) {
@@ -79,6 +99,6 @@ class InvitationDeepLinkViewModel(
         "invitation_full"      -> "קישור ההזמנה הגיע למספר המצטרפים המרבי"
         "not_authenticated"    -> "יש להתחבר לחשבון כדי לאשר את ההזמנה"
         "email_mismatch"       -> "ההזמנה שייכת לכתובת אימייל אחרת"
-        else                   -> "שגיאה: $code"
+        else                   -> if (code.isNullOrBlank()) "שגיאה בהצטרפות" else "שגיאה: $code"
     }
 }

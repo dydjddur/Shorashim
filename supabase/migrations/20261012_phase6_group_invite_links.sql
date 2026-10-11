@@ -176,12 +176,22 @@ BEGIN
         RETURN jsonb_build_object('ok', false, 'error', 'invitation_full');
     END IF;
 
-    SELECT name INTO v_fname FROM public.families WHERE id = v_inv.family_id;
-    SELECT COALESCE(p.display_name, p.full_name, split_part(u.email, '@', 1))
+    SELECT COALESCE(
+        p.display_name,
+        p.full_name,
+        u.raw_user_meta_data->>'display_name',
+        u.raw_user_meta_data->>'full_name',
+        split_part(u.email, '@', 1),
+        'בן משפחה'
+    )
     INTO v_cname
     FROM auth.users u
     LEFT JOIN public.profiles p ON p.id = u.id
     WHERE u.id = v_inv.created_by;
+
+    IF v_cname IS NULL THEN
+        v_cname := 'בן משפחה';
+    END IF;
 
     RETURN jsonb_build_object(
         'ok',            true,
