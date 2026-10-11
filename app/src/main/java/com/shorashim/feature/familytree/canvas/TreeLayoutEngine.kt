@@ -63,12 +63,18 @@ object TreeLayoutEngine {
         val childHouseholds = mutableListOf<Household>()
         var rowWidth = 0f
         var bandWidth = 0f
+        /** Offsets relative to the band's left edge. */
+        var rowLeftRel = 0f
+        var kidsLeftRel = 0f
+        /** x of the host card's centre (where the parents' connector lands), relative to the band. */
+        var hostCenterRel = 0f
         var placed = false
     }
 
     fun calculateLayout(
         people: List<Person>,
         relationships: List<Relationship>,
+        rtl: Boolean = true,
     ): Pair<List<TreeNode>, List<TreeConnection>> {
         if (people.isEmpty()) return Pair(emptyList(), emptyList())
 
@@ -140,13 +146,47 @@ object TreeLayoutEngine {
         }
 
         // ---- Band widths (post-order, iterative to survive very deep trees) ----
-        val roots = households.filter { it.parentHousehold == null }
+        val roots = orderRoots(
+            households.filter { it.parentHousehold == null },
+            households,
+            childToParents,
+            householdOf,
+        )
         val postOrder = postOrder(roots)
         for (h in postOrder) {
             val kids = h.childHouseholds
             val kidsWidth = if (kids.isEmpty()) 0f else kids.sumOf { it.bandWidth.toDouble() }.toFloat() +
                 (kids.size - 1) * HORIZONTAL_SPACING
             h.bandWidth = maxOf(h.rowWidth, kidsWidth)
+
+            if (kids.isEmpty()) {
+                h.rowLeftRel = 0f
+            } else {
+                // Where, inside the kids block, each child's connector lands.
+                var offset = 0f
+                val centres = kids.map { kid ->
+                    val c = offset + kid.hostCenterRel
+                    offset += kid.bandWidth + HORIZONTAL_SPACING
+                    c
+                }
+                val anchor = (centres.min() + centres.max()) / 2f
+                if (h.rowWidth >= kidsWidth) {
+                    // Wide couple: keep the row centred and slide the children under it.
+                    h.rowLeftRel = (h.bandWidth - h.rowWidth) / 2f
+                    val rowCentre = h.rowLeftRel + h.rowWidth / 2f
+                    h.kidsLeftRel = (rowCentre - anchor).coerceIn(0f, h.bandWidth - kidsWidth)
+                } else {
+                    // Wide children: keep them centred and slide the parents over their connector points.
+                    h.kidsLeftRel = (h.bandWidth - kidsWidth) / 2f
+                    h.rowLeftRel = (h.kidsLeftRel + anchor - h.rowWidth / 2f).coerceIn(0f, h.bandWidth - h.rowWidth)
+                }
+            }
+            val hostIndex = h.host?.let { h.members.indexOf(it) }?.takeIf { it >= 0 }
+            h.hostCenterRel = if (hostIndex != null) {
+                h.rowLeftRel + hostIndex * (NODE_WIDTH + SPOUSE_SPACING) + NODE_WIDTH / 2f
+            } else {
+                h.rowLeftRel + h.rowWidth / 2f
+            }
         }
 
         // ---- Placement (pre-order) ----
@@ -168,13 +208,18 @@ object TreeLayoutEngine {
         val minX = positions.values.minOrNull() ?: 0f
         val maxX = positions.values.maxOrNull()?.plus(NODE_WIDTH) ?: 0f
         val shift = -(minX + maxX) / 2f
+        // Hebrew reads right-to-left: the eldest child / first listed member sits on the right.
+        fun finalX(left: Float): Float {
+            val x = left + shift
+            return if (rtl) -(x + NODE_WIDTH) else x
+        }
 
         val nodeMap = LinkedHashMap<String, TreeNode>()
         for (id in peopleMap.keys) {
             val gen = generations[id] ?: 0
             nodeMap[id] = TreeNode(
                 person = peopleMap.getValue(id),
-                x = (positions[id] ?: 0f) + shift,
+                x = finalX(positions[id] ?: 0f),
                 y = TOP_MARGIN + gen * (NODE_HEIGHT + VERTICAL_SPACING),
                 width = NODE_WIDTH,
                 height = NODE_HEIGHT,
@@ -249,6 +294,93 @@ object TreeLayoutEngine {
         return gen
     }
 
+
+    /**
+     * Roots are laid out side by side. Trees that are tied together by a marriage (or by a child whose
+     * second parent lives in another tree) are kept adjacent so the cross-tree connector stays short.
+     */
+    private fun orderRoots(
+        roots: List<Household>,
+        households: List<Household>,
+        childToParents: Map<String, List<String>>,
+        householdOf: Map<String, Household>,
+    ): List<Household> {
+        if (roots.size < 2) return roots
+        fun rootOf(h: Household): Household {
+            var c = h
+            var guard = 0
+            while (c.parentHousehold != null && guard++ < 10_000) c = c.parentHousehold!!
+            return c
+        }
+        val links = LinkedHashMap<Household, MutableList<Household>>()
+        fun link(a: Household, b: Household) {
+            if (a === b) return
+            links.getOrPut(a) { mutableListOf() }.let { if (b !in it) it.add(b) }
+            links.getOrPut(b) { mutableListOf() }.let { if (a !in it) it.add(a) }
+        }
+        for (h in households) {
+            val myRoot = rootOf(h)
+            for (member in h.members) {
+                for (parent in childToParents[member].orEmpty()) {
+                    link(myRoot, rootOf(householdOf.getValue(parent)))
+                }
+            }
+        }
+        val ordered = mutableListOf<Household>()
+        val seen = HashSet<Household>()
+        for (root in roots) {
+            if (root in seen) continue
+            val stack = ArrayDeque<Household>()
+            stack.add(root)
+            while (stack.isNotEmpty()) {
+                val r = stack.removeFirst()
+                if (!seen.add(r)) continue
+                if (r in roots) ordered.add(r)
+                links[r].orEmpty().forEach { if (it !in seen) stack.add(it) }
+            }
+        }
+        return ordered
+    }
+
+    enum class MarkerKind { PARENT_CHILD, SPOUSE, SIBLING }
+
+    data class TreeMarker(val kind: MarkerKind, val position: Offset)
+
+    /** Height of the horizontal rail shared by all children that hang from the same origin. */
+    fun busY(start: Offset, end: Offset): Float =
+        start.y + (VERTICAL_SPACING / 2f).coerceAtMost((end.y - start.y) / 2f)
+
+    /**
+     * Emoji anchor points: one in the middle of every connector. Parent->child links get it on the final
+     * drop into the child, couples in the middle of the spouse line, and neighbouring siblings on the
+     * shared rail between them.
+     */
+    fun connectionMarkers(connections: List<TreeConnection>): List<TreeMarker> {
+        val markers = mutableListOf<TreeMarker>()
+        val byOrigin = LinkedHashMap<Pair<Int, Int>, MutableList<TreeConnection>>()
+        for (c in connections) {
+            when (c.type) {
+                RelationshipType.SPOUSE -> markers.add(
+                    TreeMarker(MarkerKind.SPOUSE, Offset((c.start.x + c.end.x) / 2f, (c.start.y + c.end.y) / 2f)),
+                )
+                RelationshipType.PARENT_CHILD -> {
+                    val bus = busY(c.start, c.end)
+                    markers.add(TreeMarker(MarkerKind.PARENT_CHILD, Offset(c.end.x, (bus + c.end.y) / 2f)))
+                    byOrigin.getOrPut(c.start.x.toInt() to c.start.y.toInt()) { mutableListOf() }.add(c)
+                }
+            }
+        }
+        for (group in byOrigin.values) {
+            val sorted = group.sortedBy { it.end.x }
+            for (i in 0 until sorted.size - 1) {
+                val a = sorted[i]
+                val b = sorted[i + 1]
+                markers.add(TreeMarker(MarkerKind.SIBLING, Offset((a.end.x + b.end.x) / 2f, busY(a.start, a.end))))
+            }
+        }
+        return markers
+    }
+
     private fun collectComponent(start: String, spouses: Map<String, List<String>>): Set<String> {
         val seen = LinkedHashSet<String>()
         val stack = ArrayDeque<String>()
@@ -318,7 +450,7 @@ object TreeLayoutEngine {
             if (h.placed) continue
             h.placed = true
 
-            val rowLeft = bandLeft + (h.bandWidth - h.rowWidth) / 2f
+            val rowLeft = bandLeft + h.rowLeftRel
             h.members.forEachIndexed { i, id ->
                 positions[id] = rowLeft + i * (NODE_WIDTH + SPOUSE_SPACING)
             }
@@ -326,7 +458,7 @@ object TreeLayoutEngine {
             val kids = h.childHouseholds
             if (kids.isNotEmpty()) {
                 val kidsWidth = kids.sumOf { it.bandWidth.toDouble() }.toFloat() + (kids.size - 1) * HORIZONTAL_SPACING
-                var x = bandLeft + (h.bandWidth - kidsWidth) / 2f
+                var x = bandLeft + h.kidsLeftRel
                 for (kid in kids) {
                     stack.add(kid to x)
                     x += kid.bandWidth + HORIZONTAL_SPACING

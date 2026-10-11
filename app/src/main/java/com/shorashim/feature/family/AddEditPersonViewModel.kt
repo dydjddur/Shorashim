@@ -6,6 +6,9 @@ import com.shorashim.R
 import com.shorashim.core.common.FamilyValidators
 import com.shorashim.core.model.DatePrecision
 import com.shorashim.core.model.LifeStatus
+import com.shorashim.core.model.NewPersonRelation
+import com.shorashim.core.model.RelationshipType
+import com.shorashim.data.family.RelationshipRepository
 import com.shorashim.core.model.PartialDate
 import com.shorashim.core.model.Person
 import com.shorashim.data.family.PersonRepository
@@ -34,13 +37,29 @@ data class AddEditPersonUiState(
     val dateError: Int? = null,
     val generalError: String? = null,
     val isDeleteConfirmOpen: Boolean = false,
+    // --- Adding a relative from a tree card ---
+    val relation: NewPersonRelation? = null,
+    val anchorName: String = "",
+    /** Spouses of the anchor that may be the other parent of a new child. */
+    val coParentOptions: List<Person> = emptyList(),
+    val selectedCoParentId: String? = null,
+    /** When adding a parent to someone who already has exactly one parent: that parent. */
+    val existingParent: Person? = null,
+    val linkToExistingParent: Boolean = true,
+    /** A sibling needs the anchor's parents; without them the relation cannot be stored. */
+    val siblingBlocked: Boolean = false,
 )
 
 class AddEditPersonViewModel(
     val familyId: String,
     val personId: String?,
     private val personRepository: PersonRepository,
+    private val relationshipRepository: RelationshipRepository? = null,
+    private val relation: NewPersonRelation? = null,
+    private val anchorId: String? = null,
 ) : ViewModel() {
+
+    private var anchorParentIds: List<String> = emptyList()
 
     private val _uiState = MutableStateFlow(AddEditPersonUiState(isEditing = personId != null))
     val uiState: StateFlow<AddEditPersonUiState> = _uiState.asStateFlow()
@@ -48,6 +67,85 @@ class AddEditPersonViewModel(
     init {
         if (personId != null) {
             loadPerson(personId)
+        } else if (relation != null && anchorId != null) {
+            loadAnchorContext(relation, anchorId)
+        }
+    }
+
+    private fun loadAnchorContext(relation: NewPersonRelation, anchorId: String) {
+        _uiState.value = _uiState.value.copy(relation = relation)
+        viewModelScope.launch {
+            val people = personRepository.getPeople(familyId).getOrElse { emptyList() }
+            val rels = relationshipRepository?.getRelationships(familyId)?.getOrElse { emptyList() }.orEmpty()
+            val byId = people.associateBy { it.id }
+            val anchor = byId[anchorId] ?: return@launch
+
+            val parents = rels
+                .filter { it.relationshipType == RelationshipType.PARENT_CHILD && it.relatedPersonId == anchorId }
+                .mapNotNull { byId[it.personId] }
+            val spouses = rels
+                .filter { it.relationshipType == RelationshipType.SPOUSE && (it.personId == anchorId || it.relatedPersonId == anchorId) }
+                .mapNotNull { byId[if (it.personId == anchorId) it.relatedPersonId else it.personId] }
+                .distinctBy { it.id }
+            anchorParentIds = parents.map { it.id }
+
+            _uiState.value = _uiState.value.copy(
+                anchorName = anchor.fullName,
+                coParentOptions = if (relation == NewPersonRelation.CHILD) spouses else emptyList(),
+                selectedCoParentId = if (relation == NewPersonRelation.CHILD) spouses.singleOrNull()?.id else null,
+                existingParent = if (relation == NewPersonRelation.PARENT) parents.singleOrNull() else null,
+                siblingBlocked = relation == NewPersonRelation.SIBLING && parents.isEmpty(),
+                // Children and siblings usually share the family name.
+                lastName = if ((relation == NewPersonRelation.CHILD || relation == NewPersonRelation.SIBLING) &&
+                    _uiState.value.lastName.isBlank()
+                ) {
+                    anchor.lastName.orEmpty()
+                } else {
+                    _uiState.value.lastName
+                },
+            )
+        }
+    }
+
+    fun onCoParentSelected(id: String?) {
+        _uiState.value = _uiState.value.copy(selectedCoParentId = id)
+    }
+
+    fun onLinkToExistingParentChanged(link: Boolean) {
+        _uiState.value = _uiState.value.copy(linkToExistingParent = link)
+    }
+
+    /** Stores the relationship(s) between a freshly created [created] person and the anchor. */
+    private suspend fun createRelationships(created: Person): Result<Unit> {
+        val repo = relationshipRepository
+        val anchor = anchorId
+        val rel = relation
+        if (repo == null || anchor == null || rel == null) return Result.success(Unit)
+        val s = _uiState.value
+        return runCatching {
+            when (rel) {
+                NewPersonRelation.PARENT -> {
+                    repo.createRelationship(familyId, created.id, anchor, RelationshipType.PARENT_CHILD).getOrThrow()
+                    val other = s.existingParent
+                    if (other != null && s.linkToExistingParent) {
+                        repo.createRelationship(familyId, other.id, created.id, RelationshipType.SPOUSE).getOrThrow()
+                    }
+                }
+                NewPersonRelation.CHILD -> {
+                    repo.createRelationship(familyId, anchor, created.id, RelationshipType.PARENT_CHILD).getOrThrow()
+                    s.selectedCoParentId?.let {
+                        repo.createRelationship(familyId, it, created.id, RelationshipType.PARENT_CHILD).getOrThrow()
+                    }
+                }
+                NewPersonRelation.SPOUSE ->
+                    repo.createRelationship(familyId, anchor, created.id, RelationshipType.SPOUSE).getOrThrow()
+                NewPersonRelation.SIBLING -> {
+                    check(anchorParentIds.isNotEmpty()) { "no parents" }
+                    anchorParentIds.forEach {
+                        repo.createRelationship(familyId, it, created.id, RelationshipType.PARENT_CHILD).getOrThrow()
+                    }
+                }
+            }
         }
     }
 
@@ -162,6 +260,7 @@ class AddEditPersonViewModel(
             _uiState.value = s.copy(dateError = dateErr)
             return
         }
+        if (s.siblingBlocked) return
 
         _uiState.value = s.copy(isLoading = true, generalError = null)
 
@@ -187,7 +286,21 @@ class AddEditPersonViewModel(
             }
 
             result
-                .onSuccess { onSuccess() }
+                .onSuccess { saved ->
+                    if (personId == null && relation != null) {
+                        val linked = createRelationships(saved)
+                        if (linked.isFailure) {
+                            // Do not leave an orphan card behind (a retry would create a duplicate).
+                            personRepository.deletePerson(saved.id)
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                generalError = linked.exceptionOrNull()?.localizedMessage ?: "Failed to link relative",
+                            )
+                            return@launch
+                        }
+                    }
+                    onSuccess()
+                }
                 .onFailure { t ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,

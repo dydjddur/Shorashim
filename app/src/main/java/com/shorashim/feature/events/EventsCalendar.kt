@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -56,6 +57,9 @@ import com.shorashim.core.common.HebrewDates
 import com.shorashim.core.model.CalendarEvent
 import com.shorashim.core.model.EventCalendarMath
 import com.shorashim.core.model.EventDateCalculator
+import com.shorashim.core.model.JewishCalendar
+import com.shorashim.core.model.JewishDay
+import com.shorashim.core.model.JewishDayKind
 import com.shorashim.core.ui.component.Spacing
 import java.time.LocalDate
 import java.time.Month
@@ -82,6 +86,10 @@ private data class CalendarPalette(
     val dayNumber: Color,
     val hebrewDay: Color,
     val today: Color,
+    val yomTovTint: Color,
+    val yomTovText: Color,
+    val fastText: Color,
+    val jewishText: Color,
 )
 
 @Composable
@@ -91,25 +99,33 @@ private fun rememberCalendarPalette(): CalendarPalette {
     return remember(dark, scheme) {
         if (dark) {
             CalendarPalette(
-                header = Color(0xFF0E7C89),
+                header = Color(0xFF1B5242),
                 onHeader = Color.White,
-                gridLine = Color(0xFF2B6F78).copy(alpha = 0.55f),
-                saturdayTint = Color(0xFF12353A),
-                outsideMonthNumber = Color(0xFF5E7C84),
+                gridLine = Color(0xFF2F5B4B).copy(alpha = 0.7f),
+                saturdayTint = Color(0xFF14281F),
+                outsideMonthNumber = Color(0xFF5E7C6C),
                 dayNumber = scheme.onSurface,
-                hebrewDay = Color(0xFF9CC3CB),
-                today = Color(0xFF12B3C3),
+                hebrewDay = Color(0xFF9DBBAA),
+                today = Color(0xFF48A887),
+                yomTovTint = Color(0xFF2B2713),
+                yomTovText = Color(0xFFFFC857),
+                fastText = Color(0xFFFFB4AB),
+                jewishText = Color(0xFF8FD9BB),
             )
         } else {
             CalendarPalette(
-                header = Color(0xFF12B3C3),
+                header = Color(0xFF1F7A5C),
                 onHeader = Color.White,
-                gridLine = Color(0xFF12B3C3).copy(alpha = 0.55f),
-                saturdayTint = Color(0xFFC3E3E8),
-                outsideMonthNumber = Color(0xFF7C97A6),
+                gridLine = Color(0xFF1F7A5C).copy(alpha = 0.45f),
+                saturdayTint = Color(0xFFD7EBDD),
+                outsideMonthNumber = Color(0xFF8AA396),
                 dayNumber = Color(0xFF1B1B1B),
-                hebrewDay = Color(0xFF4A5B66),
-                today = Color(0xFF0F8FA0),
+                hebrewDay = Color(0xFF506256),
+                today = Color(0xFF1B5242),
+                yomTovTint = Color(0xFFFFF1CC),
+                yomTovText = Color(0xFF9A5B00),
+                fastText = Color(0xFFB3261E),
+                jewishText = Color(0xFF1B5242),
             )
         }
     }
@@ -138,6 +154,7 @@ fun EventsCalendarView(
     val eventsByDay = remember(month, events) {
         grid.associateWith { EventCalendarMath.eventsOn(events, it) }
     }
+    val jewishByDay = remember(month) { grid.associateWith { JewishCalendar.daysFor(it) } }
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     fun shiftMonth(delta: Int) {
@@ -189,10 +206,9 @@ fun EventsCalendarView(
                             inMonth = YearMonth.from(date) == month,
                             isToday = date == today,
                             events = eventsByDay[date].orEmpty(),
+                            jewishDays = jewishByDay[date].orEmpty(),
                             palette = palette,
-                            onClick = {
-                                if (!eventsByDay[date].isNullOrEmpty()) selectedDay = date
-                            },
+                            onClick = { selectedDay = date },
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight(),
@@ -215,6 +231,7 @@ fun EventsCalendarView(
             DayEventsSheetContent(
                 date = day,
                 events = dayEvents,
+                jewishDays = jewishByDay[day].orEmpty(),
                 onMemorialClick = {
                     selectedDay = null
                     onMemorialClick(it)
@@ -321,27 +338,56 @@ private fun DayCell(
     inMonth: Boolean,
     isToday: Boolean,
     events: List<CalendarEvent>,
+    jewishDays: List<JewishDay>,
     palette: CalendarPalette,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val hebrewLabel = remember(date) {
-        if (HebrewDates.isFirstOfHebrewMonth(date)) HebrewDates.monthName(date) else HebrewDates.dayLabel(date)
+        HebrewDates.dayLabel(date)
     }
     val contentAlpha = if (inMonth) 1f else 0.55f
 
     Box(
         modifier = modifier
-            .background(if (EventCalendarMath.isSaturday(date)) palette.saturdayTint else Color.Transparent)
+            .background(
+                when {
+                    jewishDays.any { it.isYomTov } -> palette.yomTovTint
+                    EventCalendarMath.isSaturday(date) -> palette.saturdayTint
+                    else -> Color.Transparent
+                },
+            )
             .border(0.5.dp, palette.gridLine)
-            .clickable(enabled = events.isNotEmpty(), onClick = onClick),
+            .clickable(onClick = onClick),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 2.dp, vertical = 3.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .clipToBounds(),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                val shownJewish = jewishDays
+                    .filter { it.kind != JewishDayKind.ROSH_CHODESH || jewishDays.size == 1 }
+                    .take(2)
+                shownJewish.forEach { day ->
+                    Text(
+                        text = day.title,
+                        fontSize = 8.sp,
+                        lineHeight = 9.sp,
+                        fontWeight = if (day.isYomTov) FontWeight.ExtraBold else FontWeight.Bold,
+                        color = jewishColor(day, palette).copy(alpha = contentAlpha),
+                        maxLines = if (day.isYomTov) 3 else 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 1.dp),
+                    )
+                }
                 events.take(MAX_CHIPS_PER_DAY).forEach { event -> EventChip(event, contentAlpha) }
                 if (events.size > MAX_CHIPS_PER_DAY) {
                     Text(
@@ -354,7 +400,7 @@ private fun DayCell(
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(0.01f))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -427,6 +473,7 @@ private fun CalendarLegend() {
     ) {
         LegendItem(BirthdayColor, stringResource(R.string.events_birthday_tag))
         LegendItem(MemorialColor, stringResource(R.string.events_memorial_tag))
+        LegendItem(Color(0xFFD9A400), stringResource(R.string.events_holiday_tag))
     }
 }
 
@@ -452,8 +499,10 @@ private fun LegendItem(color: Color, label: String) {
 private fun DayEventsSheetContent(
     date: LocalDate,
     events: List<CalendarEvent>,
+    jewishDays: List<JewishDay>,
     onMemorialClick: (CalendarEvent.Memorial) -> Unit,
 ) {
+    val palette = rememberCalendarPalette()
     val monthName = remember(date) { date.month.hebrewName() }
     val hebrewDate = remember(date) {
         "${HebrewDates.dayLabel(date)} ${HebrewDates.monthName(date)} ה'${HebrewDates.yearLabel(date)}"
@@ -476,6 +525,29 @@ private fun DayEventsSheetContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(Spacing.xs))
+        jewishDays.forEach { day ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(jewishColor(day, palette)),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = day.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+        if (events.isEmpty() && jewishDays.isEmpty()) {
+            Text(
+                text = stringResource(R.string.events_calendar_empty_day),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         events.forEach { event ->
             when (event) {
                 is CalendarEvent.Birthday -> BirthdayCard(event = event)
@@ -486,3 +558,10 @@ private fun DayEventsSheetContent(
 }
 
 private fun Month.hebrewName(): String = getDisplayName(TextStyle.FULL, HEBREW_LOCALE)
+
+private fun jewishColor(day: JewishDay, palette: CalendarPalette): Color = when (day.kind) {
+    JewishDayKind.YOM_TOV -> palette.yomTovText
+    JewishDayKind.FAST -> palette.fastText
+    JewishDayKind.CHOL_HAMOED, JewishDayKind.CHANUKAH, JewishDayKind.PURIM -> palette.today
+    else -> palette.jewishText
+}

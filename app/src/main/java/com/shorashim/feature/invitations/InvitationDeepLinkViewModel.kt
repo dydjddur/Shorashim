@@ -76,6 +76,8 @@ class InvitationDeepLinkViewModel(
         "invitation_expired"   -> "פג תוקף ההזמנה"
         "invitation_revoked"   -> "ההזמנה בוטלה על ידי שולח ההזמנה"
         "already_accepted"     -> "ההזמנה כבר התקבלה"
+        "invitation_full"      -> "קישור ההזמנה הגיע למספר המצטרפים המרבי"
+        "not_authenticated"    -> "יש להתחבר לחשבון כדי לאשר את ההזמנה"
         "email_mismatch"       -> "ההזמנה שייכת לכתובת אימייל אחרת"
         else                   -> "שגיאה: $code"
     }

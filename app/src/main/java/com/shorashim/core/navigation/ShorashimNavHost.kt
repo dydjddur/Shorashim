@@ -107,6 +107,9 @@ fun ShorashimNavHost(
                 onNavigateToAddPerson = { fId ->
                     navController.navigate(ShorashimRoutes.addPerson(fId))
                 },
+                onNavigateToAddRelative = { fId, relation, anchorId ->
+                    navController.navigate(ShorashimRoutes.addRelative(fId, relation.name, anchorId))
+                },
                 onNavigateToEditPerson = { fId, pId ->
                     navController.navigate(ShorashimRoutes.editPerson(fId, pId))
                 },
@@ -127,17 +130,33 @@ fun ShorashimNavHost(
                     nullable = true
                     defaultValue = null
                 },
+                navArgument("relation") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("anchorId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
             ),
         ) { backStackEntry ->
             val familyId = backStackEntry.arguments?.getString("familyId").orEmpty()
             val personId = backStackEntry.arguments?.getString("personId")
+            val relation = backStackEntry.arguments?.getString("relation")
+                ?.let { name -> com.shorashim.core.model.NewPersonRelation.entries.firstOrNull { it.name == name } }
+            val anchorId = backStackEntry.arguments?.getString("anchorId")
             val viewModel: AddEditPersonViewModel = viewModel(
-                key = "AddEditPerson_${familyId}_${personId ?: "new"}",
+                key = "AddEditPerson_${familyId}_${personId ?: "new"}_${relation ?: "none"}_${anchorId ?: ""}",
                 factory = shorashimViewModelFactory {
                     AddEditPersonViewModel(
                         familyId = familyId,
                         personId = personId,
                         personRepository = appContainer.personRepository,
+                        relationshipRepository = appContainer.relationshipRepository,
+                        relation = relation,
+                        anchorId = anchorId,
                     )
                 },
             )

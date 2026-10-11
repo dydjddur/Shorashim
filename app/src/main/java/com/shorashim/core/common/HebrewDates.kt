@@ -1,21 +1,12 @@
 package com.shorashim.core.common
 
-import android.icu.text.SimpleDateFormat
-import android.icu.util.HebrewCalendar
+import com.shorashim.core.model.HebrewCalendarMath
 import java.time.LocalDate
-import java.time.ZoneId
-import java.util.Date
-import java.util.Locale
 
 /**
- * Hebrew-calendar helpers used by the events calendar.
- *
- * [toGematria] is pure Kotlin (unit-testable); everything else is backed by ICU's [HebrewCalendar],
- * which ships with Android (API 24+).
+ * Hebrew-calendar display helpers used by the events calendar (pure Kotlin, unit-testable).
  */
 object HebrewDates {
-
-    private val HEBREW_LOCALE: Locale = Locale.forLanguageTag("he-IL")
 
     private val UNITS = arrayOf("", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט")
     private val TENS = arrayOf("", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ")
@@ -46,17 +37,20 @@ object HebrewDates {
     }
 
     /** Hebrew day of month as letters, e.g. 28 -> "כח". */
-    fun dayLabel(date: LocalDate): String = toGematria(calendarFor(date).get(HebrewCalendar.DATE))
+    fun dayLabel(date: LocalDate): String = toGematria(HebrewCalendarMath.fromLocalDate(date).day)
 
-    /** True when [date] is the first day of a Hebrew month (Rosh Chodesh day 1). */
-    fun isFirstOfHebrewMonth(date: LocalDate): Boolean = calendarFor(date).get(HebrewCalendar.DATE) == 1
+    /** True when [date] is the first day of a Hebrew month. */
+    fun isFirstOfHebrewMonth(date: LocalDate): Boolean = HebrewCalendarMath.fromLocalDate(date).day == 1
 
     /** Hebrew month name, e.g. "תשרי". */
-    fun monthName(date: LocalDate): String = formatter("MMMM", date).trim()
+    fun monthName(date: LocalDate): String {
+        val h = HebrewCalendarMath.fromLocalDate(date)
+        return HebrewCalendarMath.monthName(h.year, h.month)
+    }
 
     /** Hebrew year with the thousands dropped and gershayim, e.g. 5786 -> `תשפ"ו`. */
     fun yearLabel(date: LocalDate): String {
-        val year = calendarFor(date).get(HebrewCalendar.YEAR)
+        val year = HebrewCalendarMath.fromLocalDate(date).year
         val letters = toGematria(year % 1000)
         return when {
             letters.length > 1 -> letters.dropLast(1) + "\"" + letters.last()
@@ -74,18 +68,5 @@ object HebrewDates {
         val months = if (startMonth == endMonth) startMonth else "$startMonth-$endMonth"
         val years = if (startYear == endYear) "ה'$startYear" else "ה'$startYear-ה'$endYear"
         return "$months $years"
-    }
-
-    private fun calendarFor(date: LocalDate): HebrewCalendar {
-        val cal = HebrewCalendar(HEBREW_LOCALE)
-        cal.timeInMillis = date.atTime(12, 0).atZone(ZoneId.of("Asia/Jerusalem")).toInstant().toEpochMilli()
-        return cal
-    }
-
-    private fun formatter(pattern: String, date: LocalDate): String {
-        val cal = calendarFor(date)
-        val fmt = SimpleDateFormat(pattern, HEBREW_LOCALE)
-        fmt.calendar = cal
-        return fmt.format(Date(cal.timeInMillis))
     }
 }

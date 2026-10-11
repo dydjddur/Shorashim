@@ -1,0 +1,1663 @@
+2024-01-06|parasha|Shemot
+2024-01-11|rc|
+2024-01-13|parasha|Vaera
+2024-01-20|parasha|Bo
+2024-01-25|holiday|Tu BiShvat
+2024-01-27|holiday|Shabbat Shirah
+2024-01-27|parasha|Beshalach
+2024-02-03|parasha|Yitro
+2024-02-09|rc|
+2024-02-10|parasha|Mishpatim
+2024-02-10|rc|
+2024-02-17|parasha|Terumah
+2024-02-23|holiday|Purim Katan
+2024-02-24|holiday|Shushan Purim Katan
+2024-02-24|parasha|Tetzaveh
+2024-03-02|parasha|Ki Tisa
+2024-03-09|holiday|Shabbat Shekalim
+2024-03-09|parasha|Vayakhel
+2024-03-10|rc|
+2024-03-11|rc|
+2024-03-16|parasha|Pekudei
+2024-03-21|holiday|Ta'anit Esther
+2024-03-23|holiday|Erev Purim
+2024-03-23|holiday|Shabbat Zachor
+2024-03-23|parasha|Vayikra
+2024-03-24|holiday|Purim
+2024-03-25|holiday|Shushan Purim
+2024-03-30|holiday|Shabbat Parah
+2024-03-30|parasha|Tzav
+2024-04-06|holiday|Shabbat HaChodesh
+2024-04-06|parasha|Shmini
+2024-04-09|rc|
+2024-04-13|parasha|Tazria
+2024-04-20|holiday|Shabbat HaGadol
+2024-04-20|parasha|Metzora
+2024-04-22|holiday|Erev Pesach
+2024-04-22|holiday|Ta'anit Bechorot
+2024-04-23|holiday|Pesach I
+2024-04-24|holiday|Pesach II (CH''M)
+2024-04-25|holiday|Pesach III (CH''M)
+2024-04-26|holiday|Pesach IV (CH''M)
+2024-04-27|holiday|Pesach V (CH''M)
+2024-04-28|holiday|Pesach VI (CH''M)
+2024-04-29|holiday|Pesach VII
+2024-05-04|parasha|Achrei Mot
+2024-05-06|holiday|Yom HaShoah
+2024-05-08|rc|
+2024-05-09|rc|
+2024-05-11|parasha|Kedoshim
+2024-05-13|holiday|Yom HaZikaron
+2024-05-14|holiday|Yom HaAtzma'ut
+2024-05-18|parasha|Emor
+2024-05-22|holiday|Pesach Sheni
+2024-05-25|parasha|Behar
+2024-05-26|holiday|Lag BaOmer
+2024-06-01|parasha|Bechukotai
+2024-06-05|holiday|Yom Yerushalayim
+2024-06-07|rc|
+2024-06-08|parasha|Bamidbar
+2024-06-11|holiday|Erev Shavuot
+2024-06-12|holiday|Shavuot
+2024-06-15|parasha|Nasso
+2024-06-22|parasha|Beha'alotcha
+2024-06-29|parasha|Sh'lach
+2024-07-06|parasha|Korach
+2024-07-06|rc|
+2024-07-07|rc|
+2024-07-13|parasha|Chukat
+2024-07-20|parasha|Balak
+2024-07-23|holiday|Tzom Tammuz
+2024-07-27|parasha|Pinchas
+2024-08-03|parasha|Matot-Masei
+2024-08-05|rc|
+2024-08-10|holiday|Shabbat Chazon
+2024-08-10|parasha|Devarim
+2024-08-12|holiday|Erev Tish'a B'Av
+2024-08-13|holiday|Tish'a B'Av
+2024-08-17|holiday|Shabbat Nachamu
+2024-08-17|parasha|Vaetchanan
+2024-08-19|holiday|Tu B'Av
+2024-08-24|parasha|Eikev
+2024-08-31|parasha|Re'eh
+2024-09-03|rc|
+2024-09-04|rc|
+2024-09-07|parasha|Shoftim
+2024-09-14|parasha|Ki Teitzei
+2024-09-21|parasha|Ki Tavo
+2024-09-28|parasha|Nitzavim-Vayeilech
+2024-10-02|holiday|Erev Rosh Hashana
+2024-10-03|holiday|Rosh Hashana I
+2024-10-04|holiday|Rosh Hashana II
+2024-10-05|holiday|Shabbat Shuva
+2024-10-05|parasha|Ha'azinu
+2024-10-06|holiday|Tzom Gedaliah
+2024-10-11|holiday|Erev Yom Kippur
+2024-10-12|holiday|Yom Kippur
+2024-10-16|holiday|Erev Sukkot
+2024-10-17|holiday|Sukkot I
+2024-10-18|holiday|Sukkot II (CH''M)
+2024-10-19|holiday|Sukkot III (CH''M)
+2024-10-20|holiday|Sukkot IV (CH''M)
+2024-10-21|holiday|Sukkot V (CH''M)
+2024-10-22|holiday|Sukkot VI (CH''M)
+2024-10-23|holiday|Sukkot VII (Hoshana Raba)
+2024-10-24|holiday|Shmini Atzeret
+2024-10-26|parasha|Bereshit
+2024-11-01|rc|
+2024-11-02|parasha|Noach
+2024-11-02|rc|
+2024-11-09|parasha|Lech-Lecha
+2024-11-16|parasha|Vayera
+2024-11-23|parasha|Chayei Sara
+2024-11-28|holiday|Sigd
+2024-11-30|parasha|Toldot
+2024-12-01|rc|
+2024-12-02|rc|
+2024-12-07|parasha|Vayetzei
+2024-12-14|parasha|Vayishlach
+2024-12-21|parasha|Vayeshev
+2024-12-25|chanukah|1
+2024-12-26|chanukah|2
+2024-12-27|chanukah|3
+2024-12-28|chanukah|4
+2024-12-28|parasha|Miketz
+2024-12-29|chanukah|5
+2024-12-30|chanukah|6
+2024-12-31|chanukah|7
+2024-12-31|rc|
+2025-01-01|chanukah|8
+2025-01-01|rc|
+2025-01-04|parasha|Vayigash
+2025-01-10|holiday|Asara B'Tevet
+2025-01-11|parasha|Vayechi
+2025-01-18|parasha|Shemot
+2025-01-25|parasha|Vaera
+2025-01-30|rc|
+2025-02-01|parasha|Bo
+2025-02-08|holiday|Shabbat Shirah
+2025-02-08|parasha|Beshalach
+2025-02-13|holiday|Tu BiShvat
+2025-02-15|parasha|Yitro
+2025-02-22|parasha|Mishpatim
+2025-02-28|rc|
+2025-03-01|holiday|Shabbat Shekalim
+2025-03-01|parasha|Terumah
+2025-03-01|rc|
+2025-03-08|holiday|Shabbat Zachor
+2025-03-08|parasha|Tetzaveh
+2025-03-13|holiday|Erev Purim
+2025-03-13|holiday|Ta'anit Esther
+2025-03-14|holiday|Purim
+2025-03-15|holiday|Shushan Purim
+2025-03-15|parasha|Ki Tisa
+2025-03-22|holiday|Shabbat Parah
+2025-03-22|parasha|Vayakhel
+2025-03-29|holiday|Shabbat HaChodesh
+2025-03-29|parasha|Pekudei
+2025-03-30|rc|
+2025-04-05|parasha|Vayikra
+2025-04-10|holiday|Ta'anit Bechorot
+2025-04-12|holiday|Erev Pesach
+2025-04-12|holiday|Shabbat HaGadol
+2025-04-12|parasha|Tzav
+2025-04-13|holiday|Pesach I
+2025-04-14|holiday|Pesach II (CH''M)
+2025-04-15|holiday|Pesach III (CH''M)
+2025-04-16|holiday|Pesach IV (CH''M)
+2025-04-17|holiday|Pesach V (CH''M)
+2025-04-18|holiday|Pesach VI (CH''M)
+2025-04-19|holiday|Pesach VII
+2025-04-24|holiday|Yom HaShoah
+2025-04-26|parasha|Shmini
+2025-04-28|rc|
+2025-04-29|rc|
+2025-04-30|holiday|Yom HaZikaron
+2025-05-01|holiday|Yom HaAtzma'ut
+2025-05-03|parasha|Tazria-Metzora
+2025-05-10|parasha|Achrei Mot-Kedoshim
+2025-05-12|holiday|Pesach Sheni
+2025-05-16|holiday|Lag BaOmer
+2025-05-17|parasha|Emor
+2025-05-24|parasha|Behar-Bechukotai
+2025-05-26|holiday|Yom Yerushalayim
+2025-05-28|rc|
+2025-05-31|parasha|Bamidbar
+2025-06-01|holiday|Erev Shavuot
+2025-06-02|holiday|Shavuot
+2025-06-07|parasha|Nasso
+2025-06-14|parasha|Beha'alotcha
+2025-06-21|parasha|Sh'lach
+2025-06-26|rc|
+2025-06-27|rc|
+2025-06-28|parasha|Korach
+2025-07-05|parasha|Chukat
+2025-07-12|parasha|Balak
+2025-07-13|holiday|Tzom Tammuz
+2025-07-19|parasha|Pinchas
+2025-07-26|parasha|Matot-Masei
+2025-07-26|rc|
+2025-08-02|holiday|Erev Tish'a B'Av
+2025-08-02|holiday|Shabbat Chazon
+2025-08-02|parasha|Devarim
+2025-08-03|holiday|Tish'a B'Av
+2025-08-09|holiday|Shabbat Nachamu
+2025-08-09|holiday|Tu B'Av
+2025-08-09|parasha|Vaetchanan
+2025-08-16|parasha|Eikev
+2025-08-23|parasha|Re'eh
+2025-08-24|rc|
+2025-08-25|rc|
+2025-08-30|parasha|Shoftim
+2025-09-06|parasha|Ki Teitzei
+2025-09-13|parasha|Ki Tavo
+2025-09-20|parasha|Nitzavim
+2025-09-22|holiday|Erev Rosh Hashana
+2025-09-23|holiday|Rosh Hashana I
+2025-09-24|holiday|Rosh Hashana II
+2025-09-25|holiday|Tzom Gedaliah
+2025-09-27|holiday|Shabbat Shuva
+2025-09-27|parasha|Vayeilech
+2025-10-01|holiday|Erev Yom Kippur
+2025-10-02|holiday|Yom Kippur
+2025-10-04|parasha|Ha'azinu
+2025-10-06|holiday|Erev Sukkot
+2025-10-07|holiday|Sukkot I
+2025-10-08|holiday|Sukkot II (CH''M)
+2025-10-09|holiday|Sukkot III (CH''M)
+2025-10-10|holiday|Sukkot IV (CH''M)
+2025-10-11|holiday|Sukkot V (CH''M)
+2025-10-12|holiday|Sukkot VI (CH''M)
+2025-10-13|holiday|Sukkot VII (Hoshana Raba)
+2025-10-14|holiday|Shmini Atzeret
+2025-10-18|parasha|Bereshit
+2025-10-22|rc|
+2025-10-23|rc|
+2025-10-25|parasha|Noach
+2025-11-01|parasha|Lech-Lecha
+2025-11-08|parasha|Vayera
+2025-11-15|parasha|Chayei Sara
+2025-11-20|holiday|Sigd
+2025-11-21|rc|
+2025-11-22|parasha|Toldot
+2025-11-29|parasha|Vayetzei
+2025-12-06|parasha|Vayishlach
+2025-12-13|parasha|Vayeshev
+2025-12-14|chanukah|1
+2025-12-15|chanukah|2
+2025-12-16|chanukah|3
+2025-12-17|chanukah|4
+2025-12-18|chanukah|5
+2025-12-19|chanukah|6
+2025-12-20|chanukah|7
+2025-12-20|parasha|Miketz
+2025-12-20|rc|
+2025-12-21|chanukah|8
+2025-12-21|rc|
+2025-12-27|parasha|Vayigash
+2025-12-30|holiday|Asara B'Tevet
+2026-01-03|parasha|Vayechi
+2026-01-10|parasha|Shemot
+2026-01-17|parasha|Vaera
+2026-01-19|rc|
+2026-01-24|parasha|Bo
+2026-01-31|holiday|Shabbat Shirah
+2026-01-31|parasha|Beshalach
+2026-02-02|holiday|Tu BiShvat
+2026-02-07|parasha|Yitro
+2026-02-14|holiday|Shabbat Shekalim
+2026-02-14|parasha|Mishpatim
+2026-02-17|rc|
+2026-02-18|rc|
+2026-02-21|parasha|Terumah
+2026-02-28|holiday|Shabbat Zachor
+2026-02-28|parasha|Tetzaveh
+2026-03-02|holiday|Erev Purim
+2026-03-02|holiday|Ta'anit Esther
+2026-03-03|holiday|Purim
+2026-03-04|holiday|Shushan Purim
+2026-03-07|holiday|Shabbat Parah
+2026-03-07|parasha|Ki Tisa
+2026-03-14|holiday|Shabbat HaChodesh
+2026-03-14|parasha|Vayakhel-Pekudei
+2026-03-19|rc|
+2026-03-21|parasha|Vayikra
+2026-03-28|holiday|Shabbat HaGadol
+2026-03-28|parasha|Tzav
+2026-04-01|holiday|Erev Pesach
+2026-04-01|holiday|Ta'anit Bechorot
+2026-04-02|holiday|Pesach I
+2026-04-03|holiday|Pesach II (CH''M)
+2026-04-04|holiday|Pesach III (CH''M)
+2026-04-05|holiday|Pesach IV (CH''M)
+2026-04-06|holiday|Pesach V (CH''M)
+2026-04-07|holiday|Pesach VI (CH''M)
+2026-04-08|holiday|Pesach VII
+2026-04-11|parasha|Shmini
+2026-04-14|holiday|Yom HaShoah
+2026-04-17|rc|
+2026-04-18|parasha|Tazria-Metzora
+2026-04-18|rc|
+2026-04-21|holiday|Yom HaZikaron
+2026-04-22|holiday|Yom HaAtzma'ut
+2026-04-25|parasha|Achrei Mot-Kedoshim
+2026-05-01|holiday|Pesach Sheni
+2026-05-02|parasha|Emor
+2026-05-05|holiday|Lag BaOmer
+2026-05-09|parasha|Behar-Bechukotai
+2026-05-15|holiday|Yom Yerushalayim
+2026-05-16|parasha|Bamidbar
+2026-05-17|rc|
+2026-05-21|holiday|Erev Shavuot
+2026-05-22|holiday|Shavuot
+2026-05-23|parasha|Nasso
+2026-05-30|parasha|Beha'alotcha
+2026-06-06|parasha|Sh'lach
+2026-06-13|parasha|Korach
+2026-06-15|rc|
+2026-06-16|rc|
+2026-06-20|parasha|Chukat
+2026-06-27|parasha|Balak
+2026-07-02|holiday|Tzom Tammuz
+2026-07-04|parasha|Pinchas
+2026-07-11|parasha|Matot-Masei
+2026-07-15|rc|
+2026-07-18|holiday|Shabbat Chazon
+2026-07-18|parasha|Devarim
+2026-07-22|holiday|Erev Tish'a B'Av
+2026-07-23|holiday|Tish'a B'Av
+2026-07-25|holiday|Shabbat Nachamu
+2026-07-25|parasha|Vaetchanan
+2026-07-29|holiday|Tu B'Av
+2026-08-01|parasha|Eikev
+2026-08-08|parasha|Re'eh
+2026-08-13|rc|
+2026-08-14|rc|
+2026-08-15|parasha|Shoftim
+2026-08-22|parasha|Ki Teitzei
+2026-08-29|parasha|Ki Tavo
+2026-09-05|parasha|Nitzavim-Vayeilech
+2026-09-11|holiday|Erev Rosh Hashana
+2026-09-12|holiday|Rosh Hashana I
+2026-09-13|holiday|Rosh Hashana II
+2026-09-14|holiday|Tzom Gedaliah
+2026-09-19|holiday|Shabbat Shuva
+2026-09-19|parasha|Ha'azinu
+2026-09-20|holiday|Erev Yom Kippur
+2026-09-21|holiday|Yom Kippur
+2026-09-25|holiday|Erev Sukkot
+2026-09-26|holiday|Sukkot I
+2026-09-27|holiday|Sukkot II (CH''M)
+2026-09-28|holiday|Sukkot III (CH''M)
+2026-09-29|holiday|Sukkot IV (CH''M)
+2026-09-30|holiday|Sukkot V (CH''M)
+2026-10-01|holiday|Sukkot VI (CH''M)
+2026-10-02|holiday|Sukkot VII (Hoshana Raba)
+2026-10-03|holiday|Shmini Atzeret
+2026-10-10|parasha|Bereshit
+2026-10-11|rc|
+2026-10-12|rc|
+2026-10-17|parasha|Noach
+2026-10-24|parasha|Lech-Lecha
+2026-10-31|parasha|Vayera
+2026-11-07|parasha|Chayei Sara
+2026-11-09|holiday|Sigd
+2026-11-10|rc|
+2026-11-11|rc|
+2026-11-14|parasha|Toldot
+2026-11-21|parasha|Vayetzei
+2026-11-28|parasha|Vayishlach
+2026-12-04|chanukah|1
+2026-12-05|chanukah|2
+2026-12-05|parasha|Vayeshev
+2026-12-06|chanukah|3
+2026-12-07|chanukah|4
+2026-12-08|chanukah|5
+2026-12-09|chanukah|6
+2026-12-10|chanukah|7
+2026-12-10|rc|
+2026-12-11|chanukah|8
+2026-12-11|rc|
+2026-12-12|parasha|Miketz
+2026-12-19|parasha|Vayigash
+2026-12-20|holiday|Asara B'Tevet
+2026-12-26|parasha|Vayechi
+2027-01-02|parasha|Shemot
+2027-01-09|parasha|Vaera
+2027-01-09|rc|
+2027-01-16|parasha|Bo
+2027-01-23|holiday|Shabbat Shirah
+2027-01-23|holiday|Tu BiShvat
+2027-01-23|parasha|Beshalach
+2027-01-30|parasha|Yitro
+2027-02-06|parasha|Mishpatim
+2027-02-07|rc|
+2027-02-08|rc|
+2027-02-13|parasha|Terumah
+2027-02-20|parasha|Tetzaveh
+2027-02-21|holiday|Purim Katan
+2027-02-22|holiday|Shushan Purim Katan
+2027-02-27|parasha|Ki Tisa
+2027-03-06|holiday|Shabbat Shekalim
+2027-03-06|parasha|Vayakhel
+2027-03-09|rc|
+2027-03-10|rc|
+2027-03-13|parasha|Pekudei
+2027-03-20|holiday|Shabbat Zachor
+2027-03-20|parasha|Vayikra
+2027-03-22|holiday|Erev Purim
+2027-03-22|holiday|Ta'anit Esther
+2027-03-23|holiday|Purim
+2027-03-24|holiday|Shushan Purim
+2027-03-27|holiday|Shabbat Parah
+2027-03-27|parasha|Tzav
+2027-04-03|holiday|Shabbat HaChodesh
+2027-04-03|parasha|Shmini
+2027-04-08|rc|
+2027-04-10|parasha|Tazria
+2027-04-17|holiday|Shabbat HaGadol
+2027-04-17|parasha|Metzora
+2027-04-21|holiday|Erev Pesach
+2027-04-21|holiday|Ta'anit Bechorot
+2027-04-22|holiday|Pesach I
+2027-04-23|holiday|Pesach II (CH''M)
+2027-04-24|holiday|Pesach III (CH''M)
+2027-04-25|holiday|Pesach IV (CH''M)
+2027-04-26|holiday|Pesach V (CH''M)
+2027-04-27|holiday|Pesach VI (CH''M)
+2027-04-28|holiday|Pesach VII
+2027-05-01|parasha|Achrei Mot
+2027-05-04|holiday|Yom HaShoah
+2027-05-07|rc|
+2027-05-08|parasha|Kedoshim
+2027-05-08|rc|
+2027-05-11|holiday|Yom HaZikaron
+2027-05-12|holiday|Yom HaAtzma'ut
+2027-05-15|parasha|Emor
+2027-05-21|holiday|Pesach Sheni
+2027-05-22|parasha|Behar
+2027-05-25|holiday|Lag BaOmer
+2027-05-29|parasha|Bechukotai
+2027-06-04|holiday|Yom Yerushalayim
+2027-06-05|parasha|Bamidbar
+2027-06-06|rc|
+2027-06-10|holiday|Erev Shavuot
+2027-06-11|holiday|Shavuot
+2027-06-12|parasha|Nasso
+2027-06-19|parasha|Beha'alotcha
+2027-06-26|parasha|Sh'lach
+2027-07-03|parasha|Korach
+2027-07-05|rc|
+2027-07-06|rc|
+2027-07-10|parasha|Chukat
+2027-07-17|parasha|Balak
+2027-07-22|holiday|Tzom Tammuz
+2027-07-24|parasha|Pinchas
+2027-07-31|parasha|Matot-Masei
+2027-08-04|rc|
+2027-08-07|holiday|Shabbat Chazon
+2027-08-07|parasha|Devarim
+2027-08-11|holiday|Erev Tish'a B'Av
+2027-08-12|holiday|Tish'a B'Av
+2027-08-14|holiday|Shabbat Nachamu
+2027-08-14|parasha|Vaetchanan
+2027-08-18|holiday|Tu B'Av
+2027-08-21|parasha|Eikev
+2027-08-28|parasha|Re'eh
+2027-09-02|rc|
+2027-09-03|rc|
+2027-09-04|parasha|Shoftim
+2027-09-11|parasha|Ki Teitzei
+2027-09-18|parasha|Ki Tavo
+2027-09-25|parasha|Nitzavim-Vayeilech
+2027-10-01|holiday|Erev Rosh Hashana
+2027-10-02|holiday|Rosh Hashana I
+2027-10-03|holiday|Rosh Hashana II
+2027-10-04|holiday|Tzom Gedaliah
+2027-10-09|holiday|Shabbat Shuva
+2027-10-09|parasha|Ha'azinu
+2027-10-10|holiday|Erev Yom Kippur
+2027-10-11|holiday|Yom Kippur
+2027-10-15|holiday|Erev Sukkot
+2027-10-16|holiday|Sukkot I
+2027-10-17|holiday|Sukkot II (CH''M)
+2027-10-18|holiday|Sukkot III (CH''M)
+2027-10-19|holiday|Sukkot IV (CH''M)
+2027-10-20|holiday|Sukkot V (CH''M)
+2027-10-21|holiday|Sukkot VI (CH''M)
+2027-10-22|holiday|Sukkot VII (Hoshana Raba)
+2027-10-23|holiday|Shmini Atzeret
+2027-10-30|parasha|Bereshit
+2027-10-31|rc|
+2027-11-01|rc|
+2027-11-06|parasha|Noach
+2027-11-13|parasha|Lech-Lecha
+2027-11-20|parasha|Vayera
+2027-11-27|parasha|Chayei Sara
+2027-11-29|holiday|Sigd
+2027-11-30|rc|
+2027-12-01|rc|
+2027-12-04|parasha|Toldot
+2027-12-11|parasha|Vayetzei
+2027-12-18|parasha|Vayishlach
+2027-12-24|chanukah|1
+2027-12-25|chanukah|2
+2027-12-25|parasha|Vayeshev
+2027-12-26|chanukah|3
+2027-12-27|chanukah|4
+2027-12-28|chanukah|5
+2027-12-29|chanukah|6
+2027-12-30|chanukah|7
+2027-12-30|rc|
+2027-12-31|chanukah|8
+2027-12-31|rc|
+2028-01-01|parasha|Miketz
+2028-01-08|parasha|Vayigash
+2028-01-09|holiday|Asara B'Tevet
+2028-01-15|parasha|Vayechi
+2028-01-22|parasha|Shemot
+2028-01-29|parasha|Vaera
+2028-01-29|rc|
+2028-02-05|parasha|Bo
+2028-02-12|holiday|Shabbat Shirah
+2028-02-12|holiday|Tu BiShvat
+2028-02-12|parasha|Beshalach
+2028-02-19|parasha|Yitro
+2028-02-26|holiday|Shabbat Shekalim
+2028-02-26|parasha|Mishpatim
+2028-02-27|rc|
+2028-02-28|rc|
+2028-03-04|parasha|Terumah
+2028-03-09|holiday|Ta'anit Esther
+2028-03-11|holiday|Erev Purim
+2028-03-11|holiday|Shabbat Zachor
+2028-03-11|parasha|Tetzaveh
+2028-03-12|holiday|Purim
+2028-03-13|holiday|Shushan Purim
+2028-03-18|holiday|Shabbat Parah
+2028-03-18|parasha|Ki Tisa
+2028-03-25|holiday|Shabbat HaChodesh
+2028-03-25|parasha|Vayakhel-Pekudei
+2028-03-28|rc|
+2028-04-01|parasha|Vayikra
+2028-04-08|holiday|Shabbat HaGadol
+2028-04-08|parasha|Tzav
+2028-04-10|holiday|Erev Pesach
+2028-04-10|holiday|Ta'anit Bechorot
+2028-04-11|holiday|Pesach I
+2028-04-12|holiday|Pesach II (CH''M)
+2028-04-13|holiday|Pesach III (CH''M)
+2028-04-14|holiday|Pesach IV (CH''M)
+2028-04-15|holiday|Pesach V (CH''M)
+2028-04-16|holiday|Pesach VI (CH''M)
+2028-04-17|holiday|Pesach VII
+2028-04-22|parasha|Shmini
+2028-04-24|holiday|Yom HaShoah
+2028-04-26|rc|
+2028-04-27|rc|
+2028-04-29|parasha|Tazria-Metzora
+2028-05-01|holiday|Yom HaZikaron
+2028-05-02|holiday|Yom HaAtzma'ut
+2028-05-06|parasha|Achrei Mot-Kedoshim
+2028-05-10|holiday|Pesach Sheni
+2028-05-13|parasha|Emor
+2028-05-14|holiday|Lag BaOmer
+2028-05-20|parasha|Behar-Bechukotai
+2028-05-24|holiday|Yom Yerushalayim
+2028-05-26|rc|
+2028-05-27|parasha|Bamidbar
+2028-05-30|holiday|Erev Shavuot
+2028-05-31|holiday|Shavuot
+2028-06-03|parasha|Nasso
+2028-06-10|parasha|Beha'alotcha
+2028-06-17|parasha|Sh'lach
+2028-06-24|parasha|Korach
+2028-06-24|rc|
+2028-06-25|rc|
+2028-07-01|parasha|Chukat
+2028-07-08|parasha|Balak
+2028-07-11|holiday|Tzom Tammuz
+2028-07-15|parasha|Pinchas
+2028-07-22|parasha|Matot-Masei
+2028-07-24|rc|
+2028-07-29|holiday|Shabbat Chazon
+2028-07-29|parasha|Devarim
+2028-07-31|holiday|Erev Tish'a B'Av
+2028-08-01|holiday|Tish'a B'Av
+2028-08-05|holiday|Shabbat Nachamu
+2028-08-05|parasha|Vaetchanan
+2028-08-07|holiday|Tu B'Av
+2028-08-12|parasha|Eikev
+2028-08-19|parasha|Re'eh
+2028-08-22|rc|
+2028-08-23|rc|
+2028-08-26|parasha|Shoftim
+2028-09-02|parasha|Ki Teitzei
+2028-09-09|parasha|Ki Tavo
+2028-09-16|parasha|Nitzavim-Vayeilech
+2028-09-20|holiday|Erev Rosh Hashana
+2028-09-21|holiday|Rosh Hashana I
+2028-09-22|holiday|Rosh Hashana II
+2028-09-23|holiday|Shabbat Shuva
+2028-09-23|parasha|Ha'azinu
+2028-09-24|holiday|Tzom Gedaliah
+2028-09-29|holiday|Erev Yom Kippur
+2028-09-30|holiday|Yom Kippur
+2028-10-04|holiday|Erev Sukkot
+2028-10-05|holiday|Sukkot I
+2028-10-06|holiday|Sukkot II (CH''M)
+2028-10-07|holiday|Sukkot III (CH''M)
+2028-10-08|holiday|Sukkot IV (CH''M)
+2028-10-09|holiday|Sukkot V (CH''M)
+2028-10-10|holiday|Sukkot VI (CH''M)
+2028-10-11|holiday|Sukkot VII (Hoshana Raba)
+2028-10-12|holiday|Shmini Atzeret
+2028-10-14|parasha|Bereshit
+2028-10-20|rc|
+2028-10-21|parasha|Noach
+2028-10-21|rc|
+2028-10-28|parasha|Lech-Lecha
+2028-11-04|parasha|Vayera
+2028-11-11|parasha|Chayei Sara
+2028-11-16|holiday|Sigd
+2028-11-18|parasha|Toldot
+2028-11-19|rc|
+2028-11-25|parasha|Vayetzei
+2028-12-02|parasha|Vayishlach
+2028-12-09|parasha|Vayeshev
+2028-12-12|chanukah|1
+2028-12-13|chanukah|2
+2028-12-14|chanukah|3
+2028-12-15|chanukah|4
+2028-12-16|chanukah|5
+2028-12-16|parasha|Miketz
+2028-12-17|chanukah|6
+2028-12-18|chanukah|7
+2028-12-18|rc|
+2028-12-19|chanukah|8
+2028-12-19|rc|
+2028-12-23|parasha|Vayigash
+2028-12-28|holiday|Asara B'Tevet
+2028-12-30|parasha|Vayechi
+2029-01-06|parasha|Shemot
+2029-01-13|parasha|Vaera
+2029-01-17|rc|
+2029-01-20|parasha|Bo
+2029-01-27|holiday|Shabbat Shirah
+2029-01-27|parasha|Beshalach
+2029-01-31|holiday|Tu BiShvat
+2029-02-03|parasha|Yitro
+2029-02-10|holiday|Shabbat Shekalim
+2029-02-10|parasha|Mishpatim
+2029-02-15|rc|
+2029-02-16|rc|
+2029-02-17|parasha|Terumah
+2029-02-24|holiday|Shabbat Zachor
+2029-02-24|parasha|Tetzaveh
+2029-02-28|holiday|Erev Purim
+2029-02-28|holiday|Ta'anit Esther
+2029-03-01|holiday|Purim
+2029-03-02|holiday|Shushan Purim
+2029-03-03|parasha|Ki Tisa
+2029-03-10|holiday|Shabbat Parah
+2029-03-10|parasha|Vayakhel-Pekudei
+2029-03-17|holiday|Shabbat HaChodesh
+2029-03-17|parasha|Vayikra
+2029-03-17|rc|
+2029-03-24|holiday|Shabbat HaGadol
+2029-03-24|parasha|Tzav
+2029-03-30|holiday|Erev Pesach
+2029-03-30|holiday|Ta'anit Bechorot
+2029-03-31|holiday|Pesach I
+2029-04-01|holiday|Pesach II (CH''M)
+2029-04-02|holiday|Pesach III (CH''M)
+2029-04-03|holiday|Pesach IV (CH''M)
+2029-04-04|holiday|Pesach V (CH''M)
+2029-04-05|holiday|Pesach VI (CH''M)
+2029-04-06|holiday|Pesach VII
+2029-04-07|parasha|Shmini
+2029-04-12|holiday|Yom HaShoah
+2029-04-14|parasha|Tazria-Metzora
+2029-04-15|rc|
+2029-04-16|rc|
+2029-04-18|holiday|Yom HaZikaron
+2029-04-19|holiday|Yom HaAtzma'ut
+2029-04-21|parasha|Achrei Mot-Kedoshim
+2029-04-28|parasha|Emor
+2029-04-29|holiday|Pesach Sheni
+2029-05-03|holiday|Lag BaOmer
+2029-05-05|parasha|Behar
+2029-05-12|parasha|Bechukotai
+2029-05-13|holiday|Yom Yerushalayim
+2029-05-15|rc|
+2029-05-19|holiday|Erev Shavuot
+2029-05-19|parasha|Bamidbar
+2029-05-20|holiday|Shavuot
+2029-05-26|parasha|Nasso
+2029-06-02|parasha|Beha'alotcha
+2029-06-09|parasha|Sh'lach
+2029-06-13|rc|
+2029-06-14|rc|
+2029-06-16|parasha|Korach
+2029-06-23|parasha|Chukat
+2029-06-30|parasha|Balak
+2029-07-01|holiday|Tzom Tammuz
+2029-07-07|parasha|Pinchas
+2029-07-13|rc|
+2029-07-14|parasha|Matot-Masei
+2029-07-21|holiday|Erev Tish'a B'Av
+2029-07-21|holiday|Shabbat Chazon
+2029-07-21|parasha|Devarim
+2029-07-22|holiday|Tish'a B'Av (observed)
+2029-07-27|holiday|Tu B'Av
+2029-07-28|holiday|Shabbat Nachamu
+2029-07-28|parasha|Vaetchanan
+2029-08-04|parasha|Eikev
+2029-08-11|parasha|Re'eh
+2029-08-11|rc|
+2029-08-12|rc|
+2029-08-18|parasha|Shoftim
+2029-08-25|parasha|Ki Teitzei
+2029-09-01|parasha|Ki Tavo
+2029-09-08|parasha|Nitzavim
+2029-09-09|holiday|Erev Rosh Hashana
+2029-09-10|holiday|Rosh Hashana I
+2029-09-11|holiday|Rosh Hashana II
+2029-09-12|holiday|Tzom Gedaliah
+2029-09-15|holiday|Shabbat Shuva
+2029-09-15|parasha|Vayeilech
+2029-09-18|holiday|Erev Yom Kippur
+2029-09-19|holiday|Yom Kippur
+2029-09-22|parasha|Ha'azinu
+2029-09-23|holiday|Erev Sukkot
+2029-09-24|holiday|Sukkot I
+2029-09-25|holiday|Sukkot II (CH''M)
+2029-09-26|holiday|Sukkot III (CH''M)
+2029-09-27|holiday|Sukkot IV (CH''M)
+2029-09-28|holiday|Sukkot V (CH''M)
+2029-09-29|holiday|Sukkot VI (CH''M)
+2029-09-30|holiday|Sukkot VII (Hoshana Raba)
+2029-10-01|holiday|Shmini Atzeret
+2029-10-06|parasha|Bereshit
+2029-10-09|rc|
+2029-10-10|rc|
+2029-10-13|parasha|Noach
+2029-10-20|parasha|Lech-Lecha
+2029-10-27|parasha|Vayera
+2029-11-03|parasha|Chayei Sara
+2029-11-07|holiday|Sigd
+2029-11-08|rc|
+2029-11-10|parasha|Toldot
+2029-11-17|parasha|Vayetzei
+2029-11-24|parasha|Vayishlach
+2029-12-01|chanukah|1
+2029-12-01|parasha|Vayeshev
+2029-12-02|chanukah|2
+2029-12-03|chanukah|3
+2029-12-04|chanukah|4
+2029-12-05|chanukah|5
+2029-12-06|chanukah|6
+2029-12-07|chanukah|7
+2029-12-07|rc|
+2029-12-08|chanukah|8
+2029-12-08|parasha|Miketz
+2029-12-15|parasha|Vayigash
+2029-12-16|holiday|Asara B'Tevet
+2029-12-22|parasha|Vayechi
+2029-12-29|parasha|Shemot
+2030-01-05|parasha|Vaera
+2030-01-05|rc|
+2030-01-12|parasha|Bo
+2030-01-19|holiday|Shabbat Shirah
+2030-01-19|holiday|Tu BiShvat
+2030-01-19|parasha|Beshalach
+2030-01-26|parasha|Yitro
+2030-02-02|parasha|Mishpatim
+2030-02-03|rc|
+2030-02-04|rc|
+2030-02-09|parasha|Terumah
+2030-02-16|parasha|Tetzaveh
+2030-02-17|holiday|Purim Katan
+2030-02-18|holiday|Shushan Purim Katan
+2030-02-23|parasha|Ki Tisa
+2030-03-02|holiday|Shabbat Shekalim
+2030-03-02|parasha|Vayakhel
+2030-03-05|rc|
+2030-03-06|rc|
+2030-03-09|parasha|Pekudei
+2030-03-16|holiday|Shabbat Zachor
+2030-03-16|parasha|Vayikra
+2030-03-18|holiday|Erev Purim
+2030-03-18|holiday|Ta'anit Esther
+2030-03-19|holiday|Purim
+2030-03-20|holiday|Shushan Purim
+2030-03-23|holiday|Shabbat Parah
+2030-03-23|parasha|Tzav
+2030-03-30|holiday|Shabbat HaChodesh
+2030-03-30|parasha|Shmini
+2030-04-04|rc|
+2030-04-06|parasha|Tazria
+2030-04-13|holiday|Shabbat HaGadol
+2030-04-13|parasha|Metzora
+2030-04-17|holiday|Erev Pesach
+2030-04-17|holiday|Ta'anit Bechorot
+2030-04-18|holiday|Pesach I
+2030-04-19|holiday|Pesach II (CH''M)
+2030-04-20|holiday|Pesach III (CH''M)
+2030-04-21|holiday|Pesach IV (CH''M)
+2030-04-22|holiday|Pesach V (CH''M)
+2030-04-23|holiday|Pesach VI (CH''M)
+2030-04-24|holiday|Pesach VII
+2030-04-27|parasha|Achrei Mot
+2030-04-30|holiday|Yom HaShoah
+2030-05-03|rc|
+2030-05-04|parasha|Kedoshim
+2030-05-04|rc|
+2030-05-07|holiday|Yom HaZikaron
+2030-05-08|holiday|Yom HaAtzma'ut
+2030-05-11|parasha|Emor
+2030-05-17|holiday|Pesach Sheni
+2030-05-18|parasha|Behar
+2030-05-21|holiday|Lag BaOmer
+2030-05-25|parasha|Bechukotai
+2030-05-31|holiday|Yom Yerushalayim
+2030-06-01|parasha|Bamidbar
+2030-06-02|rc|
+2030-06-06|holiday|Erev Shavuot
+2030-06-07|holiday|Shavuot
+2030-06-08|parasha|Nasso
+2030-06-15|parasha|Beha'alotcha
+2030-06-22|parasha|Sh'lach
+2030-06-29|parasha|Korach
+2030-07-01|rc|
+2030-07-02|rc|
+2030-07-06|parasha|Chukat
+2030-07-13|parasha|Balak
+2030-07-18|holiday|Tzom Tammuz
+2030-07-20|parasha|Pinchas
+2030-07-27|parasha|Matot-Masei
+2030-07-31|rc|
+2030-08-03|holiday|Shabbat Chazon
+2030-08-03|parasha|Devarim
+2030-08-07|holiday|Erev Tish'a B'Av
+2030-08-08|holiday|Tish'a B'Av
+2030-08-10|holiday|Shabbat Nachamu
+2030-08-10|parasha|Vaetchanan
+2030-08-14|holiday|Tu B'Av
+2030-08-17|parasha|Eikev
+2030-08-24|parasha|Re'eh
+2030-08-29|rc|
+2030-08-30|rc|
+2030-08-31|parasha|Shoftim
+2030-09-07|parasha|Ki Teitzei
+2030-09-14|parasha|Ki Tavo
+2030-09-21|parasha|Nitzavim-Vayeilech
+2030-09-27|holiday|Erev Rosh Hashana
+2030-09-28|holiday|Rosh Hashana I
+2030-09-29|holiday|Rosh Hashana II
+2030-09-30|holiday|Tzom Gedaliah
+2030-10-05|holiday|Shabbat Shuva
+2030-10-05|parasha|Ha'azinu
+2030-10-06|holiday|Erev Yom Kippur
+2030-10-07|holiday|Yom Kippur
+2030-10-11|holiday|Erev Sukkot
+2030-10-12|holiday|Sukkot I
+2030-10-13|holiday|Sukkot II (CH''M)
+2030-10-14|holiday|Sukkot III (CH''M)
+2030-10-15|holiday|Sukkot IV (CH''M)
+2030-10-16|holiday|Sukkot V (CH''M)
+2030-10-17|holiday|Sukkot VI (CH''M)
+2030-10-18|holiday|Sukkot VII (Hoshana Raba)
+2030-10-19|holiday|Shmini Atzeret
+2030-10-26|parasha|Bereshit
+2030-10-27|rc|
+2030-10-28|rc|
+2030-11-02|parasha|Noach
+2030-11-09|parasha|Lech-Lecha
+2030-11-16|parasha|Vayera
+2030-11-23|parasha|Chayei Sara
+2030-11-25|holiday|Sigd
+2030-11-26|rc|
+2030-11-27|rc|
+2030-11-30|parasha|Toldot
+2030-12-07|parasha|Vayetzei
+2030-12-14|parasha|Vayishlach
+2030-12-20|chanukah|1
+2030-12-21|chanukah|2
+2030-12-21|parasha|Vayeshev
+2030-12-22|chanukah|3
+2030-12-23|chanukah|4
+2030-12-24|chanukah|5
+2030-12-25|chanukah|6
+2030-12-26|chanukah|7
+2030-12-26|rc|
+2030-12-27|chanukah|8
+2030-12-27|rc|
+2030-12-28|parasha|Miketz
+2031-01-04|parasha|Vayigash
+2031-01-05|holiday|Asara B'Tevet
+2031-01-11|parasha|Vayechi
+2031-01-18|parasha|Shemot
+2031-01-25|parasha|Vaera
+2031-01-25|rc|
+2031-02-01|parasha|Bo
+2031-02-08|holiday|Shabbat Shirah
+2031-02-08|holiday|Tu BiShvat
+2031-02-08|parasha|Beshalach
+2031-02-15|parasha|Yitro
+2031-02-22|holiday|Shabbat Shekalim
+2031-02-22|parasha|Mishpatim
+2031-02-23|rc|
+2031-02-24|rc|
+2031-03-01|parasha|Terumah
+2031-03-06|holiday|Ta'anit Esther
+2031-03-08|holiday|Erev Purim
+2031-03-08|holiday|Shabbat Zachor
+2031-03-08|parasha|Tetzaveh
+2031-03-09|holiday|Purim
+2031-03-10|holiday|Shushan Purim
+2031-03-15|holiday|Shabbat Parah
+2031-03-15|parasha|Ki Tisa
+2031-03-22|holiday|Shabbat HaChodesh
+2031-03-22|parasha|Vayakhel-Pekudei
+2031-03-25|rc|
+2031-03-29|parasha|Vayikra
+2031-04-05|holiday|Shabbat HaGadol
+2031-04-05|parasha|Tzav
+2031-04-07|holiday|Erev Pesach
+2031-04-07|holiday|Ta'anit Bechorot
+2031-04-08|holiday|Pesach I
+2031-04-09|holiday|Pesach II (CH''M)
+2031-04-10|holiday|Pesach III (CH''M)
+2031-04-11|holiday|Pesach IV (CH''M)
+2031-04-12|holiday|Pesach V (CH''M)
+2031-04-13|holiday|Pesach VI (CH''M)
+2031-04-14|holiday|Pesach VII
+2031-04-19|parasha|Shmini
+2031-04-21|holiday|Yom HaShoah
+2031-04-23|rc|
+2031-04-24|rc|
+2031-04-26|parasha|Tazria-Metzora
+2031-04-28|holiday|Yom HaZikaron
+2031-04-29|holiday|Yom HaAtzma'ut
+2031-05-03|parasha|Achrei Mot-Kedoshim
+2031-05-07|holiday|Pesach Sheni
+2031-05-10|parasha|Emor
+2031-05-11|holiday|Lag BaOmer
+2031-05-17|parasha|Behar-Bechukotai
+2031-05-21|holiday|Yom Yerushalayim
+2031-05-23|rc|
+2031-05-24|parasha|Bamidbar
+2031-05-27|holiday|Erev Shavuot
+2031-05-28|holiday|Shavuot
+2031-05-31|parasha|Nasso
+2031-06-07|parasha|Beha'alotcha
+2031-06-14|parasha|Sh'lach
+2031-06-21|parasha|Korach
+2031-06-21|rc|
+2031-06-22|rc|
+2031-06-28|parasha|Chukat
+2031-07-05|parasha|Balak
+2031-07-08|holiday|Tzom Tammuz
+2031-07-12|parasha|Pinchas
+2031-07-19|parasha|Matot-Masei
+2031-07-21|rc|
+2031-07-26|holiday|Shabbat Chazon
+2031-07-26|parasha|Devarim
+2031-07-28|holiday|Erev Tish'a B'Av
+2031-07-29|holiday|Tish'a B'Av
+2031-08-02|holiday|Shabbat Nachamu
+2031-08-02|parasha|Vaetchanan
+2031-08-04|holiday|Tu B'Av
+2031-08-09|parasha|Eikev
+2031-08-16|parasha|Re'eh
+2031-08-19|rc|
+2031-08-20|rc|
+2031-08-23|parasha|Shoftim
+2031-08-30|parasha|Ki Teitzei
+2031-09-06|parasha|Ki Tavo
+2031-09-13|parasha|Nitzavim-Vayeilech
+2031-09-17|holiday|Erev Rosh Hashana
+2031-09-18|holiday|Rosh Hashana I
+2031-09-19|holiday|Rosh Hashana II
+2031-09-20|holiday|Shabbat Shuva
+2031-09-20|parasha|Ha'azinu
+2031-09-21|holiday|Tzom Gedaliah
+2031-09-26|holiday|Erev Yom Kippur
+2031-09-27|holiday|Yom Kippur
+2031-10-01|holiday|Erev Sukkot
+2031-10-02|holiday|Sukkot I
+2031-10-03|holiday|Sukkot II (CH''M)
+2031-10-04|holiday|Sukkot III (CH''M)
+2031-10-05|holiday|Sukkot IV (CH''M)
+2031-10-06|holiday|Sukkot V (CH''M)
+2031-10-07|holiday|Sukkot VI (CH''M)
+2031-10-08|holiday|Sukkot VII (Hoshana Raba)
+2031-10-09|holiday|Shmini Atzeret
+2031-10-11|parasha|Bereshit
+2031-10-17|rc|
+2031-10-18|parasha|Noach
+2031-10-18|rc|
+2031-10-25|parasha|Lech-Lecha
+2031-11-01|parasha|Vayera
+2031-11-08|parasha|Chayei Sara
+2031-11-13|holiday|Sigd
+2031-11-15|parasha|Toldot
+2031-11-16|rc|
+2031-11-22|parasha|Vayetzei
+2031-11-29|parasha|Vayishlach
+2031-12-06|parasha|Vayeshev
+2031-12-09|chanukah|1
+2031-12-10|chanukah|2
+2031-12-11|chanukah|3
+2031-12-12|chanukah|4
+2031-12-13|chanukah|5
+2031-12-13|parasha|Miketz
+2031-12-14|chanukah|6
+2031-12-15|chanukah|7
+2031-12-15|rc|
+2031-12-16|chanukah|8
+2031-12-16|rc|
+2031-12-20|parasha|Vayigash
+2031-12-25|holiday|Asara B'Tevet
+2031-12-27|parasha|Vayechi
+2032-01-03|parasha|Shemot
+2032-01-10|parasha|Vaera
+2032-01-14|rc|
+2032-01-17|parasha|Bo
+2032-01-24|holiday|Shabbat Shirah
+2032-01-24|parasha|Beshalach
+2032-01-28|holiday|Tu BiShvat
+2032-01-31|parasha|Yitro
+2032-02-07|holiday|Shabbat Shekalim
+2032-02-07|parasha|Mishpatim
+2032-02-12|rc|
+2032-02-13|rc|
+2032-02-14|parasha|Terumah
+2032-02-21|holiday|Shabbat Zachor
+2032-02-21|parasha|Tetzaveh
+2032-02-25|holiday|Erev Purim
+2032-02-25|holiday|Ta'anit Esther
+2032-02-26|holiday|Purim
+2032-02-27|holiday|Shushan Purim
+2032-02-28|parasha|Ki Tisa
+2032-03-06|holiday|Shabbat Parah
+2032-03-06|parasha|Vayakhel-Pekudei
+2032-03-13|holiday|Shabbat HaChodesh
+2032-03-13|parasha|Vayikra
+2032-03-13|rc|
+2032-03-20|holiday|Shabbat HaGadol
+2032-03-20|parasha|Tzav
+2032-03-26|holiday|Erev Pesach
+2032-03-26|holiday|Ta'anit Bechorot
+2032-03-27|holiday|Pesach I
+2032-03-28|holiday|Pesach II (CH''M)
+2032-03-29|holiday|Pesach III (CH''M)
+2032-03-30|holiday|Pesach IV (CH''M)
+2032-03-31|holiday|Pesach V (CH''M)
+2032-04-01|holiday|Pesach VI (CH''M)
+2032-04-02|holiday|Pesach VII
+2032-04-03|parasha|Shmini
+2032-04-08|holiday|Yom HaShoah
+2032-04-10|parasha|Tazria-Metzora
+2032-04-11|rc|
+2032-04-12|rc|
+2032-04-14|holiday|Yom HaZikaron
+2032-04-15|holiday|Yom HaAtzma'ut
+2032-04-17|parasha|Achrei Mot-Kedoshim
+2032-04-24|parasha|Emor
+2032-04-25|holiday|Pesach Sheni
+2032-04-29|holiday|Lag BaOmer
+2032-05-01|parasha|Behar
+2032-05-08|parasha|Bechukotai
+2032-05-09|holiday|Yom Yerushalayim
+2032-05-11|rc|
+2032-05-15|holiday|Erev Shavuot
+2032-05-15|parasha|Bamidbar
+2032-05-16|holiday|Shavuot
+2032-05-22|parasha|Nasso
+2032-05-29|parasha|Beha'alotcha
+2032-06-05|parasha|Sh'lach
+2032-06-09|rc|
+2032-06-10|rc|
+2032-06-12|parasha|Korach
+2032-06-19|parasha|Chukat
+2032-06-26|parasha|Balak
+2032-06-27|holiday|Tzom Tammuz
+2032-07-03|parasha|Pinchas
+2032-07-09|rc|
+2032-07-10|parasha|Matot-Masei
+2032-07-17|holiday|Erev Tish'a B'Av
+2032-07-17|holiday|Shabbat Chazon
+2032-07-17|parasha|Devarim
+2032-07-18|holiday|Tish'a B'Av (observed)
+2032-07-23|holiday|Tu B'Av
+2032-07-24|holiday|Shabbat Nachamu
+2032-07-24|parasha|Vaetchanan
+2032-07-31|parasha|Eikev
+2032-08-07|parasha|Re'eh
+2032-08-07|rc|
+2032-08-08|rc|
+2032-08-14|parasha|Shoftim
+2032-08-21|parasha|Ki Teitzei
+2032-08-28|parasha|Ki Tavo
+2032-09-04|parasha|Nitzavim
+2032-09-05|holiday|Erev Rosh Hashana
+2032-09-06|holiday|Rosh Hashana I
+2032-09-07|holiday|Rosh Hashana II
+2032-09-08|holiday|Tzom Gedaliah
+2032-09-11|holiday|Shabbat Shuva
+2032-09-11|parasha|Vayeilech
+2032-09-14|holiday|Erev Yom Kippur
+2032-09-15|holiday|Yom Kippur
+2032-09-18|parasha|Ha'azinu
+2032-09-19|holiday|Erev Sukkot
+2032-09-20|holiday|Sukkot I
+2032-09-21|holiday|Sukkot II (CH''M)
+2032-09-22|holiday|Sukkot III (CH''M)
+2032-09-23|holiday|Sukkot IV (CH''M)
+2032-09-24|holiday|Sukkot V (CH''M)
+2032-09-25|holiday|Sukkot VI (CH''M)
+2032-09-26|holiday|Sukkot VII (Hoshana Raba)
+2032-09-27|holiday|Shmini Atzeret
+2032-10-02|parasha|Bereshit
+2032-10-05|rc|
+2032-10-06|rc|
+2032-10-09|parasha|Noach
+2032-10-16|parasha|Lech-Lecha
+2032-10-23|parasha|Vayera
+2032-10-30|parasha|Chayei Sara
+2032-11-03|holiday|Sigd
+2032-11-04|rc|
+2032-11-06|parasha|Toldot
+2032-11-13|parasha|Vayetzei
+2032-11-20|parasha|Vayishlach
+2032-11-27|chanukah|1
+2032-11-27|parasha|Vayeshev
+2032-11-28|chanukah|2
+2032-11-29|chanukah|3
+2032-11-30|chanukah|4
+2032-12-01|chanukah|5
+2032-12-02|chanukah|6
+2032-12-03|chanukah|7
+2032-12-03|rc|
+2032-12-04|chanukah|8
+2032-12-04|parasha|Miketz
+2032-12-11|parasha|Vayigash
+2032-12-12|holiday|Asara B'Tevet
+2032-12-18|parasha|Vayechi
+2032-12-25|parasha|Shemot
+2033-01-01|parasha|Vaera
+2033-01-01|rc|
+2033-01-08|parasha|Bo
+2033-01-15|holiday|Shabbat Shirah
+2033-01-15|holiday|Tu BiShvat
+2033-01-15|parasha|Beshalach
+2033-01-22|parasha|Yitro
+2033-01-29|parasha|Mishpatim
+2033-01-30|rc|
+2033-01-31|rc|
+2033-02-05|parasha|Terumah
+2033-02-12|parasha|Tetzaveh
+2033-02-13|holiday|Purim Katan
+2033-02-14|holiday|Shushan Purim Katan
+2033-02-19|parasha|Ki Tisa
+2033-02-26|holiday|Shabbat Shekalim
+2033-02-26|parasha|Vayakhel
+2033-03-01|rc|
+2033-03-02|rc|
+2033-03-05|parasha|Pekudei
+2033-03-12|holiday|Shabbat Zachor
+2033-03-12|parasha|Vayikra
+2033-03-14|holiday|Erev Purim
+2033-03-14|holiday|Ta'anit Esther
+2033-03-15|holiday|Purim
+2033-03-16|holiday|Shushan Purim
+2033-03-19|holiday|Shabbat Parah
+2033-03-19|parasha|Tzav
+2033-03-26|holiday|Shabbat HaChodesh
+2033-03-26|parasha|Shmini
+2033-03-31|rc|
+2033-04-02|parasha|Tazria
+2033-04-09|holiday|Shabbat HaGadol
+2033-04-09|parasha|Metzora
+2033-04-13|holiday|Erev Pesach
+2033-04-13|holiday|Ta'anit Bechorot
+2033-04-14|holiday|Pesach I
+2033-04-15|holiday|Pesach II (CH''M)
+2033-04-16|holiday|Pesach III (CH''M)
+2033-04-17|holiday|Pesach IV (CH''M)
+2033-04-18|holiday|Pesach V (CH''M)
+2033-04-19|holiday|Pesach VI (CH''M)
+2033-04-20|holiday|Pesach VII
+2033-04-23|parasha|Achrei Mot
+2033-04-26|holiday|Yom HaShoah
+2033-04-29|rc|
+2033-04-30|parasha|Kedoshim
+2033-04-30|rc|
+2033-05-03|holiday|Yom HaZikaron
+2033-05-04|holiday|Yom HaAtzma'ut
+2033-05-07|parasha|Emor
+2033-05-13|holiday|Pesach Sheni
+2033-05-14|parasha|Behar
+2033-05-17|holiday|Lag BaOmer
+2033-05-21|parasha|Bechukotai
+2033-05-27|holiday|Yom Yerushalayim
+2033-05-28|parasha|Bamidbar
+2033-05-29|rc|
+2033-06-02|holiday|Erev Shavuot
+2033-06-03|holiday|Shavuot
+2033-06-04|parasha|Nasso
+2033-06-11|parasha|Beha'alotcha
+2033-06-18|parasha|Sh'lach
+2033-06-25|parasha|Korach
+2033-06-27|rc|
+2033-06-28|rc|
+2033-07-02|parasha|Chukat
+2033-07-09|parasha|Balak
+2033-07-14|holiday|Tzom Tammuz
+2033-07-16|parasha|Pinchas
+2033-07-23|parasha|Matot-Masei
+2033-07-27|rc|
+2033-07-30|holiday|Shabbat Chazon
+2033-07-30|parasha|Devarim
+2033-08-03|holiday|Erev Tish'a B'Av
+2033-08-04|holiday|Tish'a B'Av
+2033-08-06|holiday|Shabbat Nachamu
+2033-08-06|parasha|Vaetchanan
+2033-08-10|holiday|Tu B'Av
+2033-08-13|parasha|Eikev
+2033-08-20|parasha|Re'eh
+2033-08-25|rc|
+2033-08-26|rc|
+2033-08-27|parasha|Shoftim
+2033-09-03|parasha|Ki Teitzei
+2033-09-10|parasha|Ki Tavo
+2033-09-17|parasha|Nitzavim-Vayeilech
+2033-09-23|holiday|Erev Rosh Hashana
+2033-09-24|holiday|Rosh Hashana I
+2033-09-25|holiday|Rosh Hashana II
+2033-09-26|holiday|Tzom Gedaliah
+2033-10-01|holiday|Shabbat Shuva
+2033-10-01|parasha|Ha'azinu
+2033-10-02|holiday|Erev Yom Kippur
+2033-10-03|holiday|Yom Kippur
+2033-10-07|holiday|Erev Sukkot
+2033-10-08|holiday|Sukkot I
+2033-10-09|holiday|Sukkot II (CH''M)
+2033-10-10|holiday|Sukkot III (CH''M)
+2033-10-11|holiday|Sukkot IV (CH''M)
+2033-10-12|holiday|Sukkot V (CH''M)
+2033-10-13|holiday|Sukkot VI (CH''M)
+2033-10-14|holiday|Sukkot VII (Hoshana Raba)
+2033-10-15|holiday|Shmini Atzeret
+2033-10-22|parasha|Bereshit
+2033-10-23|rc|
+2033-10-24|rc|
+2033-10-29|parasha|Noach
+2033-11-05|parasha|Lech-Lecha
+2033-11-12|parasha|Vayera
+2033-11-19|parasha|Chayei Sara
+2033-11-21|holiday|Sigd
+2033-11-22|rc|
+2033-11-23|rc|
+2033-11-26|parasha|Toldot
+2033-12-03|parasha|Vayetzei
+2033-12-10|parasha|Vayishlach
+2033-12-16|chanukah|1
+2033-12-17|chanukah|2
+2033-12-17|parasha|Vayeshev
+2033-12-18|chanukah|3
+2033-12-19|chanukah|4
+2033-12-20|chanukah|5
+2033-12-21|chanukah|6
+2033-12-22|chanukah|7
+2033-12-22|rc|
+2033-12-23|chanukah|8
+2033-12-23|rc|
+2033-12-24|parasha|Miketz
+2033-12-31|parasha|Vayigash
+2034-01-01|holiday|Asara B'Tevet
+2034-01-07|parasha|Vayechi
+2034-01-14|parasha|Shemot
+2034-01-21|parasha|Vaera
+2034-01-21|rc|
+2034-01-28|parasha|Bo
+2034-02-04|holiday|Shabbat Shirah
+2034-02-04|holiday|Tu BiShvat
+2034-02-04|parasha|Beshalach
+2034-02-11|parasha|Yitro
+2034-02-18|holiday|Shabbat Shekalim
+2034-02-18|parasha|Mishpatim
+2034-02-19|rc|
+2034-02-20|rc|
+2034-02-25|parasha|Terumah
+2034-03-02|holiday|Ta'anit Esther
+2034-03-04|holiday|Erev Purim
+2034-03-04|holiday|Shabbat Zachor
+2034-03-04|parasha|Tetzaveh
+2034-03-05|holiday|Purim
+2034-03-06|holiday|Shushan Purim
+2034-03-11|holiday|Shabbat Parah
+2034-03-11|parasha|Ki Tisa
+2034-03-18|holiday|Shabbat HaChodesh
+2034-03-18|parasha|Vayakhel-Pekudei
+2034-03-21|rc|
+2034-03-25|parasha|Vayikra
+2034-04-01|holiday|Shabbat HaGadol
+2034-04-01|parasha|Tzav
+2034-04-03|holiday|Erev Pesach
+2034-04-03|holiday|Ta'anit Bechorot
+2034-04-04|holiday|Pesach I
+2034-04-05|holiday|Pesach II (CH''M)
+2034-04-06|holiday|Pesach III (CH''M)
+2034-04-07|holiday|Pesach IV (CH''M)
+2034-04-08|holiday|Pesach V (CH''M)
+2034-04-09|holiday|Pesach VI (CH''M)
+2034-04-10|holiday|Pesach VII
+2034-04-15|parasha|Shmini
+2034-04-17|holiday|Yom HaShoah
+2034-04-19|rc|
+2034-04-20|rc|
+2034-04-22|parasha|Tazria-Metzora
+2034-04-24|holiday|Yom HaZikaron
+2034-04-25|holiday|Yom HaAtzma'ut
+2034-04-29|parasha|Achrei Mot-Kedoshim
+2034-05-03|holiday|Pesach Sheni
+2034-05-06|parasha|Emor
+2034-05-07|holiday|Lag BaOmer
+2034-05-13|parasha|Behar-Bechukotai
+2034-05-17|holiday|Yom Yerushalayim
+2034-05-19|rc|
+2034-05-20|parasha|Bamidbar
+2034-05-23|holiday|Erev Shavuot
+2034-05-24|holiday|Shavuot
+2034-05-27|parasha|Nasso
+2034-06-03|parasha|Beha'alotcha
+2034-06-10|parasha|Sh'lach
+2034-06-17|parasha|Korach
+2034-06-17|rc|
+2034-06-18|rc|
+2034-06-24|parasha|Chukat
+2034-07-01|parasha|Balak
+2034-07-04|holiday|Tzom Tammuz
+2034-07-08|parasha|Pinchas
+2034-07-15|parasha|Matot-Masei
+2034-07-17|rc|
+2034-07-22|holiday|Shabbat Chazon
+2034-07-22|parasha|Devarim
+2034-07-24|holiday|Erev Tish'a B'Av
+2034-07-25|holiday|Tish'a B'Av
+2034-07-29|holiday|Shabbat Nachamu
+2034-07-29|parasha|Vaetchanan
+2034-07-31|holiday|Tu B'Av
+2034-08-05|parasha|Eikev
+2034-08-12|parasha|Re'eh
+2034-08-15|rc|
+2034-08-16|rc|
+2034-08-19|parasha|Shoftim
+2034-08-26|parasha|Ki Teitzei
+2034-09-02|parasha|Ki Tavo
+2034-09-09|parasha|Nitzavim-Vayeilech
+2034-09-13|holiday|Erev Rosh Hashana
+2034-09-14|holiday|Rosh Hashana I
+2034-09-15|holiday|Rosh Hashana II
+2034-09-16|holiday|Shabbat Shuva
+2034-09-16|parasha|Ha'azinu
+2034-09-17|holiday|Tzom Gedaliah
+2034-09-22|holiday|Erev Yom Kippur
+2034-09-23|holiday|Yom Kippur
+2034-09-27|holiday|Erev Sukkot
+2034-09-28|holiday|Sukkot I
+2034-09-29|holiday|Sukkot II (CH''M)
+2034-09-30|holiday|Sukkot III (CH''M)
+2034-10-01|holiday|Sukkot IV (CH''M)
+2034-10-02|holiday|Sukkot V (CH''M)
+2034-10-03|holiday|Sukkot VI (CH''M)
+2034-10-04|holiday|Sukkot VII (Hoshana Raba)
+2034-10-05|holiday|Shmini Atzeret
+2034-10-07|parasha|Bereshit
+2034-10-13|rc|
+2034-10-14|parasha|Noach
+2034-10-14|rc|
+2034-10-21|parasha|Lech-Lecha
+2034-10-28|parasha|Vayera
+2034-11-04|parasha|Chayei Sara
+2034-11-09|holiday|Sigd
+2034-11-11|parasha|Toldot
+2034-11-12|rc|
+2034-11-13|rc|
+2034-11-18|parasha|Vayetzei
+2034-11-25|parasha|Vayishlach
+2034-12-02|parasha|Vayeshev
+2034-12-06|chanukah|1
+2034-12-07|chanukah|2
+2034-12-08|chanukah|3
+2034-12-09|chanukah|4
+2034-12-09|parasha|Miketz
+2034-12-10|chanukah|5
+2034-12-11|chanukah|6
+2034-12-12|chanukah|7
+2034-12-12|rc|
+2034-12-13|chanukah|8
+2034-12-13|rc|
+2034-12-16|parasha|Vayigash
+2034-12-22|holiday|Asara B'Tevet
+2034-12-23|parasha|Vayechi
+2034-12-30|parasha|Shemot
+2035-01-06|parasha|Vaera
+2035-01-11|rc|
+2035-01-13|parasha|Bo
+2035-01-20|holiday|Shabbat Shirah
+2035-01-20|parasha|Beshalach
+2035-01-25|holiday|Tu BiShvat
+2035-01-27|parasha|Yitro
+2035-02-03|parasha|Mishpatim
+2035-02-09|rc|
+2035-02-10|parasha|Terumah
+2035-02-10|rc|
+2035-02-17|parasha|Tetzaveh
+2035-02-23|holiday|Purim Katan
+2035-02-24|holiday|Shushan Purim Katan
+2035-02-24|parasha|Ki Tisa
+2035-03-03|parasha|Vayakhel
+2035-03-10|holiday|Shabbat Shekalim
+2035-03-10|parasha|Pekudei
+2035-03-11|rc|
+2035-03-12|rc|
+2035-03-17|parasha|Vayikra
+2035-03-22|holiday|Ta'anit Esther
+2035-03-24|holiday|Erev Purim
+2035-03-24|holiday|Shabbat Zachor
+2035-03-24|parasha|Tzav
+2035-03-25|holiday|Purim
+2035-03-26|holiday|Shushan Purim
+2035-03-31|holiday|Shabbat Parah
+2035-03-31|parasha|Shmini
+2035-04-07|holiday|Shabbat HaChodesh
+2035-04-07|parasha|Tazria
+2035-04-10|rc|
+2035-04-14|parasha|Metzora
+2035-04-21|holiday|Shabbat HaGadol
+2035-04-21|parasha|Achrei Mot
+2035-04-23|holiday|Erev Pesach
+2035-04-23|holiday|Ta'anit Bechorot
+2035-04-24|holiday|Pesach I
+2035-04-25|holiday|Pesach II (CH''M)
+2035-04-26|holiday|Pesach III (CH''M)
+2035-04-27|holiday|Pesach IV (CH''M)
+2035-04-28|holiday|Pesach V (CH''M)
+2035-04-29|holiday|Pesach VI (CH''M)
+2035-04-30|holiday|Pesach VII
+2035-05-05|parasha|Kedoshim
+2035-05-07|holiday|Yom HaShoah
+2035-05-09|rc|
+2035-05-10|rc|
+2035-05-12|parasha|Emor
+2035-05-14|holiday|Yom HaZikaron
+2035-05-15|holiday|Yom HaAtzma'ut
+2035-05-19|parasha|Behar
+2035-05-23|holiday|Pesach Sheni
+2035-05-26|parasha|Bechukotai
+2035-05-27|holiday|Lag BaOmer
+2035-06-02|parasha|Bamidbar
+2035-06-06|holiday|Yom Yerushalayim
+2035-06-08|rc|
+2035-06-09|parasha|Nasso
+2035-06-12|holiday|Erev Shavuot
+2035-06-13|holiday|Shavuot
+2035-06-16|parasha|Beha'alotcha
+2035-06-23|parasha|Sh'lach
+2035-06-30|parasha|Korach
+2035-07-07|parasha|Chukat
+2035-07-07|rc|
+2035-07-08|rc|
+2035-07-14|parasha|Balak
+2035-07-21|parasha|Pinchas
+2035-07-24|holiday|Tzom Tammuz
+2035-07-28|parasha|Matot
+2035-08-04|parasha|Masei
+2035-08-06|rc|
+2035-08-11|holiday|Shabbat Chazon
+2035-08-11|parasha|Devarim
+2035-08-13|holiday|Erev Tish'a B'Av
+2035-08-14|holiday|Tish'a B'Av
+2035-08-18|holiday|Shabbat Nachamu
+2035-08-18|parasha|Vaetchanan
+2035-08-20|holiday|Tu B'Av
+2035-08-25|parasha|Eikev
+2035-09-01|parasha|Re'eh
+2035-09-04|rc|
+2035-09-05|rc|
+2035-09-08|parasha|Shoftim
+2035-09-15|parasha|Ki Teitzei
+2035-09-22|parasha|Ki Tavo
+2035-09-29|parasha|Nitzavim-Vayeilech
+2035-10-03|holiday|Erev Rosh Hashana
+2035-10-04|holiday|Rosh Hashana I
+2035-10-05|holiday|Rosh Hashana II
+2035-10-06|holiday|Shabbat Shuva
+2035-10-06|parasha|Ha'azinu
+2035-10-07|holiday|Tzom Gedaliah
+2035-10-12|holiday|Erev Yom Kippur
+2035-10-13|holiday|Yom Kippur
+2035-10-17|holiday|Erev Sukkot
+2035-10-18|holiday|Sukkot I
+2035-10-19|holiday|Sukkot II (CH''M)
+2035-10-20|holiday|Sukkot III (CH''M)
+2035-10-21|holiday|Sukkot IV (CH''M)
+2035-10-22|holiday|Sukkot V (CH''M)
+2035-10-23|holiday|Sukkot VI (CH''M)
+2035-10-24|holiday|Sukkot VII (Hoshana Raba)
+2035-10-25|holiday|Shmini Atzeret
+2035-10-27|parasha|Bereshit
+2035-11-02|rc|
+2035-11-03|parasha|Noach
+2035-11-03|rc|
+2035-11-10|parasha|Lech-Lecha
+2035-11-17|parasha|Vayera
+2035-11-24|parasha|Chayei Sara
+2035-11-29|holiday|Sigd
+2035-12-01|parasha|Toldot
+2035-12-02|rc|
+2035-12-08|parasha|Vayetzei
+2035-12-15|parasha|Vayishlach
+2035-12-22|parasha|Vayeshev
+2035-12-25|chanukah|1
+2035-12-26|chanukah|2
+2035-12-27|chanukah|3
+2035-12-28|chanukah|4
+2035-12-29|chanukah|5
+2035-12-29|parasha|Miketz
+2035-12-30|chanukah|6
+2035-12-31|chanukah|7
+2035-12-31|rc|
+2036-01-01|chanukah|8
+2036-01-01|rc|
+2036-01-05|parasha|Vayigash
+2036-01-10|holiday|Asara B'Tevet
+2036-01-12|parasha|Vayechi
+2036-01-19|parasha|Shemot
+2036-01-26|parasha|Vaera
+2036-01-30|rc|
+2036-02-02|parasha|Bo
+2036-02-09|holiday|Shabbat Shirah
+2036-02-09|parasha|Beshalach
+2036-02-13|holiday|Tu BiShvat
+2036-02-16|parasha|Yitro
+2036-02-23|holiday|Shabbat Shekalim
+2036-02-23|parasha|Mishpatim
+2036-02-28|rc|
+2036-02-29|rc|
+2036-03-01|parasha|Terumah
+2036-03-08|holiday|Shabbat Zachor
+2036-03-08|parasha|Tetzaveh
+2036-03-12|holiday|Erev Purim
+2036-03-12|holiday|Ta'anit Esther
+2036-03-13|holiday|Purim
+2036-03-14|holiday|Shushan Purim
+2036-03-15|parasha|Ki Tisa
+2036-03-22|holiday|Shabbat Parah
+2036-03-22|parasha|Vayakhel-Pekudei
+2036-03-29|holiday|Shabbat HaChodesh
+2036-03-29|parasha|Vayikra
+2036-03-29|rc|
+2036-04-05|holiday|Shabbat HaGadol
+2036-04-05|parasha|Tzav
+2036-04-11|holiday|Erev Pesach
+2036-04-11|holiday|Ta'anit Bechorot
+2036-04-12|holiday|Pesach I
+2036-04-13|holiday|Pesach II (CH''M)
+2036-04-14|holiday|Pesach III (CH''M)
+2036-04-15|holiday|Pesach IV (CH''M)
+2036-04-16|holiday|Pesach V (CH''M)
+2036-04-17|holiday|Pesach VI (CH''M)
+2036-04-18|holiday|Pesach VII
+2036-04-19|parasha|Shmini
+2036-04-24|holiday|Yom HaShoah
+2036-04-26|parasha|Tazria-Metzora
+2036-04-27|rc|
+2036-04-28|rc|
+2036-04-30|holiday|Yom HaZikaron
+2036-05-01|holiday|Yom HaAtzma'ut
+2036-05-03|parasha|Achrei Mot-Kedoshim
+2036-05-10|parasha|Emor
+2036-05-11|holiday|Pesach Sheni
+2036-05-15|holiday|Lag BaOmer
+2036-05-17|parasha|Behar
+2036-05-24|parasha|Bechukotai
+2036-05-25|holiday|Yom Yerushalayim
+2036-05-27|rc|
+2036-05-31|holiday|Erev Shavuot
+2036-05-31|parasha|Bamidbar
+2036-06-01|holiday|Shavuot
+2036-06-07|parasha|Nasso
+2036-06-14|parasha|Beha'alotcha
+2036-06-21|parasha|Sh'lach
+2036-06-25|rc|
+2036-06-26|rc|
+2036-06-28|parasha|Korach
+2036-07-05|parasha|Chukat
+2036-07-12|parasha|Balak
+2036-07-13|holiday|Tzom Tammuz
+2036-07-19|parasha|Pinchas
+2036-07-25|rc|
+2036-07-26|parasha|Matot-Masei
+2036-08-02|holiday|Erev Tish'a B'Av
+2036-08-02|holiday|Shabbat Chazon
+2036-08-02|parasha|Devarim
+2036-08-03|holiday|Tish'a B'Av (observed)
+2036-08-08|holiday|Tu B'Av
+2036-08-09|holiday|Shabbat Nachamu
+2036-08-09|parasha|Vaetchanan
+2036-08-16|parasha|Eikev
+2036-08-23|parasha|Re'eh
+2036-08-23|rc|
+2036-08-24|rc|
+2036-08-30|parasha|Shoftim
+2036-09-06|parasha|Ki Teitzei
+2036-09-13|parasha|Ki Tavo
+2036-09-20|parasha|Nitzavim
+2036-09-21|holiday|Erev Rosh Hashana
+2036-09-22|holiday|Rosh Hashana I
+2036-09-23|holiday|Rosh Hashana II
+2036-09-24|holiday|Tzom Gedaliah
+2036-09-27|holiday|Shabbat Shuva
+2036-09-27|parasha|Vayeilech
+2036-09-30|holiday|Erev Yom Kippur
+2036-10-01|holiday|Yom Kippur
+2036-10-04|parasha|Ha'azinu
+2036-10-05|holiday|Erev Sukkot
+2036-10-06|holiday|Sukkot I
+2036-10-07|holiday|Sukkot II (CH''M)
+2036-10-08|holiday|Sukkot III (CH''M)
+2036-10-09|holiday|Sukkot IV (CH''M)
+2036-10-10|holiday|Sukkot V (CH''M)
+2036-10-11|holiday|Sukkot VI (CH''M)
+2036-10-12|holiday|Sukkot VII (Hoshana Raba)
+2036-10-13|holiday|Shmini Atzeret
+2036-10-18|parasha|Bereshit
+2036-10-21|rc|
+2036-10-22|rc|
+2036-10-25|parasha|Noach
+2036-11-01|parasha|Lech-Lecha
+2036-11-08|parasha|Vayera
+2036-11-15|parasha|Chayei Sara
+2036-11-19|holiday|Sigd
+2036-11-20|rc|
+2036-11-22|parasha|Toldot
+2036-11-29|parasha|Vayetzei
+2036-12-06|parasha|Vayishlach
+2036-12-13|chanukah|1
+2036-12-13|parasha|Vayeshev
+2036-12-14|chanukah|2
+2036-12-15|chanukah|3
+2036-12-16|chanukah|4
+2036-12-17|chanukah|5
+2036-12-18|chanukah|6
+2036-12-19|chanukah|7
+2036-12-19|rc|
+2036-12-20|chanukah|8
+2036-12-20|parasha|Miketz
+2036-12-27|parasha|Vayigash
+2036-12-28|holiday|Asara B'Tevet

@@ -88,6 +88,7 @@ fun MyFamiliesScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
             if (uiState is MyFamiliesUiState.Success) {

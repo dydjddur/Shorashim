@@ -4,7 +4,7 @@
 Kotlin · Jetpack Compose · Material 3 · Supabase (Auth + Postgres/RLS) · ממשק עברי מלא (RTL).
 
 > **למודל/מפתח שממשיך את הפרויקט:** התחילו מ-[מפת הקוד](#-מפת-הקוד-למי-שממשיך), קראו את
-> [החלטות העיצוב הקריטיות](#-החלטות-עיצוב-קריטיות) ואת [בעיות ידועות ומשימות המשך](#-בעיות-ידועות-ומשימות-המשך).
+> [החלטות העיצוב הקריטיות](#-החלטות-עיצוב-קריטיות) ואת [מה צריך להריץ בשרת](#-מה-צריך-להריץ-בשרת-חשוב) ו[בעיות ידועות](#-בעיות-ידועות-ומשימות-המשך).
 > מסמכי עומק: [ARCHITECTURE.md](ARCHITECTURE.md) · [PROGRESS.md](PROGRESS.md) · [PROJECT_PLAN.md](PROJECT_PLAN.md) · [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
 ---
@@ -13,23 +13,23 @@ Kotlin · Jetpack Compose · Material 3 · Supabase (Auth + Postgres/RLS) · מ�
 
 | תחום | מה יש |
 |---|---|
-| **עצי משפחה** | מספר עצים למשתמש, מחזור חיים טיוטה → פורסם, הרשאות לפי תפקיד (Owner / Admin / Contributor / Viewer), הזמנות בקישור עמוק (App Link) + קבלה בתוך האפליקציה |
-| **מפת עץ** | מפה **סטטית** עם סידור אוטומטי חכם (ללא חפיפות), זום וגלילה בלבד — אין גרירת כרטיסים. הוספת הורה / ילד / בן-בת זוג מכל כרטיס |
-| **אירועים** | תצוגת **לוח שנה חודשי** (ברירת מחדל) או **רשימה**. ימי הולדת (לחיים) ואזכרות (לנפטרים) מכל העצים, תאריך עברי בכל תא, חיפוש יום בלחיצה, החלקה בין חודשים |
-| **תזכורות** | התראות מקומיות ב-09:00 (שעון ישראל): אזכרה 7 ימים מראש, יום הולדת ביום עצמו |
-| **תהילים** | כל 150 הפרקים מנוקדים, אופליין; נוסח "לעילוי נשמה" עם הקדשה לנפטר |
-| **חשבון** | הרשמה / התחברות / איפוס סיסמה (Supabase Auth), עריכת פרופיל |
+| **עצי משפחה** | מספר עצים למשתמש, טיוטה → פורסם, הרשאות (Owner / Admin / Contributor / Viewer) |
+| **מפת עץ** | מפה **סטטית** עם סידור אוטומטי חכם, זום וגלילה בלבד. מכל כרטיס: הוספת **ילד / הורה / בן-בת זוג / אח-אחות** — הקשר נשמר אוטומטית. על כל קו חיבור סמל: 👪 הורה-ילד · 💍 זוג · 🤝 אחים |
+| **אירועים** | **לוח שנה חודשי** (ברירת מחדל) או רשימה. ימי הולדת, אזכרות, **כל החגים והמועדים** (חול המועד, צומות, חנוכה, פורים, ימי זיכרון ועצמאות, ראשי חודשים), **פרשת השבוע** ושבתות מיוחדות, תאריך עברי בכל תא |
+| **תהילים** | 150 פרקים מנוקדים, אופליין; עיצוב ספרי (גופן סריף, מספרי פסוקים באותיות, קישוט זהב); "לעילוי נשמה" עם הקדשה |
+| **הזמנות** | קישור הזמנה **רב-שימושי** (אחד לכל המשפחה, תקף 30 יום): שולחים בקבוצת וואטסאפ, כל בן משפחה פותח, מתחבר ומאשר — בלי מייל. דף נחיתה מציג את שם העץ ושולח ההזמנה |
+| **תזכורות** | התראות מקומיות 09:00 (שעון ישראל): אזכרה 7 ימים מראש, יום הולדת ביום עצמו |
+| **חשבון** | הרשמה / התחברות / איפוס, עריכת פרופיל |
 
 ---
 
 ## 🧱 סטאק
 
-- **UI:** Jetpack Compose + Material 3, כל המסכים תחת `LayoutDirection.Rtl` (נאכף ב-`Theme.kt` וב-`LocaleHelper`).
-- **ארכיטקטורה:** `feature/*` (Composable + ViewModel) ← `data/*` (Repository interfaces + מימושי Supabase) ← `core/*` (מודלים, ניווט, ערכת נושא).
-  ה-UI לא ניגש ל-Supabase ישירות; כל התלות עוברת דרך `AppContainer` (DI ידני).
-- **Backend:** Supabase (`supabase-kt` 3.x) — Auth, PostgREST, RLS. סכמות ב-`supabase/migrations/`.
-- **SDK:** `minSdk 24`, `targetSdk 35`, `compileSdk 36`. **Core library desugaring פעיל** — מותר להשתמש ב-`java.time` (נדרש ל-API 24–25).
-- **Web:** `web/` + `vercel.json` + `.well-known/assetlinks.json` — דף נחיתה והפניה לקישורי הזמנה (App Links).
+- **UI:** Compose + Material 3, תמיד `LayoutDirection.Rtl` (`Theme.kt`, `LocaleHelper`).
+- **ארכיטקטורה:** `feature/*` (Composable + ViewModel) ← `data/*` (Repository interfaces + מימושי Supabase) ← `core/*`. DI ידני דרך `AppContainer`. ה-UI לא ניגש ל-Supabase ישירות.
+- **Backend:** Supabase (`supabase-kt` 3.x) — Auth, PostgREST, RLS, RPC. סכמות ב-`supabase/migrations/`.
+- **SDK:** `minSdk 24`, `targetSdk 35`, `compileSdk 36`. **Core library desugaring פעיל** (מותר `java.time`).
+- **Web:** `web/public/` (+ עותקים בשורש ו-`web/`) + `vercel.json` + `.well-known/assetlinks.json` — דף ההזמנה וקישורי App Links.
 
 ---
 
@@ -38,17 +38,28 @@ Kotlin · Jetpack Compose · Material 3 · Supabase (Auth + Postgres/RLS) · מ�
 דרישות: Android Studio (JBR 21) או JDK 17+, Android SDK 36.
 
 ```bash
-./gradlew testDebugUnitTest     # בדיקות יחידה (56 בדיקות)
+./gradlew testDebugUnitTest     # בדיקות יחידה
 ./gradlew assembleDebug         # APK ב-app/build/outputs/apk/debug/
-./gradlew lintDebug             # 0 שגיאות; אזהרות גרסה בלבד
+./gradlew lintDebug             # 0 שגיאות
+adb install -r app/build/outputs/apk/debug/app-debug.apk   # applicationId: com.example.remember_me
 ```
 
-**Supabase:** ברירת המחדל מובנית ב-`app/build.gradle` (מפתח `anon` ציבורי; ההגנה בפועל היא RLS).
-לשרת אחר — העתיקו `.env.example` ל-`.env` (לא נכנס ל-git) ועדכנו `SUPABASE_URL` ו-`SUPABASE_ANON_KEY`.
-הקמת פרויקט Supabase חדש: [SUPABASE_SETUP.md](SUPABASE_SETUP.md), והריצו את המיגרציות לפי הסדר:
-`phase3_schema` → `phase4_events_and_profiles` → `phase5_invitations`.
+**Supabase:** ברירת המחדל מובנית ב-`app/build.gradle` (מפתח `anon` ציבורי; ההגנה היא RLS). לשרת אחר: `.env` (ראו `.env.example`).
 
-> ב-Windows, `gradle.properties` מקומי עשוי להכיל `org.gradle.java.home` — זו הגדרה של המכונה, אל תעלו אותה ל-git.
+> `gradle.properties` מקומי עשוי להכיל `org.gradle.java.home` — הגדרת מכונה, לא לעלות ל-git.
+
+---
+
+## 🗄️ מה צריך להריץ בשרת (חשוב)
+
+הרצה ידנית ב-**Supabase → SQL Editor**, לפי הסדר (כולם idempotent):
+
+1. `20261011_phase3_schema.sql`
+2. `20261011_phase4_events_and_profiles.sql` ← **בשרת הנוכחי חסר!** הטבלה `memorial_events` לא קיימת, ולכן הוספת אזכרה ידנית נכשלת (`Could not find the table 'public.memorial_events'`). האפליקציה מציגה כעת הודעה ברורה.
+3. `20261011_phase5_invitations.sql`
+4. `20261012_phase6_group_invite_links.sql` ← **קישורי הזמנה רב-שימושיים.** בלעדיו הקישור חד-פעמי (הראשון שאישר "שורף" אותו). מוסיף `uses_count/max_uses`, `invitation_acceptances`, מחליף `accept_invitation`, ופותח את `resolve_invitation` ל-`anon` כדי שדף הנחיתה יציג את שם העץ.
+
+**Vercel (דומיין ההזמנות `shorashim-invite.vercel.app`):** הפרויקט שייך למחבר המקורי (לא נגיש מהכלים של מודל זה). אחרי `git push` ייתכן שנדרש Redeploy. ראו [הזמנות והדומיין](#3-הזמנות-קישור-לקבוצה-והדומיין) לשורש הבעיה שתוקנה.
 
 ---
 
@@ -57,67 +68,77 @@ Kotlin · Jetpack Compose · Material 3 · Supabase (Auth + Postgres/RLS) · מ�
 ```
 app/src/main/java/com/shorashim/
 ├─ core/
-│  ├─ common/        AuthValidator, FamilyValidators, HebrewDates (ICU), LocaleHelper, ViewModelFactory
-│  ├─ model/         FamilyModels, EventModels (CalendarEvent + EventDateCalculator), EventCalendarMath
-│  ├─ navigation/    ShorashimNavHost / AuthNavHost / BottomBar / Routes (כולל deep link להזמנות)
-│  ├─ notifications/ EventNotificationScheduler, EventReminderReceiver, BootCompletedReceiver
-│  └─ ui/            theme (Color/Theme/Type), component (מצבי טעינה/ריק/שגיאה, Spacing)
-├─ data/             auth · family · invitations · memorials · profile · psalms · events (+ AppContainer)
+│  ├─ common/        HebrewDates (תצוגת תאריך עברי), Validators, LocaleHelper, ViewModelFactory
+│  ├─ model/         FamilyModels (+NewPersonRelation), EventModels, EventCalendarMath,
+│  │                 HebrewCalendarMath (לוח עברי טהור), JewishCalendar (חגים+פרשות)
+│  ├─ navigation/    NavHost, BottomBar, Routes (כולל add_edit_person?relation=&anchorId=)
+│  └─ notifications/ מתזמן התראות, Receivers
+├─ data/             auth · family · invitations · memorials · profile · psalms · events (+AppContainer)
 └─ feature/
-   ├─ familytree/    FamilyTreeScreen/ViewModel + canvas/{TreeLayoutEngine, FamilyTreeCanvas, FamilyTreeNodeCard}
-   ├─ events/        EventsScreen (רשימה/לוח + FAB), EventsCalendar (רשת חודשית), EventsViewModel, AddEditMemorialEventDialog
-   ├─ family/ invitations/ memorials/ tehillim/ settings/ auth/
+   ├─ familytree/    canvas/{TreeLayoutEngine, FamilyTreeCanvas, FamilyTreeNodeCard}
+   ├─ family/        ניהול עצים, AddEditPerson (מקבל relation+anchor ויוצר קשרים), שיתוף הזמנה
+   ├─ events/        EventsScreen (רשימה/לוח), EventsCalendar (רשת חודשית), דיאלוג אזכרה
+   ├─ tehillim/ settings/ invitations/ auth/ memorials/
+supabase/migrations/   סכמות ו-RPC          web/public/   דף הזמנה + assetlinks + vercel.json
+app/src/test/          JUnit (ללא מכשיר) + resources/hebcal_israel_2024_2036.txt (נתוני אמת לבדיקה)
 ```
-
-בדיקות: `app/src/test/java/com/shorashim/` (JUnit, ללא מכשיר). מנוע הפריסה והמתמטיקה של לוח השנה הם **פונקציות טהורות** ולכן נבדקות ב-JVM בלבד.
 
 ---
 
 ## 🧭 החלטות עיצוב קריטיות
 
-### 1. מפת העץ סטטית ו"חכמה" — `TreeLayoutEngine`
-- **אין גרירה של כרטיסים.** המשתמש רק מזיז את המפה כולה ומבצע zoom (צביטה, כפתורי +/−, "מיקוד" שמתאים את העץ למסך). `canvasX/canvasY` שנשמרים ב-DB **מתעלמים** — העמודות נשארות רק לתאימות לאחור.
-- **משק בית (household)** = אנשים המחוברים ב-`SPOUSE` — שורה אחת של כרטיסים צמודים. מארח (host) = בן/בת הזוג שיש לו הורים בעץ; משק הבית תלוי תחת הוריו.
-- **רצועה (band)** לכל משק בית: רוחבה `max(רוחב שורת הזוג, סכום רצועות הילדים)`. רצועות אחים לעולם לא נחתכות ⇒ כרטיס של כלה/חתן שנכנסו למשפחה **לא יכול** לשבת על כרטיס של אח; כל תת-העץ של האח נדחף הצידה. (נבדק ב-`TreeLayoutEngineTest`.)
-- **דורות:** ילד תמיד מתחת להורה; בני זוג באותו דור; אב קדמון בלי הורים יורד עד שורה מעל ילדו הצעיר (בלי "חורים"). אילוצים נפתרים באיטרציה עם תקרה — מוגן ממעגלים/נתונים פגומים.
-- **סדר ילדים:** לפי תאריך לידה, אחר כך סדר הקלט. **קווי חיבור:** ילדי זוג יוצאים מנקודה משותפת בין ההורים בקו "ארגוני" אורתוגונלי עם פינות מעוגלות.
-- **Hit-testing:** כל הקואורדינטות בקנבס מנורמלות לחיוביות (`CONTENT_PADDING`) — קואורדינטות שליליות גורמות לכרטיסים שלא מגיבים ללחיצה ב-Compose.
+### 1. מפת העץ — `TreeLayoutEngine` + `FamilyTreeCanvas`
+- **סטטית:** רק pan/zoom (צביטה, כפתורים, "מיקוד" = התאמה למסך; מתאים מחדש כשמספר האנשים משתנה). `canvasX/Y` מהשרת **מתעלמים**.
+- **משק בית (household)** = אנשים המחוברים ב-SPOUSE (שורה אחת). **מארח** = בן/בת הזוג עם הורים בעץ; משק הבית תלוי תחת הוריו.
+- **רצועה (band)** לכל משק בית: `max(רוחב שורת הזוג, סכום רצועות הילדים)` ⇒ רצועות אחים לא נחתכות, כלה/חתן לא יושבים על אח. **יישור:** ההורים ממורכזים מעל נקודות החיבור של הילדים; ילד יחיד תלוי ישר מתחת להורה; ילדי זוג יוצאים מנקודה משותפת בין ההורים.
+- **דורות:** ילד מתחת להורה, זוג באותו דור, אב קדמון בלי הורים יורד עד שורה מעל ילדו (בלי "חורים"). מוגן ממעגלים/כפילויות.
+- **סדר:** ילדים לפי תאריך לידה; **RTL** — הבכור/הראשון מימין. עצים שקשורים בנישואין נשארים צמודים.
+- **סמלי קשר** (`connectionMarkers`): 👪 על ירידת כל ילד, 💍 על קו הזוג, 🤝 על הפס בין אחים צמודים.
+- **יחידות:** פריסה ב-**dp**; `graphicsLayer` ו-hit-test בפיקסלים. האפליקציה RTL ⇒ `TopLeftAbsolute` + `absoluteOffset` (אחרת הכול זז ל-RTL ונעלם).
+- **הוספת קרוב:** `AddEditPersonViewModel` מקבל `relation` + `anchorId`, שומר את האדם **ואת הקשר** (ילד: אפשרות לבחור בן/בת זוג כהורה שני; הורה: קישור אוטומטי להורה הקיים כבני זוג; אח: אותם הורים; ללא הורים — חסום עם הסבר). כישלון בקישור מוחק את הכרטיס שנוצר (אין יתומים). מחיקת אדם — בדיאלוג אישור.
 
-### 2. אירועים כלוח שנה — `EventsCalendar.kt`
-- כיוון עיצובי נקבע ע"י המשתמש (לוח מודרני בסגנון "לוח שנה עברי"): כותרת חודש גדולה (שם דק + שנה עבה) עם טווח חודשים עבריים, פס כותרת טורקיז עם שמות הימים (ראשון מימין), עמודת שבת מוצללת, מספר לועזי גדול + אות עברית קטנה בכל תא, יום נוכחי מסומן.
-- אירועים שנתיים ⇒ `EventCalendarMath.occursOn` משווה חודש/יום (29 בפברואר → 28 בשנה לא מעוברת). שימו לב: `CalendarEvent.targetDate` הוא רק המופע *הבא*.
-- תאריך עברי: `HebrewDates` מעל `android.icu.util.HebrewCalendar` (API 24+). `toGematria` טהורה ונבדקת.
-- בחירת התצוגה נשמרת ב-`rememberSaveable` (ברירת מחדל: לוח שנה).
+### 2. לוח שנה יהודי — `HebrewCalendarMath` + `JewishCalendar`
+- המרה עברית↔לועזית **בקוד טהור** (לא ICU; ICU החזיר שמות חודשים לועזיים). נבדק מול **Hebcal (ישראל)**: כל החגים, הצומות, ראשי חודשים, שבתות מיוחדות וכל פרשות השבוע (כולל כפולות) תואמים ל-2024–2036 (`JewishCalendarTest`).
+- **לוח ישראל:** יום טוב אחד, שמיני עצרת=שמחת תורה, חול המועד, דחיות (צום גדליה, י״ז בתמוז, ט׳ באב, תענית אסתר, יום השואה/זיכרון/עצמאות, סיגד).
+- **פרשות:** סימולציית מחזור קריאה מסימחת תורה; חיבור פרשות לפי סוג השנה (אורך+יום ר״ה) ו-`נצבים-וילך` לפי ר״ה הבא — הכללים נגזרו ואומתו מול נתוני אמת.
+- UI (`EventsCalendar.kt`): ירוק (לא כחול), עמודת שבת מוצללת, תא יום טוב בזהב, תגיות ימי הולדת/אזכרות, גיליון תחתון ליום (חגים + אירועי משפחה), החלקה בין חודשים.
 
-### 3. לוגו
-Adaptive icon: רקע ירוק-יער `#0F3D30` + עץ אורן קווי בירוק-מנטה `#4FD8A5` (`drawable/ic_launcher_{background,foreground}.xml`), כולל שכבת `monochrome` ל-Themed Icons. ל-API 24–25: `mipmap-anydpi/` (layer-list). אייקון התראות נפרד חד-גוני: `drawable/ic_notification.xml` (אייקון צבעוני בסטטוס-בר מוצג ככתם לבן).
+### 3. הזמנות (קישור לקבוצה) והדומיין
+- **שורשי הבעיות שנמצאו:** (א) הטוקן היה חד-פעמי ⇒ `20261012_phase6_group_invite_links.sql`; (ב) `https://shorashim-invite.vercel.app/invite/<token>` החזיר **404** — Vercel שירת את `web/public` ללא `vercel.json` (ה-rewrites לא פעלו) ⇒ נוסף `vercel.json` + `404.html` בכל המיקומים; (ג) ה-App Link **לא אומת** כי טביעת האצבע של החתימה בטלפון (`A3:DE:47:…`) לא הייתה ב-`assetlinks.json` ⇒ נוספה. לחתימת release יש להוסיף את טביעת האצבע שלה.
+- **זרימה:** הקישור נפתח → (אם App Link מאומת, ישר באפליקציה; אחרת דף נחיתה עם `intent://` / `shorashim://`) → התחברות → מסך הזמנה → אישור → כניסה לעץ. הטוקן ממתין עד לסיום ההתחברות.
+- דף הנחיתה (`web/public/index.html`) שולף `resolve_invitation` עם מפתח anon ומציג שם עץ, שולח ותפקיד. קישור פתוח לא יכול להעניק ניהול (נחתך ל-CONTRIBUTOR בשרת).
+
+### 4. עיצוב
+פלטת ירוק-יער + זהב (`Gold #C9A24B`, נר `#F2B84B`). תהילים: גופן סריף, מספרי פסוקים באותיות, מפריד ✦, סרגל תחתון עם התקדמות וחיצי RTL נכונים, באנר נר ללעילוי נשמה. הגדרות: כרטיס פרופיל עם אווטאר ושורות עם אייקונים. כרטיס אדם בעץ: אות ראשונה כאווטאר.
+
+### 5. לוגו
+Adaptive icon: רקע `#0F3D30` + עץ אורן קווי `#4FD8A5`, שכבת monochrome; ל-API 24–25: `mipmap-anydpi/`; אייקון התראות חד-גוני נפרד.
 
 ---
 
-## 🐞 תיקונים אחרונים (סבב זה)
-- הוסף **FAB "הוספת אזכרה"** וחובר הדיאלוג `AddEditMemorialEventDialog` שלא היה מחובר כלל; נוספו עריכה ומחיקה (עם אישור) לאזכרות ידניות.
-- עריכת אזכרה: התאריך הוצג `dd/MM/yyyy` בטופס שמצפה ל-`yyyy-MM-dd` ⇒ נשמר פגום. נוספה המרה + ולידציה אמיתית של התאריך + מקלדת טקסט (קלט מספרי לא כולל "-").
-- **קריסה פוטנציאלית ב-Android 7.x** (`java.time` ב-API 24–25): הופעל core library desugaring.
-- כרטיסי עץ בצד השמאלי לא הגיבו ללחיצה (קואורדינטות שליליות) — תוקן בנרמול הקנבס.
-- אייקון התראה צבעוני → אייקון חד-גוני.
-- ריענון רשימת העצים/נפטרים ב-`ON_RESUME` של מסך האירועים (לא רק האירועים).
+## 🐞 תיקונים עיקריים (סבב זה)
+- **הוספת הורה/ילד/בן זוג מהכרטיס לא יצרה קשר כלל** (רק פתחה טופס ריק) — לכן "ההורה הודבק ליד הילד". תוקן + נוסף "אח/אחות".
+- יחידות הפריסה (px מול dp) גרמו לכרטיסים לחפוף; ב-RTL המפה נעלמה/זזה — תוקן.
+- אזכרות: דיאלוג מנותק, תאריך עריכה פגום, **כשל שמירה שקט** (טבלה חסרה) — עכשיו הודעת שגיאה בדיאלוג.
+- `java.time` ב-Android 7 (desugaring); אייקון התראה; מחיקת אדם בלי אישור.
+- תאריך עברי שגוי בלוח (ICU) — הוחלף במימוש טהור ובדוק.
+- כפתורי "לוח שנה/רשימה" נחתכו; כפתור "הוספת אזכרה" הועבר לתחתית.
 
 ---
 
 ## ⚠️ בעיות ידועות ומשימות המשך
-1. **לא נבדק על מכשיר/אמולטור בסבב האחרון** — השינויים הוויזואליים (לוח שנה, קנבס, לוגו) עברו קומפילציה, lint ובדיקות יחידה, אך לא נבדקו חזותית. התחילו בהרצה ובדיקה על טלפון קטן (≈360dp) וגדול.
-2. אם **שני בני הזוג** שייכים לעצים-אב נפרדים, מופיע הכרטיס רק ליד המארח; קו ההורה של השני ארוך יותר. אפשר לשפר עם קיבוץ משפחות סמוכות.
-3. הלוח מציג אירועים שנתיים לפי חודש/יום לועזי בכל שנה (מכוון); שקלו להציג גיל / "שנה לפטירה" לפי השנה המוצגת.
-4. אזכרות מחושבות לפי התאריך הלועזי בלבד (לא לפי יום הפטירה העברי); `hebrewDate` הוא שדה ידני לתצוגה.
-5. `targetSdk 35` ותלויות (Compose BOM 2024.09, AGP 8.9) ישנות — עדכון עתידי.
-6. עדיפות מוצר הבאה לפי [PROJECT_PLAN.md](PROJECT_PLAN.md): פרופיל אדם, תמונות (Storage), הגדרות פרטיות.
+1. **להריץ migrations 4 ו-6 בשרת** (ראו למעלה) ולבצע Redeploy ל-Vercel. עד אז: אזכרות ידניות לא נשמרות, וקישור הזמנה חד-פעמי.
+2. כמה שורשים לא קשורים מוצבים בשורה אחת (רחב מאוד) — אפשר לעטוף לשורות.
+3. תצוגת רשימת אירועים: טרם עוצבה מחדש כמו הלוח; אזכרות לפי יום עברי טרם (יש כעת `JewishCalendar` לבסיס).
+4. `applicationId` הוא `com.example.remember_me` — להחליף לפני פרסום, ולעדכן `assetlinks.json`/`AndroidManifest`/`web/public/index.html`.
+5. עדכון תלויות (Compose BOM, AGP) וקידום `targetSdk`.
 
 ---
 
 ## 🤝 קונבנציות
-- Kotlin רשמי, Compose ללא ViewModel בתוך Composable רגיל (יש `*Route` שחושף ViewModel ו-`*Screen` ללא מצב — קל לבדיקה/Preview).
-- טקסטים לממשק ב-`res/values/strings.xml` (עברית). פעולות Repository מחזירות `Result<T>`.
-- כל לוגיקה שניתן — טהורה ונבדקת ב-JVM; אל תוסיפו תלות ב-`android.*` לתוך `core/model` או `TreeLayoutEngine`.
+- Kotlin רשמי; `*Route` (עם ViewModel) ו-`*Screen` ללא מצב. מחרוזות ב-`strings.xml`. Repository מחזיר `Result<T>`.
+- כל לוגיקה שאפשר — טהורה ונבדקת ב-JVM (`core/model`, `TreeLayoutEngine`); בלי `android.*` שם.
+- בדיקות נתונים: לא לערוך ידנית את `hebcal_israel_2024_2036.txt` (נוצר מ-API של Hebcal).
 - אל תעלו `local.properties`, `.env`, או נתיבי JDK מקומיים.
 
 רישיון: לא הוגדר.

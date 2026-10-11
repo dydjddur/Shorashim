@@ -47,6 +47,7 @@ fun AddEditMemorialEventDialog(
     deceasedPeople: List<Person>,
     editingMemorial: CalendarEvent.Memorial?,
     isSaving: Boolean,
+    errorMessage: String? = null,
     onDismiss: () -> Unit,
     onSave: (familyId: String, personId: String?, personName: String, eventDate: String, hebrewDate: String?, description: String?) -> Unit,
 ) {
@@ -230,6 +231,14 @@ fun AddEditMemorialEventDialog(
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                if (!errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         },
         confirmButton = {

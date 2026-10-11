@@ -487,3 +487,6 @@ data class InvitationResolution(
     val expiresAt: String? = null,
     val alreadyMember: Boolean = false,
 )
+
+/** How a person that is being added from a tree card relates to the card's person (the "anchor"). */
+enum class NewPersonRelation { PARENT, CHILD, SPOUSE, SIBLING }

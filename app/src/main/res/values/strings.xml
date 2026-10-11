@@ -23,13 +23,13 @@
 
     <string name="settings_title">הגדרות</string>
     <string name="settings_about_title">אודות</string>
-    <string name="settings_about_body">שורשים מיועד לשימור אילן יוחסין משפחתי, זיכרון קרובים, שיתוף מבוקר בין בני משפחה, וקריאת תהילים.</string>
+    <string name="settings_about_body">שורשים נוצר לשימור אילן היוחסין המשפחתי: עצי משפחה חיים, ימי הולדת ואזכרות לפי לוח השנה העברי, וספר תהילים שלם לעילוי נשמת יקירינו.</string>
     <string name="settings_auth_title">חשבון</string>
     <string name="settings_auth_body">הרשמה, התחברות ואיפוס סיסמה פעילים באמצעות אימות Supabase.</string>
     <string name="settings_privacy_title">פרטיות</string>
-    <string name="settings_privacy_body">נתוני משפחה יהיו זמינים רק לחברים מורשים. מדיניות ייצוא ומחיקת חשבון תתועד ותיושם בשלב ההגדרות.</string>
+    <string name="settings_privacy_body">נתוני המשפחה גלויים רק לחברי העץ שהוזמנו. קישור הזמנה משותף תקף חודש, וניתן לבטלו בכל עת על ידי מנהל העץ.</string>
     <string name="settings_notifications_title">התראות</string>
-    <string name="settings_notifications_body">תזכורות מקומיות ומשפחתיות יתווספו בשלב ההתראות, ורק אחרי הסכמה מפורשת.</string>
+    <string name="settings_notifications_body">תזכורת לאזכרה שבוע מראש, ותזכורת ליום הולדת בבוקר היום עצמו (09:00, שעון ישראל).</string>
     <string name="settings_language_label">שפה</string>
     <string name="settings_language_value">עברית</string>
     <string name="settings_version_label">גרסה</string>
@@ -91,6 +91,8 @@
     <string name="settings_account_email">אימייל:</string>
     <string name="settings_account_status">סטטוס:</string>
     <string name="settings_account_status_active">מחובר</string>
+    <string name="settings_edit_short">עריכה</string>
+    <string name="settings_logout_short">התנתקות</string>
     <string name="settings_logout_button">התנתקות מהחשבון</string>
     <string name="settings_logout_confirm_title">התנתקות</string>
     <string name="settings_logout_confirm_message">האם ברצונך להתנתק מהחשבון? הנתונים שלך יישמרו במערכת.</string>
@@ -123,6 +125,14 @@
 
     <!-- Person Add & Edit -->
     <string name="person_add_title">הוספת אדם לעץ</string>
+    <string name="person_add_parent_title">הוספת הורה של %1$s</string>
+    <string name="person_add_child_title">הוספת ילד/ה של %1$s</string>
+    <string name="person_add_spouse_title">הוספת בן/בת זוג של %1$s</string>
+    <string name="person_add_sibling_title">הוספת אח/אחות של %1$s</string>
+    <string name="person_relation_coparent_label">הילד/ה הוא גם של:</string>
+    <string name="person_relation_coparent_none">ללא (הורה יחיד)</string>
+    <string name="person_relation_link_parent">לקשר כבן/בת זוג של %1$s (ההורה הקיים)</string>
+    <string name="person_relation_sibling_needs_parent">לאח/אחות יש להוסיף קודם הורה לאדם זה, כדי שיהיה להם הורים משותפים.</string>
     <string name="person_edit_title">עריכת פרטי אדם</string>
     <string name="person_first_name_label">שם פרטי *</string>
     <string name="person_last_name_label">שם משפחה</string>
@@ -189,6 +199,7 @@
     <string name="tree_reset_view">מיקוד למרכז</string>
     <string name="tree_add_child">הוספת ילד/ה</string>
     <string name="tree_add_parent">הוספת הורה</string>
+    <string name="tree_add_sibling">הוספת אח/אחות</string>
     <string name="tree_add_spouse">הוספת בן/בת זוג</string>
     <string name="tree_quick_edit">עריכת פרטים</string>
     <string name="tree_empty_add_first">העץ ריק כרגע. לחצו להוספת האדם הראשון!</string>
@@ -241,6 +252,8 @@
     <string name="events_calendar_today">היום</string>
     <string name="events_calendar_previous_month">החודש הקודם</string>
     <string name="events_calendar_next_month">החודש הבא</string>
+    <string name="events_holiday_tag">חג / מועד</string>
+    <string name="events_calendar_empty_day">אין אירועים ביום זה</string>
     <string name="events_edit_action">עריכה</string>
     <string name="events_delete_action">מחיקה</string>
 

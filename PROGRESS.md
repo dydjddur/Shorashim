@@ -9,6 +9,8 @@
 
 - **Phase 4.5 — Events calendar, static smart tree layout, new logo, bug-fix pass:** Completed in code (unit tests + lint green; **not yet verified visually on a device**). See README "החלטות עיצוב קריטיות".
 
+- **Phase 4.6 — On-device review pass (Galaxy S22 Ultra):** Completed. Relative creation from tree cards (parent/child/spouse/sibling), connector emoji badges, pure-Kotlin Jewish calendar (holidays + parasha, verified against Hebcal), Tehillim/Settings redesign, multi-use invitation links + Vercel/assetlinks fixes. **Server follow-up required:** run `20261011_phase4_events_and_profiles.sql` and `20261012_phase6_group_invite_links.sql` in Supabase (see README), then redeploy Vercel.
+
 ---
 
 ## Phase 4.5 Checklist

@@ -31,7 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -111,18 +111,8 @@ fun EventsScreen(
     var viewMode by rememberSaveable { mutableStateOf(EventsViewMode.CALENDAR) }
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         modifier = modifier.fillMaxSize(),
-        floatingActionButton = {
-            if (uiState.families.isNotEmpty()) {
-                ExtendedFloatingActionButton(
-                    onClick = onAddMemorial,
-                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.events_add_memorial_button)) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                )
-            }
-        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -140,22 +130,17 @@ fun EventsScreen(
                     text = stringResource(R.string.events_title),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
                     modifier = Modifier.weight(1f),
                 )
-                SingleChoiceSegmentedButtonRow {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.width(184.dp)) {
                     SegmentedButton(
                         selected = viewMode == EventsViewMode.CALENDAR,
                         onClick = { viewMode = EventsViewMode.CALENDAR },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                         icon = {},
                     ) {
-                        Icon(
-                            Icons.Outlined.CalendarMonth,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.events_view_calendar), fontSize = 12.sp)
+                        Text(stringResource(R.string.events_view_calendar), fontSize = 13.sp, maxLines = 1)
                     }
                     SegmentedButton(
                         selected = viewMode == EventsViewMode.LIST,
@@ -163,13 +148,7 @@ fun EventsScreen(
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                         icon = {},
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ViewList,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.events_view_list), fontSize = 12.sp)
+                        Text(stringResource(R.string.events_view_list), fontSize = 13.sp, maxLines = 1)
                     }
                 }
             }
@@ -208,7 +187,7 @@ fun EventsScreen(
                                 start = Spacing.md,
                                 end = Spacing.md,
                                 top = Spacing.xs,
-                                bottom = 88.dp, // Space for FAB
+                                bottom = Spacing.md,
                             ),
                             verticalArrangement = Arrangement.spacedBy(Spacing.md),
                         ) {
@@ -225,8 +204,22 @@ fun EventsScreen(
                     }
                 }
             }
+            if (uiState.families.isNotEmpty()) {
+                FilledTonalButton(
+                    onClick = onAddMemorial,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                    Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.events_add_memorial_button), fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     }
+
 
     // Memorial Event Details Dialog
     val selected = uiState.selectedEvent
@@ -249,6 +242,7 @@ fun EventsScreen(
             deceasedPeople = uiState.deceasedPeople,
             editingMemorial = uiState.editingMemorial,
             isSaving = uiState.isSaving,
+            errorMessage = uiState.actionError,
             onDismiss = onDismissAddEdit,
             onSave = onSaveMemorial,
         )

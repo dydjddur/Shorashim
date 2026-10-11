@@ -83,6 +83,7 @@ fun FamilyManagementRoute(
     viewModel: FamilyManagementViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToAddPerson: (familyId: String) -> Unit,
+    onNavigateToAddRelative: (familyId: String, relation: com.shorashim.core.model.NewPersonRelation, anchorId: String) -> Unit = { _, _, _ -> },
     onNavigateToEditPerson: (familyId: String, personId: String) -> Unit,
     onNavigateToCreateFamily: () -> Unit = {},
     invitationRepository: InvitationRepository? = null,
@@ -154,16 +155,19 @@ fun FamilyManagementRoute(
             )
         },
         onAddChildClick = { parent ->
-            onNavigateToAddPerson(uiState.currentFamilyId)
+            onNavigateToAddRelative(uiState.currentFamilyId, com.shorashim.core.model.NewPersonRelation.CHILD, parent.id)
         },
         onAddParentClick = { child ->
-            onNavigateToAddPerson(uiState.currentFamilyId)
+            onNavigateToAddRelative(uiState.currentFamilyId, com.shorashim.core.model.NewPersonRelation.PARENT, child.id)
         },
         onAddSpouseClick = { spouse ->
-            onNavigateToAddPerson(uiState.currentFamilyId)
+            onNavigateToAddRelative(uiState.currentFamilyId, com.shorashim.core.model.NewPersonRelation.SPOUSE, spouse.id)
+        },
+        onAddSiblingClick = { sibling ->
+            onNavigateToAddRelative(uiState.currentFamilyId, com.shorashim.core.model.NewPersonRelation.SIBLING, sibling.id)
         },
         onShareInvite = {
-            shareInviteViewModel?.createAndShare(context)
+            shareInviteViewModel?.createAndShare(context, familyName = uiState.family?.name)
         },
         onRefresh = viewModel::loadData,
         modifier = modifier,
@@ -204,11 +208,43 @@ fun FamilyManagementScreen(
     onAddChildClick: (Person) -> Unit,
     onAddParentClick: (Person) -> Unit,
     onAddSpouseClick: (Person) -> Unit,
+    onAddSiblingClick: (Person) -> Unit = {},
     onShareInvite: () -> Unit = {},
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var renameText by remember(uiState.family?.name) { mutableStateOf(uiState.family?.name.orEmpty()) }
+    var personPendingDelete by remember { mutableStateOf<Person?>(null) }
+
+    // Deleting a person also removes their relationships, so always ask first.
+    personPendingDelete?.let { victim ->
+        AlertDialog(
+            onDismissRequest = { personPendingDelete = null },
+            title = {
+                Text(
+                    text = stringResource(R.string.person_delete_dialog_title),
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = { Text(stringResource(R.string.person_delete_dialog_message, victim.fullName)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeletePerson(victim.id)
+                        personPendingDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(stringResource(R.string.person_delete_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { personPendingDelete = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 
     // Rename Dialog
     if (uiState.isRenaming) {
@@ -317,6 +353,7 @@ fun FamilyManagementScreen(
     }
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -436,8 +473,9 @@ fun FamilyManagementScreen(
                         onAddChildClick = onAddChildClick,
                         onAddParentClick = onAddParentClick,
                         onAddSpouseClick = onAddSpouseClick,
+                        onAddSiblingClick = onAddSiblingClick,
                         onEditPersonClick = { p -> onPersonClick(p.id) },
-                        onDeletePersonClick = { p -> onDeletePerson(p.id) },
+                        onDeletePersonClick = { p -> personPendingDelete = p },
                         onPublishClick = onPublish,
                         onEmptyAddPersonClick = onAddPersonClick,
                         modifier = Modifier.fillMaxSize(),

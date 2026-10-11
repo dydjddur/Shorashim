@@ -10,8 +10,10 @@ object ShorashimRoutes {
     const val FAMILY_MANAGEMENT = "family_management/{familyId}"
     fun familyManagement(familyId: String) = "family_management/$familyId"
 
-    const val ADD_EDIT_PERSON = "add_edit_person/{familyId}?personId={personId}"
+    const val ADD_EDIT_PERSON = "add_edit_person/{familyId}?personId={personId}&relation={relation}&anchorId={anchorId}"
     fun addPerson(familyId: String) = "add_edit_person/$familyId"
+    fun addRelative(familyId: String, relation: String, anchorId: String) =
+        "add_edit_person/$familyId?relation=$relation&anchorId=$anchorId"
     fun editPerson(familyId: String, personId: String) = "add_edit_person/$familyId?personId=$personId"
 
     const val MEMORIALS = "memorials"

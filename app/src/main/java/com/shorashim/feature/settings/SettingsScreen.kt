@@ -1,6 +1,22 @@
 package com.shorashim.feature.settings
 
 import android.content.pm.PackageManager
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Park
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -130,11 +146,13 @@ fun SettingsScreen(
     ) {
         Text(
             text = stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+            ),
             color = MaterialTheme.colorScheme.primary,
         )
 
-        // Account Card
         AccountCard(
             authState = authState,
             displayName = userDisplayName,
@@ -145,26 +163,37 @@ fun SettingsScreen(
         SnackbarHost(hostState = snackbarHostState)
 
         SettingsInfoCard(
+            icon = Icons.Outlined.Park,
             title = stringResource(R.string.settings_about_title),
             body = stringResource(R.string.settings_about_body),
         )
         SettingsInfoCard(
+            icon = Icons.Outlined.Lock,
             title = stringResource(R.string.settings_privacy_title),
             body = stringResource(R.string.settings_privacy_body),
         )
         SettingsInfoCard(
+            icon = Icons.Outlined.Notifications,
             title = stringResource(R.string.settings_notifications_title),
             body = stringResource(R.string.settings_notifications_body),
         )
-        Text(
-            text = stringResource(R.string.settings_language_label) + ": " +
-                stringResource(R.string.settings_language_value),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Text(
-            text = stringResource(R.string.settings_version_label) + ": " + versionName,
-            style = MaterialTheme.typography.bodyMedium,
-        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_language_label) + ": " +
+                    stringResource(R.string.settings_language_value),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.settings_version_label) + ": " + versionName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(Spacing.lg))
     }
 
@@ -205,75 +234,95 @@ private fun AccountCard(
     onEditProfileClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = scheme.surfaceVariant),
+        border = BorderStroke(1.dp, scheme.outlineVariant),
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
-            Text(
-                text = stringResource(R.string.settings_auth_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(Spacing.sm))
-
             when (authState) {
                 is AuthState.Authenticated -> {
                     val effectiveName = displayName.ifBlank { authState.user.displayName }
-                    if (effectiveName.isNotBlank()) {
-                        Text(
-                            text = stringResource(R.string.settings_account_name) + " " + effectiveName,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Spacer(Modifier.height(Spacing.xs))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(scheme.primary, scheme.tertiary))),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = effectiveName.trim().firstOrNull()?.toString()
+                                    ?: authState.user.email.firstOrNull()?.uppercase().orEmpty(),
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Serif,
+                                color = scheme.onPrimary,
+                            )
+                        }
+                        Spacer(Modifier.width(Spacing.md))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = effectiveName.ifBlank { stringResource(R.string.settings_auth_title) },
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = scheme.onSurface,
+                                maxLines = 1,
+                            )
+                            Text(
+                                text = authState.user.email,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = scheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Surface(shape = RoundedCornerShape(8.dp), color = scheme.primary.copy(alpha = 0.16f)) {
+                                Text(
+                                    text = stringResource(R.string.settings_account_status_active),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = scheme.primary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
                     }
-                    Text(
-                        text = stringResource(R.string.settings_account_email) + " " + authState.user.email,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(Modifier.height(Spacing.xs))
-                    Text(
-                        text = stringResource(R.string.settings_account_status) + " " +
-                            stringResource(R.string.settings_account_status_active),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
                     Spacer(Modifier.height(Spacing.md))
-                    Button(
-                        onClick = onEditProfileClicked,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = null,
-                        )
-                        Spacer(Modifier.width(Spacing.sm))
-                        Text(stringResource(R.string.profile_edit_button))
-                    }
-                    Spacer(Modifier.height(Spacing.sm))
-                    OutlinedButton(
-                        onClick = onLogoutClicked,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Logout,
-                            contentDescription = null,
-                        )
-                        Spacer(Modifier.width(Spacing.sm))
-                        Text(stringResource(R.string.settings_logout_button))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        Button(
+                            onClick = onEditProfileClicked,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(Spacing.xs))
+                            Text(stringResource(R.string.settings_edit_short), maxLines = 1)
+                        }
+                        OutlinedButton(
+                            onClick = onLogoutClicked,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = scheme.error),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(Spacing.xs))
+                            Text(stringResource(R.string.settings_logout_short), maxLines = 1)
+                        }
                     }
                 }
                 is AuthState.Unconfigured -> {
                     Text(
                         text = authState.message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = scheme.onSurfaceVariant,
                     )
                 }
                 else -> {
@@ -289,26 +338,44 @@ private fun AccountCard(
 
 @Composable
 private fun SettingsInfoCard(
+    icon: ImageVector,
     title: String,
     body: String,
 ) {
+    val scheme = MaterialTheme.colorScheme
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = scheme.surface),
+        border = BorderStroke(1.dp, scheme.outlineVariant),
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(Spacing.sm))
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyLarge,
-            )
+        Row(
+            modifier = Modifier.padding(Spacing.md),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(scheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(imageVector = icon, contentDescription = null, tint = scheme.primary, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(Spacing.md))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = scheme.onSurface,
+                )
+                Spacer(Modifier.height(Spacing.xs))
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

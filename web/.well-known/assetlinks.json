@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.example.remember_me",
       "sha256_cert_fingerprints": [
-        "32:ED:8A:F1:2E:F2:64:AD:5F:20:D7:C7:84:BE:6F:5F:03:C7:A7:24:0A:46:86:21:1C:72:BD:35:B6:DA:6F:04"
+        "32:ED:8A:F1:2E:F2:64:AD:5F:20:D7:C7:84:BE:6F:5F:03:C7:A7:24:0A:46:86:21:1C:72:BD:35:B6:DA:6F:04",
+        "A3:DE:47:58:16:BF:2A:29:7E:DF:35:53:CA:C5:10:7A:30:2E:01:A9:93:18:62:7A:A4:26:EF:0D:67:97:9B:2E"
       ]
     }
   }

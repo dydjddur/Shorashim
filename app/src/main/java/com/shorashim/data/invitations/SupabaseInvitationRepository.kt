@@ -42,13 +42,6 @@ class SupabaseInvitationRepository(
         val userId = client.auth.currentUserOrNull()?.id
             ?: error("User not authenticated")
 
-        val insertData = mapOf(
-            "family_id"  to familyId,
-            "created_by" to userId,
-            "role"       to role.name,
-            "expires_at" to "NOW() + INTERVAL '$expiresInDays days'",
-        )
-
         // Use RPC-style insert that returns the created row
         val result = client.postgrest[TABLE]
             .insert(buildInsertDto(familyId, userId, role, expiresInDays)) {
@@ -68,7 +61,8 @@ class SupabaseInvitationRepository(
         familyId = familyId,
         createdBy = userId,
         role = role,
-        expiresInDays = expiresInDays,
+        // The column default is 7 days; family links are meant to live longer, so send the expiry explicitly.
+        expiresAt = java.time.Instant.now().plus(java.time.Duration.ofDays(expiresInDays.toLong())).toString(),
     )
 
     // -----------------------------------------------------------------------
@@ -220,7 +214,5 @@ private data class FamilyInvitationInsert(
     @kotlinx.serialization.SerialName("family_id")  val familyId: String,
     @kotlinx.serialization.SerialName("created_by") val createdBy: String,
     val role: MembershipRole,
-    // expires_at is a computed expression; Supabase default handles it.
-    // We pass expiresInDays only if we need to override.
-    @kotlinx.serialization.Transient val expiresInDays: Int = 7,
+    @kotlinx.serialization.SerialName("expires_at") val expiresAt: String,
 )

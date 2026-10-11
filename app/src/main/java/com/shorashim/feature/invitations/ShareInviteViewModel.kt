@@ -31,7 +31,8 @@ class ShareInviteViewModel(
     fun createAndShare(
         context: Context,
         role: MembershipRole = MembershipRole.CONTRIBUTOR,
-        expiresInDays: Int = 7,
+        expiresInDays: Int = GROUP_LINK_DAYS,
+        familyName: String? = null,
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -41,7 +42,7 @@ class ShareInviteViewModel(
                         isLoading = false,
                         currentInvitation = invitation,
                     )
-                    shareLink(context, invitation)
+                    shareLink(context, invitation, familyName)
                 }
                 .onFailure { t ->
                     _uiState.value = _uiState.value.copy(
@@ -73,13 +74,18 @@ class ShareInviteViewModel(
     fun clearToast() { _uiState.value = _uiState.value.copy(toastMessage = null) }
 
     companion object {
-        fun shareLink(context: Context, invitation: FamilyInvitation) {
+        /** A shared family link stays valid for a month so the whole family has time to join. */
+        const val GROUP_LINK_DAYS = 30
+
+        fun shareLink(context: Context, invitation: FamilyInvitation, familyName: String? = null) {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "הזמנה לאפליקציית שורשים")
+                putExtra(Intent.EXTRA_SUBJECT, "הזמנה לעץ משפחה בשורשים")
+                val tree = familyName?.takeIf { it.isNotBlank() }?.let { " \"$it\"" }.orEmpty()
                 putExtra(
                     Intent.EXTRA_TEXT,
-                    "הוזמנת לעץ המשפחה! לחץ/י על הקישור כדי להצטרף לאפליקציית שורשים:\n${invitation.shareUrl}"
+                    "\uD83C\uDF33 הוזמנתם להצטרף לעץ המשפחה$tree באפליקציית שורשים!\n" +
+                        "הקישור מיועד לכל בני המשפחה — לחצו עליו, התחברו ואשרו את ההזמנה:\n${invitation.shareUrl}",
                 )
             }
             context.startActivity(Intent.createChooser(intent, "שיתוף קישור הזמנה"))

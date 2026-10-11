@@ -68,6 +68,7 @@ fun CreateFamilyScreen(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(

@@ -53,6 +53,7 @@ fun FamilyTreeNodeCard(
     onAddChildClick: (Person) -> Unit,
     onAddParentClick: (Person) -> Unit,
     onAddSpouseClick: (Person) -> Unit,
+    onAddSiblingClick: (Person) -> Unit = {},
     onEditPersonClick: (Person) -> Unit,
     onDeletePersonClick: (Person) -> Unit,
     modifier: Modifier = Modifier,
@@ -121,12 +122,23 @@ fun FamilyTreeNodeCard(
                         if (isDeceased) {
                             Text(text = "🕯️", fontSize = 18.sp)
                         } else {
-                            Icon(
-                                imageVector = Icons.Outlined.Person,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp),
-                            )
+                            val initial = person.firstName.trim().firstOrNull()?.toString()
+                            if (initial != null) {
+                                Text(
+                                    text = initial,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -201,6 +213,13 @@ fun FamilyTreeNodeCard(
                         onClick = {
                             menuExpanded = false
                             onAddSpouseClick(person)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.tree_add_sibling)) },
+                        onClick = {
+                            menuExpanded = false
+                            onAddSiblingClick(person)
                         },
                     )
                 }

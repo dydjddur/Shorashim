@@ -27,6 +27,8 @@ data class EventsUiState(
     val isAddEditOpen: Boolean = false,
     val editingMemorial: CalendarEvent.Memorial? = null,
     val isSaving: Boolean = false,
+    /** Failure of a save/delete action (shown inside the dialog), separate from a failed load. */
+    val actionError: String? = null,
 )
 
 class EventsViewModel(
@@ -102,6 +104,7 @@ class EventsViewModel(
     fun onOpenAddDialog() {
         _uiState.update {
             it.copy(
+                actionError = null,
                 isAddEditOpen = true,
                 editingMemorial = null,
             )
@@ -157,7 +160,7 @@ class EventsViewModel(
                 _uiState.update { it.copy(isSaving = false, isAddEditOpen = false, editingMemorial = null) }
                 loadEvents()
             }.onFailure { err ->
-                _uiState.update { it.copy(isSaving = false, errorMessage = err.message) }
+                _uiState.update { it.copy(isSaving = false, actionError = friendlyError(err)) }
             }
         }
     }
@@ -169,8 +172,21 @@ class EventsViewModel(
                 _uiState.update { it.copy(selectedEvent = null) }
                 loadEvents()
             }.onFailure { err ->
-                _uiState.update { it.copy(errorMessage = err.message) }
+                _uiState.update { it.copy(actionError = friendlyError(err)) }
             }
+        }
+    }
+
+    fun clearActionError() {
+        _uiState.update { it.copy(actionError = null) }
+    }
+
+    private fun friendlyError(t: Throwable): String {
+        val raw = t.message.orEmpty()
+        return if (raw.contains("memorial_events", ignoreCase = true) && raw.contains("schema cache", ignoreCase = true)) {
+            "טבלת האזכרות עדיין לא קיימת בשרת (Supabase). יש להריץ את קובץ המיגרציה phase4_events_and_profiles.sql."
+        } else {
+            raw.ifBlank { "הפעולה נכשלה, נסו שוב" }
         }
     }
 }

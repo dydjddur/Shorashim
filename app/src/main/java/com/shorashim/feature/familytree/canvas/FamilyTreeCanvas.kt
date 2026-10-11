@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -69,8 +70,12 @@ import kotlin.math.roundToInt
 
 private const val MIN_SCALE = 0.12f
 private const val MAX_SCALE = 2.5f
-private const val CONTENT_PADDING = 120f
+private const val CONTENT_PADDING = 40f
 private const val CORNER_RADIUS = 18f
+private const val BADGE_SIZE = 28f
+
+/** Pins children to the physical top-left corner regardless of layout direction (the app is RTL). */
+private val TopLeftAbsolute = Alignment { _, _, _ -> IntOffset.Zero }
 
 /**
  * Static family tree map. The layout is computed automatically by [TreeLayoutEngine]; the user can
@@ -84,6 +89,7 @@ fun FamilyTreeCanvas(
     onAddChildClick: (Person) -> Unit,
     onAddParentClick: (Person) -> Unit,
     onAddSpouseClick: (Person) -> Unit,
+    onAddSiblingClick: (Person) -> Unit = {},
     onEditPersonClick: (Person) -> Unit,
     onDeletePersonClick: (Person) -> Unit,
     onPublishClick: () -> Unit,
@@ -98,6 +104,7 @@ fun FamilyTreeCanvas(
         TreeLayoutEngine.calculateLayout(people, relationships)
     }
     val bounds = remember(nodes) { TreeLayoutEngine.contentBounds(nodes) }
+    val markers = remember(connections) { TreeLayoutEngine.connectionMarkers(connections) }
 
     // Canvas coordinates are normalised so that the content starts at (CONTENT_PADDING, CONTENT_PADDING);
     // everything stays in positive space, which keeps hit-testing of the cards reliable.
@@ -114,12 +121,16 @@ fun FamilyTreeCanvas(
         val viewportW = constraints.maxWidth.toFloat()
         val viewportH = constraints.maxHeight.toFloat()
         val density = LocalDensity.current
+        // Layout units are dp (the cards are sized in dp); gestures and offsets work in pixels.
+        val d = density.density
+        val contentWidthPx = contentWidth * d
+        val contentHeightPx = contentHeight * d
 
         fun clampOffset(candidate: Offset, atScale: Float): Offset {
             val margin = 80f
-            val minX = margin - contentWidth * atScale
+            val minX = margin - contentWidthPx * atScale
             val maxX = viewportW - margin
-            val minY = margin - contentHeight * atScale
+            val minY = margin - contentHeightPx * atScale
             val maxY = viewportH - margin
             return Offset(
                 candidate.x.coerceIn(minOf(minX, maxX), maxOf(minX, maxX)),
@@ -129,12 +140,12 @@ fun FamilyTreeCanvas(
 
         fun fitToScreen() {
             if (nodes.isEmpty() || viewportW <= 0f || viewportH <= 0f) return
-            val fit = minOf(viewportW / contentWidth, viewportH / contentHeight)
-            val s = fit.coerceIn(MIN_SCALE, 1f)
+            val fit = minOf(viewportW / contentWidthPx, viewportH / contentHeightPx)
+            val s = fit.coerceIn(MIN_SCALE, 1.2f)
             scale = s
             offset = Offset(
-                (viewportW - contentWidth * s) / 2f,
-                ((viewportH - contentHeight * s) / 2f).coerceAtLeast(0f),
+                (viewportW - contentWidthPx * s) / 2f,
+                ((viewportH - contentHeightPx * s) / 2f).coerceAtLeast(0f),
             )
         }
 
@@ -145,8 +156,9 @@ fun FamilyTreeCanvas(
             scale = newScale
         }
 
-        LaunchedEffect(nodes.isNotEmpty(), viewportW, viewportH) {
-            if (nodes.isNotEmpty() && !hasInitialView && viewportW > 0f) {
+        // Re-fit whenever the set of people changes (e.g. after adding a relative) so the new card is in view.
+        LaunchedEffect(nodes.size, viewportW, viewportH) {
+            if (nodes.isNotEmpty() && viewportW > 0f) {
                 fitToScreen()
                 hasInitialView = true
             }
@@ -212,10 +224,10 @@ fun FamilyTreeCanvas(
             ) {
                 Box(
                     modifier = Modifier
-                        .wrapContentSize(align = Alignment.TopStart, unbounded = true)
+                        .wrapContentSize(align = TopLeftAbsolute, unbounded = true)
                         .requiredSize(
-                            width = with(density) { contentWidth.toDp() },
-                            height = with(density) { contentHeight.toDp() },
+                            width = contentWidth.dp,
+                            height = contentHeight.dp,
                         )
                         .graphicsLayer {
                             transformOrigin = TransformOrigin(0f, 0f)
@@ -224,21 +236,23 @@ fun FamilyTreeCanvas(
                             translationX = offset.x
                             translationY = offset.y
                         },
+                    contentAlignment = TopLeftAbsolute,
                 ) {
                     // Connection lines
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val parentStroke = Stroke(
-                            width = 2.5.dp.toPx(),
+                            width = 2.5f,
                             cap = StrokeCap.Round,
                             join = StrokeJoin.Round,
                         )
                         val spouseStroke = Stroke(
-                            width = 2.5.dp.toPx(),
+                            width = 2.5f,
                             cap = StrokeCap.Round,
                             pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f),
                         )
                         val shift = Offset(shiftX, shiftY)
 
+                        withTransform({ scale(d, d, Offset.Zero) }) {
                         for (conn in connections) {
                             val start = conn.start + shift
                             val end = conn.end + shift
@@ -251,7 +265,7 @@ fun FamilyTreeCanvas(
                                     )
                                     drawCircle(
                                         color = connectorColor,
-                                        radius = 4.dp.toPx(),
+                                        radius = 3.5f,
                                         center = end,
                                     )
                                 }
@@ -261,14 +275,24 @@ fun FamilyTreeCanvas(
                                         lineTo(end.x, end.y)
                                     }
                                     drawPath(path = path, color = spouseColor, style = spouseStroke)
-                                    drawCircle(
-                                        color = spouseColor,
-                                        radius = 5.dp.toPx(),
-                                        center = Offset((start.x + end.x) / 2f, (start.y + end.y) / 2f),
-                                    )
                                 }
                             }
                         }
+                        }
+                    }
+
+                    // Relationship emoji in the middle of every connector
+                    for (marker in markers) {
+                        ConnectorBadge(
+                            kind = marker.kind,
+                            modifier = Modifier.absoluteOffset {
+                                val half = (BADGE_SIZE / 2f) * d
+                                IntOffset(
+                                    x = ((marker.position.x + shiftX) * d - half).roundToInt(),
+                                    y = ((marker.position.y + shiftY) * d - half).roundToInt(),
+                                )
+                            },
+                        )
                     }
 
                     // Person cards
@@ -279,12 +303,13 @@ fun FamilyTreeCanvas(
                             onAddChildClick = onAddChildClick,
                             onAddParentClick = onAddParentClick,
                             onAddSpouseClick = onAddSpouseClick,
+                            onAddSiblingClick = onAddSiblingClick,
                             onEditPersonClick = onEditPersonClick,
                             onDeletePersonClick = onDeletePersonClick,
-                            modifier = Modifier.offset {
+                            modifier = Modifier.absoluteOffset {
                                 IntOffset(
-                                    x = (node.x + shiftX).roundToInt(),
-                                    y = (node.y + shiftY).roundToInt(),
+                                    x = ((node.x + shiftX) * d).roundToInt(),
+                                    y = ((node.y + shiftY) * d).roundToInt(),
                                 )
                             },
                         )
@@ -417,7 +442,7 @@ private fun elbowPath(start: Offset, end: Offset): Path {
         path.lineTo(end.x, end.y)
         return path
     }
-    val busY = start.y + (TreeLayoutEngine.VERTICAL_SPACING / 2f).coerceAtMost((end.y - start.y) / 2f)
+    val busY = TreeLayoutEngine.busY(start, end)
     val r = minOf(CORNER_RADIUS, abs(dx) / 2f, (busY - start.y).coerceAtLeast(1f), (end.y - busY).coerceAtLeast(1f))
     val dir = if (dx > 0) 1f else -1f
 
@@ -427,4 +452,25 @@ private fun elbowPath(start: Offset, end: Offset): Path {
     path.quadraticTo(end.x, busY, end.x, busY + r)
     path.lineTo(end.x, end.y)
     return path
+}
+
+/** Small round emoji chip that sits on a connector and names the relationship it represents. */
+@Composable
+private fun ConnectorBadge(kind: TreeLayoutEngine.MarkerKind, modifier: Modifier = Modifier) {
+    val (emoji, tint) = when (kind) {
+        TreeLayoutEngine.MarkerKind.PARENT_CHILD -> "👪" to MaterialTheme.colorScheme.primary
+        TreeLayoutEngine.MarkerKind.SPOUSE -> "💍" to Color(0xFFC48B47)
+        TreeLayoutEngine.MarkerKind.SIBLING -> "🤝" to MaterialTheme.colorScheme.tertiary
+    }
+    Surface(
+        modifier = modifier.size(BADGE_SIZE.dp),
+        shape = androidx.compose.foundation.shape.CircleShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, tint),
+        shadowElevation = 2.dp,
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Text(text = emoji, fontSize = 14.sp)
+        }
+    }
 }

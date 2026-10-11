@@ -84,6 +84,8 @@ fun AddEditPersonRoute(
         onDeleteClicked = { viewModel.setDeleteConfirmOpen(true) },
         onDeleteConfirmDismiss = { viewModel.setDeleteConfirmOpen(false) },
         onDeleteConfirmed = { viewModel.delete(onNavigateBack) },
+        onCoParentSelected = viewModel::onCoParentSelected,
+        onLinkToExistingParentChanged = viewModel::onLinkToExistingParentChanged,
         modifier = modifier,
     )
 }
@@ -111,6 +113,8 @@ fun AddEditPersonScreen(
     onDeleteConfirmDismiss: () -> Unit,
     onDeleteConfirmed: () -> Unit,
     modifier: Modifier = Modifier,
+    onCoParentSelected: (String?) -> Unit = {},
+    onLinkToExistingParentChanged: (Boolean) -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -145,14 +149,25 @@ fun AddEditPersonScreen(
     }
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(
-                            if (uiState.isEditing) R.string.person_edit_title else R.string.person_add_title,
-                        ),
+                        text = when {
+                            uiState.isEditing -> stringResource(R.string.person_edit_title)
+                            uiState.relation == null || uiState.anchorName.isBlank() -> stringResource(R.string.person_add_title)
+                            else -> stringResource(
+                                when (uiState.relation) {
+                                    com.shorashim.core.model.NewPersonRelation.PARENT -> R.string.person_add_parent_title
+                                    com.shorashim.core.model.NewPersonRelation.CHILD -> R.string.person_add_child_title
+                                    com.shorashim.core.model.NewPersonRelation.SPOUSE -> R.string.person_add_spouse_title
+                                    else -> R.string.person_add_sibling_title
+                                },
+                                uiState.anchorName,
+                            )
+                        },
                         fontWeight = FontWeight.Bold,
                     )
                 },
@@ -190,6 +205,12 @@ fun AddEditPersonScreen(
                 .padding(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
+            RelationOptions(
+                uiState = uiState,
+                onCoParentSelected = onCoParentSelected,
+                onLinkToExistingParentChanged = onLinkToExistingParentChanged,
+            )
+
             AuthCard {
                 // Names Section
                 AuthTextField(
@@ -443,6 +464,81 @@ fun DateInputSection(
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
+    }
+}
+
+/** Extra choices shown when the person is added as a relative of someone on the tree. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RelationOptions(
+    uiState: AddEditPersonUiState,
+    onCoParentSelected: (String?) -> Unit,
+    onLinkToExistingParentChanged: (Boolean) -> Unit,
+) {
+    if (uiState.relation == null || uiState.isEditing) return
+
+    if (uiState.siblingBlocked) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.person_relation_sibling_needs_parent),
+                modifier = Modifier.padding(Spacing.md),
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
+        return
+    }
+
+    if (uiState.coParentOptions.isNotEmpty()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Text(
+                    text = stringResource(R.string.person_relation_coparent_label),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                )
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    uiState.coParentOptions.forEach { spouse ->
+                        FilterChip(
+                            selected = uiState.selectedCoParentId == spouse.id,
+                            onClick = { onCoParentSelected(spouse.id) },
+                            label = { Text(spouse.fullName) },
+                        )
+                    }
+                    FilterChip(
+                        selected = uiState.selectedCoParentId == null,
+                        onClick = { onCoParentSelected(null) },
+                        label = { Text(stringResource(R.string.person_relation_coparent_none)) },
+                    )
+                }
+            }
+        }
+    }
+
+    uiState.existingParent?.let { parent ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onLinkToExistingParentChanged(!uiState.linkToExistingParent) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.Checkbox(
+                checked = uiState.linkToExistingParent,
+                onCheckedChange = onLinkToExistingParentChanged,
+            )
+            Text(
+                text = stringResource(R.string.person_relation_link_parent, parent.fullName),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }

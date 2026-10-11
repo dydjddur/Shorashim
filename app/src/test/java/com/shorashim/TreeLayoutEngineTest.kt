@@ -209,7 +209,8 @@ class TreeLayoutEngineTest {
         val people = listOf(person("p"), person("young", "2010-01-01"), person("old", "1990-01-01"))
         val rels = listOf(parentChild("p", "young"), parentChild("p", "old"))
         val (nodes, _) = TreeLayoutEngine.calculateLayout(people, rels)
-        assertTrue(nodes.first { it.person.id == "old" }.x < nodes.first { it.person.id == "young" }.x)
+        // RTL layout: the eldest child sits on the right-hand side.
+        assertTrue(nodes.first { it.person.id == "old" }.x > nodes.first { it.person.id == "young" }.x)
     }
 
     @Test
@@ -245,5 +246,34 @@ class TreeLayoutEngineTest {
         assertEquals(gen.getValue("dad"), gen.getValue("mom"))
         assertEquals(gen.getValue("mom") - 1, gen.getValue("mgp"))
         assertNoOverlaps(nodes)
+    }
+
+    @Test
+    fun `only child hangs straight under its single parent`() {
+        val people = listOf(person("p"), person("c"), person("cw"))
+        val rels = listOf(parentChild("p", "c"), spouse("c", "cw"))
+        val (nodes, _) = TreeLayoutEngine.calculateLayout(people, rels)
+        val p = nodes.first { it.person.id == "p" }
+        val c = nodes.first { it.person.id == "c" }
+        assertEquals(c.center.x, p.center.x, 0.01f)
+    }
+
+    @Test
+    fun `couple sits centred above the connector points of its children`() {
+        val people = listOf("f", "m", "a", "b").map { person(it) }
+        val rels = listOf(
+            spouse("f", "m"),
+            parentChild("f", "a"), parentChild("m", "a"),
+            parentChild("f", "b"), parentChild("m", "b"),
+        )
+        val (nodes, connections) = TreeLayoutEngine.calculateLayout(people, rels)
+        val byId = nodes.associateBy { it.person.id }
+        val coupleMid = (byId.getValue("f").center.x + byId.getValue("m").center.x) / 2f
+        val kidsMid = (byId.getValue("a").center.x + byId.getValue("b").center.x) / 2f
+        assertEquals(kidsMid, coupleMid, 0.01f)
+        val markers = TreeLayoutEngine.connectionMarkers(connections)
+        assertEquals(1, markers.count { it.kind == TreeLayoutEngine.MarkerKind.SIBLING })
+        assertEquals(2, markers.count { it.kind == TreeLayoutEngine.MarkerKind.PARENT_CHILD })
+        assertEquals(1, markers.count { it.kind == TreeLayoutEngine.MarkerKind.SPOUSE })
     }
 }

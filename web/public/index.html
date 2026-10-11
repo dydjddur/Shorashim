@@ -3,131 +3,226 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>שורשים - הזמנה לעץ משפחה</title>
+  <meta name="theme-color" content="#0F3D30">
+  <meta name="robots" content="noindex">
+  <title>שורשים · הזמנה לעץ משפחה</title>
+  <meta property="og:title" content="הוזמנת להצטרף לעץ משפחה בשורשים">
+  <meta property="og:description" content="לחצו כדי להצטרף לעץ המשפחה באפליקציית שורשים">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Heebo', sans-serif;
+    :root {
+      --forest: #0F3D30;
+      --forest-2: #143E32;
+      --mint: #4FD8A5;
+      --mint-dark: #1B5242;
+      --gold: #C9A24B;
+      --cream: #F7F3EA;
+      --ink: #14201A;
+      --muted: #506256;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: linear-gradient(135deg, #f0f7f2 0%, #e6f0e9 100%);
-      color: #1e3a2f;
+      font-family: 'Heebo', system-ui, sans-serif;
+      color: var(--ink);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      background:
+        radial-gradient(1200px 500px at 50% -10%, rgba(79,216,165,.25), transparent 60%),
+        linear-gradient(180deg, #0F3D30 0%, #0C2E25 45%, #F7F3EA 45.1%, #F7F3EA 100%);
     }
     .card {
-      background: white;
-      max-width: 480px;
       width: 100%;
-      border-radius: 24px;
-      box-shadow: 0 12px 40px rgba(46, 125, 50, 0.12);
-      padding: 36px 28px;
+      max-width: 460px;
+      background: #fff;
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(8, 38, 29, .28);
+      padding: 0 26px 28px;
       text-align: center;
-      border: 1px solid rgba(76, 175, 80, 0.2);
+      overflow: hidden;
+      border: 1px solid rgba(201,162,75,.35);
     }
-    .icon-wrap {
-      width: 84px;
-      height: 84px;
-      background: #e8f5e9;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 42px;
+    .emblem {
+      width: 88px; height: 88px;
+      margin: -44px auto 14px;
+      border-radius: 26px;
+      background: var(--forest);
+      display: grid; place-items: center;
+      box-shadow: 0 10px 24px rgba(15,61,48,.45);
+      border: 3px solid #fff;
     }
-    h1 {
-      font-size: 26px;
-      font-weight: 800;
-      color: #2e7d32;
-      margin-bottom: 8px;
-    }
-    p.subtitle {
-      font-size: 16px;
-      color: #557264;
-      line-height: 1.5;
-      margin-bottom: 28px;
-    }
+    .emblem svg { width: 54px; height: 54px; }
+    .brand { font-family: 'Frank Ruhl Libre', serif; font-weight: 900; font-size: 22px; color: var(--forest); letter-spacing: .5px; }
+    .orn { color: var(--gold); margin: 10px 0 14px; display: flex; align-items: center; gap: 10px; }
+    .orn::before, .orn::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+    .orn::after { background: linear-gradient(270deg, transparent, var(--gold)); }
+    h1 { font-family: 'Frank Ruhl Libre', serif; font-size: 26px; line-height: 1.25; color: var(--forest); font-weight: 900; }
+    .family { font-family: 'Frank Ruhl Libre', serif; font-size: 34px; font-weight: 900; color: var(--mint-dark); margin: 6px 0 2px; word-break: break-word; }
+    .sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin-top: 6px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 16px 0 6px; }
+    .chip { background: #EEF6F1; color: var(--mint-dark); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 700; }
     .btn {
-      display: block;
-      width: 100%;
-      padding: 16px;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      margin-bottom: 12px;
-      cursor: pointer;
-      border: none;
+      display: block; width: 100%; padding: 16px; border-radius: 16px; border: 0;
+      font-size: 17px; font-weight: 800; text-decoration: none; cursor: pointer; margin-top: 14px;
+      font-family: inherit;
     }
-    .btn-primary {
-      background: #2e7d32;
-      color: white;
-      box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
-    }
-    .btn-primary:hover {
-      background: #256628;
-    }
-    .btn-secondary {
-      background: #f1f8f4;
-      color: #2e7d32;
-      border: 1px solid rgba(46, 125, 50, 0.3);
-    }
-    .btn-secondary:hover {
-      background: #e3f0e8;
-    }
-    .footer {
-      margin-top: 24px;
-      font-size: 13px;
-      color: #889e93;
-    }
+    .btn-primary { background: linear-gradient(180deg, #1F7A5C, #1B5242); color: #fff; box-shadow: 0 8px 20px rgba(27,82,66,.35); }
+    .btn-ghost { background: #F1F6F3; color: var(--mint-dark); font-weight: 700; font-size: 15px; }
+    .steps { text-align: right; background: var(--cream); border-radius: 18px; padding: 14px 18px; margin-top: 18px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .steps b { color: var(--forest); }
+    .steps ol { padding-right: 20px; }
+    .state { padding: 26px 0 6px; color: var(--muted); }
+    .spinner { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #D9ECE3; border-top-color: var(--mint-dark); margin: 0 auto 12px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .err { color: #9B2C2C; font-weight: 700; }
+    .foot { margin-top: 20px; font-size: 12px; color: #7A8C82; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon-wrap">🌳</div>
-    <h1>הוזמנת לעץ משפחה!</h1>
-    <p class="subtitle">
-      אחד מבני המשפחה שלך הזמין אותך להצטרף לעץ המשפחה באפליקציית <strong>שורשים</strong>.
-    </p>
-
-    <a id="openAppBtn" href="#" class="btn btn-primary">
-      פתיחה באפליקציית שורשים
-    </a>
-
-    <a href="https://github.com/dydjddur/Shorashim/releases" class="btn btn-secondary">
-      הורדת האפליקציה (APK)
-    </a>
-
-    <div class="footer">
-      שורשים — אפליקציה לשימור אילן יוחסין משפחתי וזיכרון קרובים
+  <main class="card">
+    <div class="emblem" aria-hidden="true">
+      <svg viewBox="0 0 108 108" fill="none">
+        <g transform="translate(54 53.5) scale(1.2) translate(-54 -53.5)">
+          <path d="M54 29 L68.5 49.5 L61 49.5 L72.5 64.5 L58.2 64.5 L58.2 78 L49.8 78 L49.8 64.5 L35.5 64.5 L47 49.5 L39.5 49.5 Z"
+                stroke="#4FD8A5" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      </svg>
     </div>
-  </div>
+    <div class="brand">שורשים</div>
+    <div class="orn">✦</div>
+
+    <section id="loading" class="state">
+      <div class="spinner"></div>
+      טוענים את פרטי ההזמנה…
+    </section>
+
+    <section id="ok" class="hidden">
+      <h1>הוזמנת להצטרף לעץ המשפחה</h1>
+      <div class="family" id="familyName">עץ משפחה</div>
+      <p class="sub" id="inviter"></p>
+      <div class="chips">
+        <span class="chip" id="roleChip"></span>
+        <span class="chip" id="expiryChip"></span>
+      </div>
+    </section>
+
+    <section id="generic" class="hidden">
+      <h1>הוזמנת להצטרף לעץ משפחה</h1>
+      <p class="sub">אחד מבני המשפחה שיתף איתך קישור הצטרפות לעץ המשפחה באפליקציית שורשים.</p>
+    </section>
+
+    <section id="bad" class="hidden state">
+      <h1 class="err" id="badTitle">ההזמנה אינה זמינה</h1>
+      <p class="sub" id="badText"></p>
+    </section>
+
+    <div id="actions">
+      <a id="openAppBtn" class="btn btn-primary" href="#">פתיחה באפליקציית שורשים</a>
+      <a class="btn btn-ghost" id="downloadBtn" href="https://github.com/dydjddur/Shorashim/releases">אין לך את האפליקציה? הורדה</a>
+      <button class="btn btn-ghost" id="copyBtn" type="button">העתקת הקישור</button>
+      <div class="steps" id="steps">
+        <b>איך מצטרפים?</b>
+        <ol>
+          <li>פותחים את האפליקציה (או מתקינים אותה בלחיצה למעלה).</li>
+          <li>נכנסים לחשבון או נרשמים — אין צורך בהזמנה במייל.</li>
+          <li>מאשרים את ההזמנה ונכנסים ישר לעץ המשפחה.</li>
+        </ol>
+        הקישור מיועד לכל בני המשפחה — אפשר לשתף אותו בקבוצה.
+      </div>
+    </div>
+
+    <div class="foot">שורשים — שימור אילן יוחסין משפחתי וזיכרון קרובים</div>
+  </main>
 
   <script>
-    // Extract token from URL path: /invite/{token}
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const token = pathParts.length >= 2 && pathParts[0] === 'invite' ? pathParts[1] : '';
+    // Public Supabase anon key / URL (same values as the app; protected by RLS and SECURITY DEFINER RPCs).
+    var SUPABASE_URL = 'https://drbhaydqdlupzpyngkdl.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYmhheWRxZGx1cHpweW5na2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTAwNTMsImV4cCI6MjEwNzIyNjA1M30.ITyIGFcp5JpLU5sz_TVFQZOG8KoBe8KeQ8ydKZjVBG4';
+    var PACKAGE_ID = 'com.example.remember_me';
 
-    const openAppBtn = document.getElementById('openAppBtn');
-    if (token) {
-      openAppBtn.href = `shorashim://invite/${token}`;
-      // Auto redirect to custom scheme if on mobile device
-      setTimeout(() => {
-        window.location.href = `shorashim://invite/${token}`;
-      }, 300);
-    } else {
-      openAppBtn.href = 'shorashim://invite/';
+    var parts = window.location.pathname.split('/').filter(Boolean);
+    var token = (parts[0] === 'invite' && parts[1]) ? parts[1] : (parts.length === 1 && /^[0-9a-fA-F]{16,}$/.test(parts[0]) ? parts[0] : '');
+    token = token.replace(/[^0-9a-zA-Z_-]/g, '');
+
+    var isAndroid = /android/i.test(navigator.userAgent);
+    var $ = function (id) { return document.getElementById(id); };
+    var openBtn = $('openAppBtn');
+
+    var intentUri = 'intent://invite/' + token + '#Intent;scheme=shorashim;package=' + PACKAGE_ID + ';end';
+    var schemeUri = 'shorashim://invite/' + token;
+    openBtn.href = isAndroid ? intentUri : schemeUri;
+
+    function show(id) {
+      ['loading', 'ok', 'generic', 'bad'].forEach(function (s) { $(s).classList.toggle('hidden', s !== id); });
     }
+
+    var ROLES = { OWNER: 'מנהל/ת על', ADMIN: 'מנהל/ת', CONTRIBUTOR: 'משתתף/ת — אפשר להוסיף ולערוך', EDITOR: 'עורך/ת', VIEWER: 'צופה' };
+    var ERRORS = {
+      invitation_not_found: ['ההזמנה לא נמצאה', 'ייתכן שהקישור הועתק לא במלואו. בקשו מבן המשפחה לשלוח קישור חדש.'],
+      invitation_expired: ['פג תוקף ההזמנה', 'בקשו מבן המשפחה שיצר את הקישור ליצור קישור חדש.'],
+      invitation_revoked: ['ההזמנה בוטלה', 'שולח ההזמנה ביטל את הקישור. בקשו קישור חדש.']
+    };
+
+    function daysLeft(iso) {
+      var ms = new Date(iso).getTime() - Date.now();
+      return Math.max(0, Math.ceil(ms / 86400000));
+    }
+
+    if (!token) {
+      show('generic');
+      $('actions').classList.remove('hidden');
+    } else {
+      fetch(SUPABASE_URL + '/rest/v1/rpc/resolve_invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        body: JSON.stringify({ p_token: token })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data && data.ok) {
+          $('familyName').textContent = data.family_name || 'עץ משפחה';
+          $('inviter').textContent = data.invited_by ? 'הוזמנת על ידי ' + data.invited_by : '';
+          $('roleChip').textContent = ROLES[data.role] || 'משתתף/ת';
+          var d = data.expires_at ? daysLeft(data.expires_at) : null;
+          $('expiryChip').textContent = d === null ? '' : (d <= 1 ? 'הקישור תקף עוד יום' : 'הקישור תקף עוד ' + d + ' ימים');
+          if (d === null) $('expiryChip').classList.add('hidden');
+          show('ok');
+        } else {
+          var e = ERRORS[data && data.error];
+          if (e) {
+            $('badTitle').textContent = e[0];
+            $('badText').textContent = e[1];
+            show('bad');
+            openBtn.classList.add('hidden');
+            $('steps').classList.add('hidden');
+          } else {
+            show('generic');
+          }
+        }
+      }).catch(function () { show('generic'); });
+
+      // Android: try to hand the link straight to the app.
+      if (isAndroid) {
+        setTimeout(function () { window.location.href = intentUri; }, 700);
+      }
+    }
+
+    if (!isAndroid) {
+      $('downloadBtn').textContent = 'האפליקציה זמינה כרגע למכשירי אנדרואיד';
+      $('downloadBtn').removeAttribute('href');
+    }
+
+    $('copyBtn').addEventListener('click', function () {
+      var url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: 'הזמנה לעץ משפחה בשורשים', url: url }).catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () { $('copyBtn').textContent = 'הקישור הועתק ✓'; });
+      }
+    });
   </script>
 </body>
 </html>
