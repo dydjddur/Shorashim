@@ -79,6 +79,9 @@ fun SettingsScreen(
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var isSavingProfile by remember { mutableStateOf(false) }
     var profileErrorMessage by remember { mutableStateOf<String?>(null) }
+    var userDisplayName by remember(authState) {
+        mutableStateOf((authState as? AuthState.Authenticated)?.user?.displayName.orEmpty())
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -134,6 +137,7 @@ fun SettingsScreen(
         // Account Card
         AccountCard(
             authState = authState,
+            displayName = userDisplayName,
             onEditProfileClicked = { showEditProfileDialog = true },
             onLogoutClicked = { showLogoutDialog = true },
         )
@@ -182,6 +186,7 @@ fun SettingsScreen(
                     val res = profileRepository?.updateProfile(fullName, displayName)
                     isSavingProfile = false
                     if (res != null && res.isSuccess) {
+                        userDisplayName = displayName.ifBlank { fullName }
                         showEditProfileDialog = false
                         snackbarHostState.showSnackbar(successMessage)
                     } else {
@@ -196,6 +201,7 @@ fun SettingsScreen(
 @Composable
 private fun AccountCard(
     authState: AuthState,
+    displayName: String,
     onEditProfileClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
 ) {
@@ -215,9 +221,10 @@ private fun AccountCard(
 
             when (authState) {
                 is AuthState.Authenticated -> {
-                    if (authState.user.displayName.isNotBlank()) {
+                    val effectiveName = displayName.ifBlank { authState.user.displayName }
+                    if (effectiveName.isNotBlank()) {
                         Text(
-                            text = stringResource(R.string.settings_account_name) + " " + authState.user.displayName,
+                            text = stringResource(R.string.settings_account_name) + " " + effectiveName,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Spacer(Modifier.height(Spacing.xs))

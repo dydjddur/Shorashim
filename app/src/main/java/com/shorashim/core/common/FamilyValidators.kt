@@ -61,6 +61,19 @@ object FamilyValidators {
                 }
             }
         }
+        if (date.precision == DatePrecision.FULL_DATE) {
+            if (y != null || m != null || d != null) {
+                if (y == null || m == null || d == null) {
+                    return R.string.validation_date_invalid
+                }
+            }
+        } else if (date.precision == DatePrecision.YEAR_MONTH) {
+            if (y != null || m != null) {
+                if (y == null || m == null) {
+                    return R.string.validation_date_invalid
+                }
+            }
+        }
         return null
     }
 

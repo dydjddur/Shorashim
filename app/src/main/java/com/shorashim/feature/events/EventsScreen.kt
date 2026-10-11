@@ -20,30 +20,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Cake
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,17 +59,14 @@ fun EventsRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        viewModel.loadEvents()
+    }
+
     EventsScreen(
         uiState = uiState,
         onRetry = { viewModel.loadEvents() },
         onSelectEvent = { viewModel.onSelectEvent(it) },
-        onOpenAddDialog = { viewModel.onOpenAddDialog() },
-        onOpenEditDialog = { viewModel.onOpenEditDialog(it) },
-        onCloseAddEditDialog = { viewModel.onCloseAddEditDialog() },
-        onSaveMemorial = { famId, pId, name, date, hebDate, desc ->
-            viewModel.saveMemorialEvent(famId, pId, name, date, hebDate, desc)
-        },
-        onDeleteMemorial = { viewModel.deleteMemorialEvent(it) },
         onNavigateToMemorialTehillim = onNavigateToMemorialTehillim,
         modifier = modifier,
     )
@@ -89,38 +77,11 @@ fun EventsScreen(
     uiState: EventsUiState,
     onRetry: () -> Unit,
     onSelectEvent: (CalendarEvent?) -> Unit,
-    onOpenAddDialog: () -> Unit,
-    onOpenEditDialog: (CalendarEvent.Memorial) -> Unit,
-    onCloseAddEditDialog: () -> Unit,
-    onSaveMemorial: (familyId: String, personId: String?, personName: String, eventDate: String, hebrewDate: String?, description: String?) -> Unit,
-    onDeleteMemorial: (memorialId: String) -> Unit,
     onNavigateToMemorialTehillim: (deceasedName: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showDeleteConfirmDialog by remember { mutableStateOf<CalendarEvent.Memorial?>(null) }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onOpenAddDialog,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = Spacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Outlined.Add, contentDescription = null)
-                    Spacer(Modifier.width(Spacing.xs))
-                    Text(
-                        text = stringResource(R.string.events_add_memorial_button),
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-        },
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -194,51 +155,6 @@ fun EventsScreen(
                 onSelectEvent(null)
                 onNavigateToMemorialTehillim(selected.personName)
             },
-            onEdit = {
-                onOpenEditDialog(selected)
-            },
-            onDelete = {
-                showDeleteConfirmDialog = selected
-            },
-        )
-    }
-
-    // Delete confirmation dialog
-    val toDelete = showDeleteConfirmDialog
-    if (toDelete != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = null },
-            title = { Text(stringResource(R.string.events_delete_memorial_confirm_title)) },
-            text = { Text(stringResource(R.string.events_delete_memorial_confirm_msg)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val id = toDelete.memorialId
-                        showDeleteConfirmDialog = null
-                        onDeleteMemorial(id)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Text(stringResource(R.string.delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
-    }
-
-    // Add / Edit Dialog
-    if (uiState.isAddEditOpen) {
-        AddEditMemorialEventDialog(
-            families = uiState.families,
-            deceasedPeople = uiState.deceasedPeople,
-            editingMemorial = uiState.editingMemorial,
-            isSaving = uiState.isSaving,
-            onDismiss = onCloseAddEditDialog,
-            onSave = onSaveMemorial,
         )
     }
 }
@@ -428,8 +344,6 @@ private fun MemorialDetailsDialog(
     memorial: CalendarEvent.Memorial,
     onDismiss: () -> Unit,
     onReadTehillim: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -467,7 +381,7 @@ private fun MemorialDetailsDialog(
                 if (!memorial.description.isNullOrBlank()) {
                     Spacer(Modifier.height(Spacing.xs))
                     Text(
-                        text = "הערות: ${memorial.description}",
+                        text = memorial.description,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -494,34 +408,6 @@ private fun MemorialDetailsDialog(
                         text = stringResource(R.string.events_read_tehillim_button),
                         fontWeight = FontWeight.Bold,
                     )
-                }
-
-                if (memorial.canEdit) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    ) {
-                        OutlinedButton(
-                            onClick = onEdit,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                        ) {
-                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("עריכה")
-                        }
-
-                        OutlinedButton(
-                            onClick = onDelete,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                        ) {
-                            Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("מחיקה")
-                        }
-                    }
                 }
             }
         },

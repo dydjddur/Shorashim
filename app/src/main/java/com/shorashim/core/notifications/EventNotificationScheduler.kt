@@ -57,12 +57,12 @@ class EventNotificationScheduler(
         targetDate: LocalDate,
     ) {
         val today = EventDateCalculator.getTodayInIsrael()
-        val reminderDate = targetDate.minusDays(7)
+        var reminderDate = targetDate.minusDays(7)
+        val nowIsrael = ZonedDateTime.now(EventDateCalculator.ISRAEL_ZONE)
+        val triggerToday = ZonedDateTime.of(today, LocalTime.of(9, 0), EventDateCalculator.ISRAEL_ZONE)
 
-        // Do not schedule if reminder date is in the past or today has already passed 7 days before
-        if (reminderDate.isBefore(today)) {
-            Log.d("EventScheduler", "Memorial reminder date $reminderDate is in the past. Skipping.")
-            return
+        if (reminderDate.isBefore(today) || (reminderDate == today && nowIsrael.isAfter(triggerToday))) {
+            reminderDate = targetDate.plusYears(1).minusDays(7)
         }
 
         val triggerTimeEpochMs = ZonedDateTime.of(

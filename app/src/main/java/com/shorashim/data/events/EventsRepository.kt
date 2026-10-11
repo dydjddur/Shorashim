@@ -49,6 +49,10 @@ class DefaultEventsRepository(
             for ((key, duplicates) in groupedPeople) {
                 val primaryPerson = duplicates.first()
                 if (primaryPerson.birthDate.isNullOrBlank()) continue
+                // Deceased relatives must ONLY have memorial events, never birthdays
+                if (duplicates.any { it.lifeStatus == com.shorashim.core.model.LifeStatus.DECEASED }) {
+                    continue
+                }
                 // If precision is known to be YEAR_ONLY or UNKNOWN, skip because month/day are unknown
                 if (primaryPerson.birthDatePrecision == DatePrecision.YEAR_ONLY ||
                     primaryPerson.birthDatePrecision == DatePrecision.UNKNOWN
@@ -79,30 +83,86 @@ class DefaultEventsRepository(
                 )
             }
 
-            // 4. Fetch memorial events
-            val memorialsResult = memorialRepository.getMemorialEvents()
-            val memorials = memorialsResult.getOrElse { emptyList() }
+            // 4. Derive memorial events automatically from deceased relatives' deathDate
+            val deceasedPeople = people.filter { person ->
+                person.lifeStatus == com.shorashim.core.model.LifeStatus.DECEASED &&
+                    !person.deathDate.isNullOrBlank() &&
+                    person.deathDatePrecision != DatePrecision.YEAR_ONLY &&
+                    person.deathDatePrecision != DatePrecision.UNKNOWN
+            }
 
-            val memorialCalendarEvents = memorials.mapNotNull { mem ->
-                val nextDate = EventDateCalculator.calculateNextMemorialDate(mem.eventDate, today) ?: return@mapNotNull null
+            val groupedDeceased = deceasedPeople.groupBy { person ->
+                "${person.firstName.trim().lowercase()}|${person.lastName?.trim()?.lowercase().orEmpty()}|${person.deathDate.orEmpty()}"
+            }
+
+            val memorialCalendarEvents = mutableListOf<CalendarEvent.Memorial>()
+
+            for ((_, duplicates) in groupedDeceased) {
+                val primaryPerson = duplicates.first()
+                val deathDateStr = primaryPerson.deathDate ?: continue
+                val nextMemorial = EventDateCalculator.calculateNextMemorialDate(deathDateStr, today) ?: continue
+                val daysUntil = EventDateCalculator.calculateDaysUntil(nextMemorial, today)
+                val relativeLabel = EventDateCalculator.formatRelativeLabel(nextMemorial, today)
+                val treeNames = duplicates.mapNotNull { familyMap[it.familyId] }.distinct()
+                val familyName = treeNames.joinToString(", ").ifBlank { "עץ משפחה" }
+
+                val deathYear = deathDateStr.split("-").firstOrNull()?.toIntOrNull()
+                val yearsSincePassing = if (deathYear != null) nextMemorial.year - deathYear else null
+                val formattedOriginalDate = formatIsoDateToDisplay(deathDateStr)
+
+                val description = if (yearsSincePassing != null && yearsSincePassing > 0) {
+                    "אזכרה - שנה $yearsSincePassing לפטירה (נפטר/ה ב-$formattedOriginalDate)"
+                } else {
+                    "אזכרה שנתית (נפטר/ה ב-$formattedOriginalDate)"
+                }
+
+                memorialCalendarEvents.add(
+                    CalendarEvent.Memorial(
+                        id = "mem_person_${primaryPerson.id}",
+                        memorialId = primaryPerson.id,
+                        personId = primaryPerson.id,
+                        personName = primaryPerson.fullName,
+                        familyId = primaryPerson.familyId,
+                        familyName = familyName,
+                        originalDateStr = formattedOriginalDate,
+                        targetDate = nextMemorial,
+                        hebrewDate = null,
+                        description = description,
+                        daysUntil = daysUntil,
+                        relativeLabel = relativeLabel,
+                        canEdit = false,
+                    )
+                )
+            }
+
+            // Also merge any standalone manual memorial events from DB
+            val memorialsResult = memorialRepository.getMemorialEvents()
+            val existingPersonIds = memorialCalendarEvents.mapNotNull { it.personId }.toSet()
+            val manualMemorials = memorialsResult.getOrElse { emptyList() }
+                .filter { it.personId == null || it.personId !in existingPersonIds }
+
+            for (mem in manualMemorials) {
+                val nextDate = EventDateCalculator.calculateNextMemorialDate(mem.eventDate, today) ?: continue
                 val daysUntil = EventDateCalculator.calculateDaysUntil(nextDate, today)
                 val relativeLabel = EventDateCalculator.formatRelativeLabel(nextDate, today)
                 val familyName = familyMap[mem.familyId] ?: mem.familyName.ifBlank { "משפחה" }
 
-                CalendarEvent.Memorial(
-                    id = "mem_${mem.id}",
-                    memorialId = mem.id,
-                    personId = mem.personId,
-                    personName = mem.personName,
-                    familyId = mem.familyId,
-                    familyName = familyName,
-                    originalDateStr = mem.eventDate,
-                    targetDate = nextDate,
-                    hebrewDate = mem.hebrewDate,
-                    description = mem.description,
-                    daysUntil = daysUntil,
-                    relativeLabel = relativeLabel,
-                    canEdit = true, // Authorized participant
+                memorialCalendarEvents.add(
+                    CalendarEvent.Memorial(
+                        id = "mem_${mem.id}",
+                        memorialId = mem.id,
+                        personId = mem.personId,
+                        personName = mem.personName,
+                        familyId = mem.familyId,
+                        familyName = familyName,
+                        originalDateStr = formatIsoDateToDisplay(mem.eventDate),
+                        targetDate = nextDate,
+                        hebrewDate = mem.hebrewDate,
+                        description = mem.description,
+                        daysUntil = daysUntil,
+                        relativeLabel = relativeLabel,
+                        canEdit = true,
+                    )
                 )
             }
 
@@ -129,3 +189,13 @@ class DefaultEventsRepository(
         return memorialRepository.deleteMemorialEvent(id)
     }
 }
+
+private fun formatIsoDateToDisplay(isoDate: String): String {
+    val parts = isoDate.trim().split("-")
+    return if (parts.size == 3) {
+        "${parts[2]}/${parts[1]}/${parts[0]}"
+    } else {
+        isoDate
+    }
+}
+

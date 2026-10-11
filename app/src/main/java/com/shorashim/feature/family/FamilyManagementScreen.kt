@@ -86,6 +86,10 @@ fun FamilyManagementRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        viewModel.loadData()
+    }
+
     LaunchedEffect(uiState.toastMessage) {
         val msg = uiState.toastMessage
         if (msg != null) {

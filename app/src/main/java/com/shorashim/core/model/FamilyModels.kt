@@ -280,15 +280,15 @@ data class PartialDate(
     fun toIsoDateString(): String? {
         return when (precision) {
             DatePrecision.UNKNOWN -> null
-            DatePrecision.YEAR_ONLY -> year?.let { String.format("%04d-01-01", it) }
+            DatePrecision.YEAR_ONLY -> year?.let { String.format(java.util.Locale.ROOT, "%04d-01-01", it) }
             DatePrecision.YEAR_MONTH -> {
                 if (year != null && month != null) {
-                    String.format("%04d-%02d-01", year, month)
+                    String.format(java.util.Locale.ROOT, "%04d-%02d-01", year, month)
                 } else null
             }
             DatePrecision.FULL_DATE -> {
                 if (year != null && month != null && day != null) {
-                    String.format("%04d-%02d-%02d", year, month, day)
+                    String.format(java.util.Locale.ROOT, "%04d-%02d-%02d", year, month, day)
                 } else null
             }
         }

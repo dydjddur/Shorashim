@@ -5,6 +5,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+def defaultSupabaseUrl = "https://drbhaydqdlupzpyngkdl.supabase.co"
+def defaultSupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYmhheWRxZGx1cHpweW5na2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTAwNTMsImV4cCI6MjEwNzIyNjA1M30.ITyIGFcp5JpLU5sz_TVFQZOG8KoBe8KeQ8ydKZjVBG4"
+
 def supabaseUrl = ""
 def supabaseAnonKey = ""
 def envFile = rootProject.file(".env")
@@ -38,6 +41,13 @@ if (envFile.exists()) {
             supabaseAnonKey = raw
         }
     }
+}
+
+if (supabaseUrl.isEmpty()) {
+    supabaseUrl = defaultSupabaseUrl
+}
+if (supabaseAnonKey.isEmpty()) {
+    supabaseAnonKey = defaultSupabaseAnonKey
 }
 
 android {
