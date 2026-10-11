@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(LocaleHelper.wrap(newBase))
     }
 
-    private var pendingInviteToken: String? = null
+    private val pendingInviteToken = androidx.compose.runtime.mutableStateOf<String?>(null)
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
@@ -39,18 +39,23 @@ class MainActivity : ComponentActivity() {
 
     private fun extractInviteToken(intent: android.content.Intent?) {
         val uri = intent?.data ?: return
+        android.util.Log.d("MainActivity", "Received deep link URI: $uri")
         // https://shorashim-invite.vercel.app/invite/{token} OR shorashim://invite/{token}
         val token = when {
-            uri.scheme == "https" && uri.host == "shorashim-invite.vercel.app" && uri.pathSegments.size >= 2 -> {
-                if (uri.pathSegments[0] == "invite") uri.pathSegments[1] else null
+            uri.scheme == "https" && uri.host == "shorashim-invite.vercel.app" -> {
+                val segments = uri.pathSegments
+                if (segments.size >= 2 && segments[0] == "invite") segments[1]
+                else if (segments.size == 1 && segments[0] != "invite") segments[0]
+                else null
             }
-            uri.scheme == "shorashim" && uri.host == "invite" -> {
+            uri.scheme == "shorashim" -> {
                 uri.pathSegments.firstOrNull() ?: uri.lastPathSegment
             }
             else -> null
         }
+        android.util.Log.d("MainActivity", "Extracted token: $token")
         if (!token.isNullOrBlank()) {
-            pendingInviteToken = token
+            pendingInviteToken.value = token
         }
     }
 
@@ -77,11 +82,18 @@ class MainActivity : ComponentActivity() {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentRoute = navBackStackEntry?.destination?.route
 
-                        androidx.compose.runtime.LaunchedEffect(pendingInviteToken) {
-                            val token = pendingInviteToken
+                        val inviteToken by pendingInviteToken
+                        androidx.compose.runtime.LaunchedEffect(inviteToken) {
+                            val token = inviteToken
+                            android.util.Log.d("MainActivity", "LaunchedEffect triggered with inviteToken: $token")
                             if (token != null) {
-                                pendingInviteToken = null
-                                navController.navigate(com.shorashim.core.navigation.ShorashimRoutes.invitationDeepLink(token))
+                                pendingInviteToken.value = null
+                                try {
+                                    navController.navigate(com.shorashim.core.navigation.ShorashimRoutes.invitationDeepLink(token))
+                                    android.util.Log.d("MainActivity", "Navigated to deep link route: ${com.shorashim.core.navigation.ShorashimRoutes.invitationDeepLink(token)}")
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "Navigation to deep link failed", e)
+                                }
                             }
                         }
 
