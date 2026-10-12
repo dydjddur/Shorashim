@@ -8,8 +8,23 @@ module.exports = (req, res) => {
     return res.status(200).end();
   }
 
-  const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-  const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+  const supabaseUrl = (
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    process.env.REACT_APP_SUPABASE_URL ||
+    process.env.supabase_url ||
+    ''
+  ).trim();
+
+  const supabaseAnonKey = (
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.REACT_APP_SUPABASE_ANON_KEY ||
+    process.env.supabase_anon_key ||
+    ''
+  ).trim();
 
   return res.status(200).json({
     supabaseUrl: supabaseUrl,
