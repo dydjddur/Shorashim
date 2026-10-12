@@ -140,9 +140,6 @@
   </main>
 
   <script>
-    // Public Supabase anon key / URL (same values as the app; protected by RLS and SECURITY DEFINER RPCs).
-    var SUPABASE_URL = 'https://drbhaydqdlupzpyngkdl.supabase.co';
-    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYmhheWRxZGx1cHpweW5na2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTAwNTMsImV4cCI6MjEwNzIyNjA1M30.ITyIGFcp5JpLU5sz_TVFQZOG8KoBe8KeQ8ydKZjVBG4';
     var PACKAGE_ID = 'com.example.remember_me';
 
     var parts = window.location.pathname.split('/').filter(Boolean);
@@ -173,36 +170,68 @@
       return Math.max(0, Math.ceil(ms / 86400000));
     }
 
+    function renderInvitation(data) {
+      if (data && data.ok) {
+        $('familyName').textContent = data.family_name || 'עץ משפחה';
+        $('inviter').textContent = data.invited_by ? 'הוזמנת על ידי ' + data.invited_by : '';
+        $('roleChip').textContent = ROLES[data.role] || 'משתתף/ת';
+        var d = data.expires_at ? daysLeft(data.expires_at) : null;
+        $('expiryChip').textContent = d === null ? '' : (d <= 1 ? 'הקישור תקף עוד יום' : 'הקישור תקף עוד ' + d + ' ימים');
+        if (d === null) $('expiryChip').classList.add('hidden');
+        show('ok');
+      } else {
+        var e = ERRORS[data && data.error];
+        if (e) {
+          $('badTitle').textContent = e[0];
+          $('badText').textContent = e[1];
+          show('bad');
+          openBtn.classList.add('hidden');
+          $('steps').classList.add('hidden');
+        } else {
+          show('generic');
+        }
+      }
+    }
+
     if (!token) {
       show('generic');
       $('actions').classList.remove('hidden');
     } else {
-      fetch(SUPABASE_URL + '/rest/v1/rpc/resolve_invitation', {
+      fetch('/api/resolve_invitation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ p_token: token })
-      }).then(function (r) { return r.json(); }).then(function (data) {
-        if (data && data.ok) {
-          $('familyName').textContent = data.family_name || 'עץ משפחה';
-          $('inviter').textContent = data.invited_by ? 'הוזמנת על ידי ' + data.invited_by : '';
-          $('roleChip').textContent = ROLES[data.role] || 'משתתף/ת';
-          var d = data.expires_at ? daysLeft(data.expires_at) : null;
-          $('expiryChip').textContent = d === null ? '' : (d <= 1 ? 'הקישור תקף עוד יום' : 'הקישור תקף עוד ' + d + ' ימים');
-          if (d === null) $('expiryChip').classList.add('hidden');
-          show('ok');
-        } else {
-          var e = ERRORS[data && data.error];
-          if (e) {
-            $('badTitle').textContent = e[0];
-            $('badText').textContent = e[1];
-            show('bad');
-            openBtn.classList.add('hidden');
-            $('steps').classList.add('hidden');
-          } else {
-            show('generic');
-          }
+      })
+      .then(function (r) {
+        if (!r.ok && r.status !== 400 && r.status !== 404) {
+          throw new Error('fallback');
         }
-      }).catch(function () { show('generic'); });
+        return r.json();
+      })
+      .then(renderInvitation)
+      .catch(function () {
+        fetch('/api/config')
+          .then(function (r) { return r.json(); })
+          .then(function (cfg) {
+            if (!cfg || !cfg.supabaseUrl || !cfg.supabaseAnonKey) {
+              show('generic');
+              return;
+            }
+            var cleanUrl = cfg.supabaseUrl.replace(/\/+$/, '');
+            return fetch(cleanUrl + '/rest/v1/rpc/resolve_invitation', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.supabaseAnonKey,
+                'Authorization': 'Bearer ' + cfg.supabaseAnonKey
+              },
+              body: JSON.stringify({ p_token: token })
+            })
+            .then(function (r) { return r.json(); })
+            .then(renderInvitation);
+          })
+          .catch(function () { show('generic'); });
+      });
 
       // Android: try to hand the link straight to the app.
       if (isAndroid) {

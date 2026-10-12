@@ -5,11 +5,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-def defaultSupabaseUrl = "https://drbhaydqdlupzpyngkdl.supabase.co"
-def defaultSupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYmhheWRxZGx1cHpweW5na2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTAwNTMsImV4cCI6MjEwNzIyNjA1M30.ITyIGFcp5JpLU5sz_TVFQZOG8KoBe8KeQ8ydKZjVBG4"
-
 def supabaseUrl = ""
 def supabaseAnonKey = ""
+
+// 1. Read from root .env file if present (developer local override, gitignored)
 def envFile = rootProject.file(".env")
 if (envFile.exists()) {
     envFile.eachLine { line ->
@@ -43,11 +42,43 @@ if (envFile.exists()) {
     }
 }
 
-if (supabaseUrl.isEmpty()) {
-    supabaseUrl = defaultSupabaseUrl
+// 2. Check System environment variables (e.g. CI/CD or developer OS environment)
+if (supabaseUrl.isEmpty() && System.getenv("SUPABASE_URL") != null) {
+    supabaseUrl = System.getenv("SUPABASE_URL").trim()
 }
-if (supabaseAnonKey.isEmpty()) {
-    supabaseAnonKey = defaultSupabaseAnonKey
+if (supabaseAnonKey.isEmpty() && System.getenv("SUPABASE_ANON_KEY") != null) {
+    supabaseAnonKey = System.getenv("SUPABASE_ANON_KEY").trim()
+}
+
+// 3. Check Gradle project properties (e.g. -PsupabaseUrl=... -PsupabaseAnonKey=...)
+if (supabaseUrl.isEmpty() && project.hasProperty("supabaseUrl")) {
+    supabaseUrl = project.property("supabaseUrl").toString().trim()
+}
+if (supabaseAnonKey.isEmpty() && project.hasProperty("supabaseAnonKey")) {
+    supabaseAnonKey = project.property("supabaseAnonKey").toString().trim()
+}
+
+// 4. Fallback: Fetch configuration from Vercel endpoint if not provided locally
+if (supabaseUrl.isEmpty() || supabaseAnonKey.isEmpty()) {
+    try {
+        def vercelConfigUrl = new URL("https://shorashim-invite.vercel.app/api/config")
+        def connection = (HttpURLConnection) vercelConfigUrl.openConnection()
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 4000
+        connection.readTimeout = 4000
+        if (connection.responseCode == 200) {
+            def text = connection.inputStream.text
+            def parsed = new groovy.json.JsonSlurper().parseText(text)
+            if (supabaseUrl.isEmpty() && parsed.supabaseUrl) {
+                supabaseUrl = parsed.supabaseUrl.toString().trim()
+            }
+            if (supabaseAnonKey.isEmpty() && parsed.supabaseAnonKey) {
+                supabaseAnonKey = parsed.supabaseAnonKey.toString().trim()
+            }
+        }
+    } catch (Exception ignored) {
+        // Build continues
+    }
 }
 
 android {
