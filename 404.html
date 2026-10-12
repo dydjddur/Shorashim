@@ -133,18 +133,18 @@
     <div id="actions">
       <a id="openAppBtn" class="btn btn-primary" href="#">פתיחה באפליקציית שורשים</a>
       <div id="notInstalledBanner" class="not-installed hidden">
-        <b>האפליקציה עדיין לא מותקנת במכשיר?</b>
-        <span>לחצו להורדה והתקנה ישירה של האפליקציה (קובץ APK):</span>
-        <a id="directDownloadBtn" class="btn btn-download" href="https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk" download="shorashim-v1.0.0.apk">📥 הורדת אפליקציית שורשים (APK)</a>
+        <b>האפליקציה עדיין לא מותקנת במכשיר</b>
+        <span>הורדת קובץ ה-APK העדכני החלה. אם ההורדה לא החלה אוטומטית, לחצו כאן:</span>
+        <a id="directDownloadBtn" class="btn btn-download" href="/download">📥 הורדת אפליקציית שורשים (קובץ APK)</a>
       </div>
-      <a class="btn btn-ghost" id="downloadBtn" href="https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk" download="shorashim-v1.0.0.apk">📥 אין לך את האפליקציה? הורדת APK</a>
+      <a class="btn btn-ghost" id="downloadBtn" href="/download">📥 אין לך את האפליקציה? הורדת APK</a>
       <button class="btn btn-ghost" id="copyBtn" type="button">העתקת הקישור</button>
       <div class="steps" id="steps">
         <b>איך מצטרפים?</b>
         <ol>
-          <li>מורידים ומתקינים את האפליקציה (בלחיצה על הורדת קובץ ה-APK).</li>
-          <li>לאחר ההתקנה, חוזרים לקישור זה ולוחצים <b>פתיחה באפליקציית שורשים</b>.</li>
-          <li>נכנסים עם שם המשתמש או נרשמים ומצטרפים ישר לעץ המשפחה!</li>
+          <li>לוחצים <b>פתיחה באפליקציית שורשים</b> למעלה (אם האפליקציה אינה מותקנת, קובץ ה-APK יירד אוטומטית).</li>
+          <li>מתקינים את האפליקציה במכשיר.</li>
+          <li>חוזרים לקישור זה, נכנסים לחשבון ומצטרפים ישר לעץ המשפחה!</li>
         </ol>
         הקישור מיועד לכל בני המשפחה — אפשר לשתף אותו בקבוצה.
       </div>
@@ -155,7 +155,6 @@
 
   <script>
     var PACKAGE_ID = 'com.example.remember_me';
-    var APK_DOWNLOAD_URL = 'https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk';
 
     var parts = window.location.pathname.split('/').filter(Boolean);
     var token = (parts[0] === 'invite' && parts[1]) ? parts[1] : (parts.length === 1 && /^[0-9a-fA-F]{16,}$/.test(parts[0]) ? parts[0] : '');
@@ -166,11 +165,8 @@
     var openBtn = $('openAppBtn');
     var notInstalledBanner = $('notInstalledBanner');
 
-    var fallbackUrl = window.location.origin ? (window.location.origin + '/download') : APK_DOWNLOAD_URL;
-    var encodedFallback = encodeURIComponent(fallbackUrl);
-    var intentUri = 'intent://invite/' + token + '#Intent;scheme=shorashim;package=' + PACKAGE_ID + ';S.browser_fallback_url=' + encodedFallback + ';end';
     var schemeUri = 'shorashim://invite/' + token;
-    openBtn.href = isAndroid ? intentUri : schemeUri;
+    var intentUri = 'intent://invite/' + token + '#Intent;scheme=shorashim;package=' + PACKAGE_ID + ';end';
 
     var appOpened = false;
     function markAppOpened() { appOpened = true; }
@@ -186,15 +182,27 @@
       }
     }
 
-    openBtn.addEventListener('click', function () {
-      if (!isAndroid) return;
+    openBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (!isAndroid) {
+        showInstallPrompt();
+        window.location.href = '/download';
+        return;
+      }
+
       appOpened = false;
       var clickedAt = Date.now();
+
+      // Attempt to open installed app via custom scheme
+      window.location.href = schemeUri;
+
+      // If app did not open after 1.2s, it is not installed: download APK from latest release!
       setTimeout(function () {
-        if (!appOpened && !document.hidden && (Date.now() - clickedAt < 3500)) {
+        if (!appOpened && !document.hidden && (Date.now() - clickedAt < 3000)) {
           showInstallPrompt();
+          window.location.href = '/download';
         }
-      }, 1600);
+      }, 1200);
     });
 
     function show(id) {
@@ -276,18 +284,6 @@
           .catch(function () { show('generic'); });
       });
 
-      // Android: try to hand the link straight to the app.
-      if (isAndroid) {
-        setTimeout(function () {
-          var triedAt = Date.now();
-          window.location.href = intentUri;
-          setTimeout(function () {
-            if (!appOpened && !document.hidden && (Date.now() - triedAt < 3500)) {
-              showInstallPrompt();
-            }
-          }, 1800);
-        }, 700);
-      }
     }
 
     if (!isAndroid) {

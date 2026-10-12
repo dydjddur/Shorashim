@@ -22,7 +22,10 @@ import com.shorashim.core.navigation.ShorashimDestination
 import com.shorashim.core.navigation.ShorashimNavHost
 import com.shorashim.core.ui.component.ShorashimLoadingState
 import com.shorashim.core.ui.theme.ShorashimTheme
+import com.shorashim.core.update.AppUpdateDialog
+import com.shorashim.core.update.AppUpdateManager
 import com.shorashim.feature.auth.AuthViewModel
+import androidx.lifecycle.lifecycleScope
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -30,6 +33,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val pendingInviteToken = androidx.compose.runtime.mutableStateOf<String?>(null)
+    private val appUpdateManager = AppUpdateManager()
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
@@ -64,8 +68,19 @@ class MainActivity : ComponentActivity() {
         extractInviteToken(intent)
         enableEdgeToEdge()
         val appContainer = (application as ShorashimApplication).container
+        appUpdateManager.start(lifecycleScope)
         setContent {
             ShorashimTheme {
+                val updateInfo by appUpdateManager.updateInfo.collectAsStateWithLifecycle()
+                updateInfo?.let { info ->
+                    AppUpdateDialog(
+                        updateInfo = info,
+                        onDismiss = { dontAskAgain ->
+                            appUpdateManager.dismiss(dontAskAgain)
+                        }
+                    )
+                }
+
                 val authViewModel: AuthViewModel = viewModel(
                     factory = shorashimViewModelFactory {
                         AuthViewModel(appContainer.authRepository)

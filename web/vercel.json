@@ -19,24 +19,23 @@
       ]
     }
   ],
-  "redirects": [
+  "rewrites": [
     {
       "source": "/download",
-      "destination": "https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk",
-      "permanent": false
+      "destination": "/api/download"
     },
     {
       "source": "/download/apk",
-      "destination": "https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk",
-      "permanent": false
+      "destination": "/api/download"
     },
     {
       "source": "/shorashim.apk",
-      "destination": "https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk",
-      "permanent": false
-    }
-  ],
-  "rewrites": [
+      "destination": "/api/download"
+    },
+    {
+      "source": "/version",
+      "destination": "/api/version"
+    },
     {
       "source": "/invite/:token",
       "destination": "/"

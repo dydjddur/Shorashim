@@ -320,5 +320,13 @@
     <!-- Tree Refresh -->
     <string name="tree_refresh_action">רענון עץ המשפחה</string>
     <string name="tree_refresh_success">עץ המשפחה עודכן בהצלחה</string>
+
+    <!-- App Updates -->
+    <string name="update_dialog_title">עדכון גרסה זמין 🚀</string>
+    <string name="update_dialog_message">קיימת גרסה חדשה של שורשים (v%1$s). הגרסה הנוכחית שלך: v%2$s.</string>
+    <string name="update_dialog_action_update">עדכון עכשיו</string>
+    <string name="update_dialog_action_later">מאוחר יותר</string>
+    <string name="update_dialog_dont_ask_again">אל תשאל אותי שוב בסשן זה</string>
+    <string name="update_dialog_notes_title">מה חדש בעדכון:</string>
 </resources>
 
