@@ -79,6 +79,15 @@
     .spinner { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #D9ECE3; border-top-color: var(--mint-dark); margin: 0 auto 12px; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .err { color: #9B2C2C; font-weight: 700; }
+    .not-installed {
+      background: #FFF9E6; border: 1.5px solid #F3C96A; border-radius: 16px;
+      padding: 14px 16px; margin-top: 14px; text-align: right; color: #6D4C0E; font-size: 14px; line-height: 1.6;
+    }
+    .not-installed b { color: #4A3408; font-size: 15px; display: block; margin-bottom: 4px; }
+    .btn-download {
+      background: linear-gradient(180deg, #E2A73E, #C88E23); color: #fff !important;
+      box-shadow: 0 6px 18px rgba(200,142,35,.35); margin-top: 10px;
+    }
     .foot { margin-top: 20px; font-size: 12px; color: #7A8C82; }
     .hidden { display: none !important; }
   </style>
@@ -123,14 +132,19 @@
 
     <div id="actions">
       <a id="openAppBtn" class="btn btn-primary" href="#">פתיחה באפליקציית שורשים</a>
-      <a class="btn btn-ghost" id="downloadBtn" href="https://github.com/dydjddur/Shorashim/releases">אין לך את האפליקציה? הורדה</a>
+      <div id="notInstalledBanner" class="not-installed hidden">
+        <b>האפליקציה עדיין לא מותקנת במכשיר?</b>
+        <span>לחצו להורדה והתקנה ישירה של האפליקציה (קובץ APK):</span>
+        <a id="directDownloadBtn" class="btn btn-download" href="https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk" download="shorashim-v1.0.0.apk">📥 הורדת אפליקציית שורשים (APK)</a>
+      </div>
+      <a class="btn btn-ghost" id="downloadBtn" href="https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk" download="shorashim-v1.0.0.apk">📥 אין לך את האפליקציה? הורדת APK</a>
       <button class="btn btn-ghost" id="copyBtn" type="button">העתקת הקישור</button>
       <div class="steps" id="steps">
         <b>איך מצטרפים?</b>
         <ol>
-          <li>פותחים את האפליקציה (או מתקינים אותה בלחיצה למעלה).</li>
-          <li>נכנסים לחשבון או נרשמים — אין צורך בהזמנה במייל.</li>
-          <li>מאשרים את ההזמנה ונכנסים ישר לעץ המשפחה.</li>
+          <li>מורידים ומתקינים את האפליקציה (בלחיצה על הורדת קובץ ה-APK).</li>
+          <li>לאחר ההתקנה, חוזרים לקישור זה ולוחצים <b>פתיחה באפליקציית שורשים</b>.</li>
+          <li>נכנסים עם שם המשתמש או נרשמים ומצטרפים ישר לעץ המשפחה!</li>
         </ol>
         הקישור מיועד לכל בני המשפחה — אפשר לשתף אותו בקבוצה.
       </div>
@@ -141,6 +155,7 @@
 
   <script>
     var PACKAGE_ID = 'com.example.remember_me';
+    var APK_DOWNLOAD_URL = 'https://github.com/dydjddur/Shorashim/releases/download/v1.0.0/shorashim-v1.0.0.apk';
 
     var parts = window.location.pathname.split('/').filter(Boolean);
     var token = (parts[0] === 'invite' && parts[1]) ? parts[1] : (parts.length === 1 && /^[0-9a-fA-F]{16,}$/.test(parts[0]) ? parts[0] : '');
@@ -149,10 +164,38 @@
     var isAndroid = /android/i.test(navigator.userAgent);
     var $ = function (id) { return document.getElementById(id); };
     var openBtn = $('openAppBtn');
+    var notInstalledBanner = $('notInstalledBanner');
 
-    var intentUri = 'intent://invite/' + token + '#Intent;scheme=shorashim;package=' + PACKAGE_ID + ';end';
+    var fallbackUrl = window.location.origin ? (window.location.origin + '/download') : APK_DOWNLOAD_URL;
+    var encodedFallback = encodeURIComponent(fallbackUrl);
+    var intentUri = 'intent://invite/' + token + '#Intent;scheme=shorashim;package=' + PACKAGE_ID + ';S.browser_fallback_url=' + encodedFallback + ';end';
     var schemeUri = 'shorashim://invite/' + token;
     openBtn.href = isAndroid ? intentUri : schemeUri;
+
+    var appOpened = false;
+    function markAppOpened() { appOpened = true; }
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) markAppOpened();
+    });
+    window.addEventListener('blur', markAppOpened);
+    window.addEventListener('pagehide', markAppOpened);
+
+    function showInstallPrompt() {
+      if (notInstalledBanner) {
+        notInstalledBanner.classList.remove('hidden');
+      }
+    }
+
+    openBtn.addEventListener('click', function () {
+      if (!isAndroid) return;
+      appOpened = false;
+      var clickedAt = Date.now();
+      setTimeout(function () {
+        if (!appOpened && !document.hidden && (Date.now() - clickedAt < 3500)) {
+          showInstallPrompt();
+        }
+      }, 1600);
+    });
 
     function show(id) {
       ['loading', 'ok', 'generic', 'bad'].forEach(function (s) { $(s).classList.toggle('hidden', s !== id); });
@@ -235,7 +278,15 @@
 
       // Android: try to hand the link straight to the app.
       if (isAndroid) {
-        setTimeout(function () { window.location.href = intentUri; }, 700);
+        setTimeout(function () {
+          var triedAt = Date.now();
+          window.location.href = intentUri;
+          setTimeout(function () {
+            if (!appOpened && !document.hidden && (Date.now() - triedAt < 3500)) {
+              showInstallPrompt();
+            }
+          }, 1800);
+        }, 700);
       }
     }
 
