@@ -33,9 +33,11 @@ class AuthViewModel(
 
     // --- Login Handlers ---
 
-    fun onLoginEmailChanged(email: String) {
-        _loginUiState.update { it.copy(email = email, emailError = null, generalError = null) }
+    fun onLoginIdentifierChanged(identifier: String) {
+        _loginUiState.update { it.copy(usernameOrEmail = identifier, usernameOrEmailError = null, generalError = null) }
     }
+
+    fun onLoginEmailChanged(email: String) = onLoginIdentifierChanged(email)
 
     fun onLoginPasswordChanged(password: String) {
         _loginUiState.update { it.copy(password = password, passwordError = null, generalError = null) }
@@ -49,13 +51,13 @@ class AuthViewModel(
         val state = _loginUiState.value
         if (state.isLoading) return
 
-        val emailError = AuthValidator.validateEmail(state.email)
+        val identifierError = AuthValidator.validateLoginIdentifier(state.usernameOrEmail)
         val passwordError = AuthValidator.validatePassword(state.password)
 
-        if (emailError != null || passwordError != null) {
+        if (identifierError != null || passwordError != null) {
             _loginUiState.update {
                 it.copy(
-                    emailError = emailError,
+                    usernameOrEmailError = identifierError,
                     passwordError = passwordError,
                 )
             }
@@ -65,7 +67,7 @@ class AuthViewModel(
         _loginUiState.update { it.copy(isLoading = true, generalError = null) }
 
         viewModelScope.launch {
-            val result = authRepository.login(state.email, state.password)
+            val result = authRepository.login(state.usernameOrEmail, state.password)
             result.fold(
                 onSuccess = {
                     _loginUiState.update { it.copy(isLoading = false) }
@@ -88,6 +90,10 @@ class AuthViewModel(
 
     fun onRegisterNameChanged(name: String) {
         _registerUiState.update { it.copy(name = name, nameError = null, generalError = null) }
+    }
+
+    fun onRegisterUsernameChanged(username: String) {
+        _registerUiState.update { it.copy(username = username, usernameError = null, generalError = null) }
     }
 
     fun onRegisterEmailChanged(email: String) {
@@ -129,15 +135,17 @@ class AuthViewModel(
         if (state.isLoading) return
 
         val nameError = AuthValidator.validateName(state.name)
-        val emailError = AuthValidator.validateEmail(state.email)
+        val usernameError = AuthValidator.validateUsername(state.username)
+        val emailError = AuthValidator.validateOptionalEmail(state.email)
         val passwordError = AuthValidator.validatePassword(state.password)
         val confirmError = AuthValidator.validateConfirmPassword(state.password, state.confirmPassword)
         val termsError = AuthValidator.validateTermsAccepted(state.termsAccepted)
 
-        if (nameError != null || emailError != null || passwordError != null || confirmError != null || termsError != null) {
+        if (nameError != null || usernameError != null || emailError != null || passwordError != null || confirmError != null || termsError != null) {
             _registerUiState.update {
                 it.copy(
                     nameError = nameError,
+                    usernameError = usernameError,
                     emailError = emailError,
                     passwordError = passwordError,
                     confirmPasswordError = confirmError,
@@ -150,7 +158,12 @@ class AuthViewModel(
         _registerUiState.update { it.copy(isLoading = true, generalError = null) }
 
         viewModelScope.launch {
-            val result = authRepository.register(state.name, state.email, state.password)
+            val result = authRepository.register(
+                name = state.name,
+                username = state.username,
+                password = state.password,
+                email = state.email.ifBlank { null },
+            )
             result.fold(
                 onSuccess = {
                     _registerUiState.update { it.copy(isLoading = false) }
@@ -168,47 +181,134 @@ class AuthViewModel(
         }
     }
 
-    // --- Forgot Password Handlers ---
+    // --- Forgot Password OTP Handlers ---
 
-    fun onForgotPasswordEmailChanged(email: String) {
+    fun onForgotPasswordUsernameChanged(username: String) {
         _forgotPasswordUiState.update {
-            it.copy(email = email, emailError = null, generalError = null)
+            it.copy(username = username, usernameError = null, generalError = null)
         }
     }
 
-    fun sendPasswordResetEmail() {
+    fun onForgotPasswordCodeChanged(code: String) {
+        _forgotPasswordUiState.update {
+            it.copy(code = code, codeError = null, generalError = null)
+        }
+    }
+
+    fun onForgotPasswordNewPasswordChanged(password: String) {
+        _forgotPasswordUiState.update {
+            it.copy(newPassword = password, newPasswordError = null, generalError = null)
+        }
+    }
+
+    fun onForgotPasswordConfirmNewPasswordChanged(confirm: String) {
+        _forgotPasswordUiState.update {
+            it.copy(confirmNewPassword = confirm, confirmNewPasswordError = null, generalError = null)
+        }
+    }
+
+    fun toggleNewPasswordVisibility() {
+        _forgotPasswordUiState.update { it.copy(isNewPasswordVisible = !it.isNewPasswordVisible) }
+    }
+
+    fun toggleConfirmNewPasswordVisibility() {
+        _forgotPasswordUiState.update { it.copy(isConfirmNewPasswordVisible = !it.isConfirmNewPasswordVisible) }
+    }
+
+    fun requestCode() {
         val state = _forgotPasswordUiState.value
         if (state.isLoading) return
 
-        val emailError = AuthValidator.validateEmail(state.email)
-        if (emailError != null) {
-            _forgotPasswordUiState.update { it.copy(emailError = emailError) }
+        val usernameError = AuthValidator.validateUsername(state.username)
+        if (usernameError != null) {
+            _forgotPasswordUiState.update { it.copy(usernameError = usernameError) }
             return
         }
 
         _forgotPasswordUiState.update { it.copy(isLoading = true, generalError = null) }
 
         viewModelScope.launch {
-            val result = authRepository.sendPasswordResetEmail(state.email)
-            result.fold(
-                onSuccess = {
-                    _forgotPasswordUiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isEmailSent = true,
-                            generalError = null,
-                        )
-                    }
-                },
-                onFailure = { error ->
-                    _forgotPasswordUiState.update {
-                        it.copy(
-                            isLoading = false,
-                            generalError = AuthErrorMapper.mapThrowable(error),
-                        )
-                    }
-                },
-            )
+            authRepository.requestPasswordResetCode(state.username)
+                .fold(
+                    onSuccess = { hasEmail ->
+                        _forgotPasswordUiState.update {
+                            it.copy(
+                                isLoading = false,
+                                hasEmail = hasEmail,
+                                step = if (hasEmail) ForgotPasswordStep.ENTER_CODE else ForgotPasswordStep.ENTER_USERNAME,
+                                generalError = if (!hasEmail) com.shorashim.R.string.auth_error_not_configured else null,
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        _forgotPasswordUiState.update {
+                            it.copy(
+                                isLoading = false,
+                                generalError = AuthErrorMapper.mapThrowable(error),
+                            )
+                        }
+                    },
+                )
+        }
+    }
+
+    fun verifyCode() {
+        val state = _forgotPasswordUiState.value
+        if (state.isLoading) return
+
+        val codeError = AuthValidator.validateResetCode(state.code)
+        if (codeError != null) {
+            _forgotPasswordUiState.update { it.copy(codeError = codeError) }
+            return
+        }
+
+        // Advance to step 3 (enter new password)
+        _forgotPasswordUiState.update {
+            it.copy(step = ForgotPasswordStep.ENTER_NEW_PASSWORD, generalError = null)
+        }
+    }
+
+    fun completePasswordReset(onSuccess: () -> Unit = {}) {
+        val state = _forgotPasswordUiState.value
+        if (state.isLoading) return
+
+        val passwordError = AuthValidator.validatePassword(state.newPassword)
+        val confirmError = AuthValidator.validateConfirmPassword(state.newPassword, state.confirmNewPassword)
+
+        if (passwordError != null || confirmError != null) {
+            _forgotPasswordUiState.update {
+                it.copy(
+                    newPasswordError = passwordError,
+                    confirmNewPasswordError = confirmError,
+                )
+            }
+            return
+        }
+
+        _forgotPasswordUiState.update { it.copy(isLoading = true, generalError = null) }
+
+        viewModelScope.launch {
+            authRepository.verifyAndResetPassword(state.username, state.code, state.newPassword)
+                .fold(
+                    onSuccess = {
+                        _forgotPasswordUiState.update {
+                            it.copy(
+                                isLoading = false,
+                                step = ForgotPasswordStep.SUCCESS,
+                                generalError = null,
+                            )
+                        }
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        _forgotPasswordUiState.update {
+                            it.copy(
+                                isLoading = false,
+                                generalError = AuthErrorMapper.mapThrowable(error),
+                            )
+                        }
+                    },
+                )
         }
     }
 

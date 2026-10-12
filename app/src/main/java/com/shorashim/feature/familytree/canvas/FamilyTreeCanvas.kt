@@ -24,11 +24,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -94,6 +96,8 @@ fun FamilyTreeCanvas(
     onDeletePersonClick: (Person) -> Unit,
     onPublishClick: () -> Unit,
     onEmptyAddPersonClick: () -> Unit,
+    onRefreshClick: (() -> Unit)? = null,
+    isRefreshing: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
@@ -156,9 +160,9 @@ fun FamilyTreeCanvas(
             scale = newScale
         }
 
-        // Re-fit whenever the set of people changes (e.g. after adding a relative) so the new card is in view.
-        LaunchedEffect(nodes.size, viewportW, viewportH) {
-            if (nodes.isNotEmpty() && viewportW > 0f) {
+        // Initial fit to screen on first view only. Preserves zoom level and scroll/pan position on realtime updates!
+        LaunchedEffect(nodes.isNotEmpty(), viewportW, viewportH) {
+            if (!hasInitialView && nodes.isNotEmpty() && viewportW > 0f) {
                 fitToScreen()
                 hasInitialView = true
             }
@@ -422,6 +426,34 @@ fun FamilyTreeCanvas(
                             contentDescription = stringResource(R.string.tree_zoom_out),
                             tint = MaterialTheme.colorScheme.primary,
                         )
+                    }
+                    if (onRefreshClick != null) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp)
+                                .width(1.dp)
+                                .height(20.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        )
+                        IconButton(
+                            onClick = onRefreshClick,
+                            enabled = !isRefreshing,
+                            modifier = Modifier.size(38.dp),
+                        ) {
+                            if (isRefreshing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.Refresh,
+                                    contentDescription = stringResource(R.string.tree_refresh_action),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
                     }
                 }
             }

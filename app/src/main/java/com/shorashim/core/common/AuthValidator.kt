@@ -15,6 +15,8 @@ object AuthValidator {
         Pattern.CASE_INSENSITIVE,
     )
 
+    private val USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,30}$")
+
     @StringRes
     fun validateName(name: String): Int? {
         val trimmed = name.trim()
@@ -26,11 +28,49 @@ object AuthValidator {
     }
 
     @StringRes
+    fun validateUsername(username: String): Int? {
+        val clean = username.trim().removePrefix("@")
+        return when {
+            clean.isEmpty() -> R.string.validation_username_empty
+            clean.length < 3 -> R.string.validation_username_too_short
+            !USERNAME_PATTERN.matcher(clean).matches() -> R.string.validation_username_invalid
+            else -> null
+        }
+    }
+
+    @StringRes
+    fun validateLoginIdentifier(identifier: String): Int? {
+        val trimmed = identifier.trim()
+        return if (trimmed.isEmpty()) {
+            R.string.validation_username_empty
+        } else null
+    }
+
+    @StringRes
     fun validateEmail(email: String): Int? {
         val trimmed = email.trim()
         return when {
             trimmed.isEmpty() -> R.string.validation_email_empty
             !EMAIL_PATTERN.matcher(trimmed).matches() -> R.string.validation_email_invalid
+            else -> null
+        }
+    }
+
+    @StringRes
+    fun validateOptionalEmail(email: String?): Int? {
+        if (email.isNullOrBlank()) return null
+        val trimmed = email.trim()
+        return if (!EMAIL_PATTERN.matcher(trimmed).matches()) {
+            R.string.validation_email_invalid
+        } else null
+    }
+
+    @StringRes
+    fun validateResetCode(code: String): Int? {
+        val trimmed = code.trim()
+        return when {
+            trimmed.isEmpty() -> R.string.validation_code_empty
+            trimmed.length != 6 || !trimmed.all { it.isDigit() } -> R.string.validation_code_invalid
             else -> null
         }
     }

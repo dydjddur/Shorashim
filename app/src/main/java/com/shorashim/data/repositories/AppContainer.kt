@@ -53,6 +53,7 @@ class AppContainer(
                 install(Auth)
                 install(Postgrest)
                 install(Storage)
+                install(io.github.jan.supabase.realtime.Realtime)
                 defaultSerializer = io.github.jan.supabase.serializer.KotlinXSerializer(
                     kotlinx.serialization.json.Json {
                         ignoreUnknownKeys = true

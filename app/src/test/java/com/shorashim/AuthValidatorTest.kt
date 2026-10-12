@@ -53,4 +53,36 @@ class AuthValidatorTest {
         assertEquals(R.string.validation_terms_required, AuthValidator.validateTermsAccepted(false))
         assertNull(AuthValidator.validateTermsAccepted(true))
     }
+
+    @Test
+    fun usernameValidation() {
+        assertEquals(R.string.validation_username_empty, AuthValidator.validateUsername(""))
+        assertEquals(R.string.validation_username_empty, AuthValidator.validateUsername("   "))
+        assertEquals(R.string.validation_username_too_short, AuthValidator.validateUsername("ab"))
+        assertEquals(R.string.validation_username_invalid, AuthValidator.validateUsername("user-name!"))
+        assertEquals(R.string.validation_username_invalid, AuthValidator.validateUsername("משתמש"))
+        assertNull(AuthValidator.validateUsername("naor_123"))
+        assertNull(AuthValidator.validateUsername("@naor_123"))
+        assertNull(AuthValidator.validateUsername("david_cohen"))
+    }
+
+    @Test
+    fun optionalEmailValidation() {
+        assertNull(AuthValidator.validateOptionalEmail(null))
+        assertNull(AuthValidator.validateOptionalEmail(""))
+        assertNull(AuthValidator.validateOptionalEmail("   "))
+        assertEquals(R.string.validation_email_invalid, AuthValidator.validateOptionalEmail("invalid"))
+        assertNull(AuthValidator.validateOptionalEmail("valid@example.com"))
+    }
+
+    @Test
+    fun resetCodeValidation() {
+        assertEquals(R.string.validation_code_empty, AuthValidator.validateResetCode(""))
+        assertEquals(R.string.validation_code_empty, AuthValidator.validateResetCode("   "))
+        assertEquals(R.string.validation_code_invalid, AuthValidator.validateResetCode("12345"))
+        assertEquals(R.string.validation_code_invalid, AuthValidator.validateResetCode("1234567"))
+        assertEquals(R.string.validation_code_invalid, AuthValidator.validateResetCode("12345a"))
+        assertNull(AuthValidator.validateResetCode("123456"))
+        assertNull(AuthValidator.validateResetCode(" 987654 "))
+    }
 }

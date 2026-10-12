@@ -125,6 +125,9 @@ data class FamilyMember(
     val familyId: String,
     val userId: String,
     val userEmail: String? = null,
+    val displayName: String? = null,
+    val username: String? = null,
+    val avatarUrl: String? = null,
     val role: MembershipRole,
     val isCurrentUser: Boolean = false,
     val createdAt: String? = null,
@@ -159,6 +162,33 @@ data class PersonInsertDto(
     val canvasY: Double = 0.0,
     @SerialName("created_by")
     val createdBy: String? = null,
+)
+
+@Serializable
+data class PersonUpdateDto(
+    @SerialName("first_name")
+    val firstName: String,
+    @SerialName("last_name")
+    val lastName: String? = null,
+    @SerialName("additional_names")
+    val additionalNames: String? = null,
+    @SerialName("photo_path")
+    val photoPath: String? = null,
+    @SerialName("life_status")
+    val lifeStatus: LifeStatus,
+    @SerialName("birth_date")
+    val birthDate: String? = null,
+    @SerialName("birth_date_precision")
+    val birthDatePrecision: DatePrecision? = null,
+    @SerialName("death_date")
+    val deathDate: String? = null,
+    @SerialName("death_date_precision")
+    val deathDatePrecision: DatePrecision? = null,
+    val biography: String? = null,
+    @SerialName("canvas_x")
+    val canvasX: Double = 0.0,
+    @SerialName("canvas_y")
+    val canvasY: Double = 0.0,
 )
 
 @Serializable
@@ -410,12 +440,14 @@ data class MemorialEvent(
 @Serializable
 data class UserProfileDto(
     val id: String = "",
+    val username: String? = null,
     @SerialName("full_name")
     val fullName: String = "",
     @SerialName("display_name")
     val displayName: String = "",
     @SerialName("avatar_url")
     val avatarUrl: String? = null,
+    val email: String? = null,
     @SerialName("updated_at")
     val updatedAt: String? = null,
 )
@@ -423,9 +455,11 @@ data class UserProfileDto(
 @Serializable
 data class UserProfile(
     val id: String,
+    val username: String? = null,
     val fullName: String,
     val displayName: String = "",
     val avatarUrl: String? = null,
+    val email: String? = null,
 )
 
 // ---------------------------------------------------------------------------
@@ -461,6 +495,8 @@ data class FamilyInvitation(
     val familyName: String = "",   // enriched client-side
     val token: String,
     val createdBy: String,
+    val inviterDisplayName: String? = null,
+    val inviterUsername: String? = null,
     val inviteeEmail: String? = null,
     val inviteeUserId: String? = null,
     val status: InvitationStatus,

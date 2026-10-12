@@ -1,7 +1,15 @@
 package com.shorashim.feature.family
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,21 +18,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -33,28 +48,40 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shorashim.R
 import com.shorashim.core.model.DatePrecision
 import com.shorashim.core.model.LifeStatus
+import com.shorashim.core.ui.component.ImageUtils
+import com.shorashim.core.ui.component.PersonAvatar
 import com.shorashim.core.ui.component.Spacing
 import com.shorashim.feature.auth.AuthCard
 import com.shorashim.feature.auth.AuthPrimaryButton
 import com.shorashim.feature.auth.AuthTextField
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AddEditPersonRoute(
@@ -70,6 +97,7 @@ fun AddEditPersonRoute(
         onFirstNameChanged = viewModel::onFirstNameChanged,
         onLastNameChanged = viewModel::onLastNameChanged,
         onAdditionalNamesChanged = viewModel::onAdditionalNamesChanged,
+        onPhotoChanged = viewModel::onPhotoChanged,
         onLifeStatusChanged = viewModel::onLifeStatusChanged,
         onBirthYearChanged = viewModel::onBirthYearChanged,
         onBirthMonthChanged = viewModel::onBirthMonthChanged,
@@ -98,6 +126,7 @@ fun AddEditPersonScreen(
     onFirstNameChanged: (String) -> Unit,
     onLastNameChanged: (String) -> Unit,
     onAdditionalNamesChanged: (String) -> Unit,
+    onPhotoChanged: (String?) -> Unit = {},
     onLifeStatusChanged: (LifeStatus) -> Unit,
     onBirthYearChanged: (String) -> Unit,
     onBirthMonthChanged: (String) -> Unit,
@@ -117,6 +146,26 @@ fun AddEditPersonScreen(
     onLinkToExistingParentChanged: (Boolean) -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var isCompressingPhoto by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            isCompressingPhoto = true
+            coroutineScope.launch(Dispatchers.IO) {
+                val base64 = ImageUtils.uriToCompressedBase64(context, uri)
+                withContext(Dispatchers.Main) {
+                    isCompressingPhoto = false
+                    if (base64 != null) {
+                        onPhotoChanged(base64)
+                    }
+                }
+            }
+        }
+    }
 
     if (uiState.isDeleteConfirmOpen) {
         AlertDialog(
@@ -212,6 +261,146 @@ fun AddEditPersonScreen(
             )
 
             AuthCard {
+                // Photo Picker Section
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Spacing.md),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(110.dp)
+                            .clickable(enabled = !uiState.isLoading && !isCompressingPhoto) {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!uiState.photoPath.isNullOrBlank()) {
+                            PersonAvatar(
+                                photoPath = uiState.photoPath,
+                                firstName = uiState.firstName.ifBlank { "אדם" },
+                                isDeceased = uiState.lifeStatus == LifeStatus.DECEASED,
+                                size = 110.dp,
+                                shape = CircleShape,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .size(34.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                    .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.PhotoCamera,
+                                    contentDescription = stringResource(R.string.person_change_photo),
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        } else {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                                modifier = Modifier.size(110.dp),
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.AddAPhoto,
+                                        contentDescription = stringResource(R.string.person_add_photo),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(34.dp),
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.person_add_photo),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                        }
+
+                        if (isCompressingPhoto) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(38.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(Spacing.xs))
+
+                    Text(
+                        text = stringResource(R.string.person_photo_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = Spacing.md),
+                    )
+
+                    Spacer(Modifier.height(Spacing.xs))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            enabled = !uiState.isLoading && !isCompressingPhoto,
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.photoPath.isNullOrBlank()) Icons.Outlined.AddAPhoto else Icons.Outlined.PhotoCamera,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = if (uiState.photoPath.isNullOrBlank()) {
+                                    stringResource(R.string.person_add_photo)
+                                } else {
+                                    stringResource(R.string.person_change_photo)
+                                },
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                            )
+                        }
+
+                        if (!uiState.photoPath.isNullOrBlank()) {
+                            TextButton(
+                                onClick = { onPhotoChanged(null) },
+                                enabled = !uiState.isLoading && !isCompressingPhoto,
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DeleteOutline,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.person_remove_photo),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(Spacing.xs))
+
                 // Names Section
                 AuthTextField(
                     value = uiState.firstName,

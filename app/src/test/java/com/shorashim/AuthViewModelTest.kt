@@ -17,12 +17,25 @@ class AuthViewModelTest {
         val mutableAuthState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
         override val authState: StateFlow<AuthState> = mutableAuthState
 
-        override suspend fun login(email: String, password: String): Result<AuthUser> {
-            return Result.success(AuthUser("uid-1", email, "משתמש בדיקה"))
+        override suspend fun login(usernameOrEmail: String, password: String): Result<AuthUser> {
+            return Result.success(AuthUser("uid-1", email = "", displayName = "משתמש בדיקה", username = usernameOrEmail))
         }
 
-        override suspend fun register(name: String, email: String, password: String): Result<AuthUser> {
-            return Result.success(AuthUser("uid-1", email, name))
+        override suspend fun register(
+            name: String,
+            username: String,
+            password: String,
+            email: String?,
+        ): Result<AuthUser> {
+            return Result.success(AuthUser("uid-1", email = email.orEmpty(), displayName = name, username = username))
+        }
+
+        override suspend fun requestPasswordResetCode(username: String): Result<Boolean> {
+            return Result.success(true)
+        }
+
+        override suspend fun verifyAndResetPassword(username: String, code: String, newPassword: String): Result<Unit> {
+            return Result.success(Unit)
         }
 
         override suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
@@ -42,7 +55,7 @@ class AuthViewModelTest {
         viewModel.login()
 
         val state = viewModel.loginUiState.value
-        assertEquals(R.string.validation_email_empty, state.emailError)
+        assertEquals(R.string.validation_username_empty, state.usernameOrEmailError)
         assertEquals(R.string.validation_password_empty, state.passwordError)
     }
 
@@ -51,6 +64,7 @@ class AuthViewModelTest {
         val repository = FakeAuthRepository()
         val viewModel = AuthViewModel(repository)
 
+        viewModel.onRegisterUsernameChanged("a")
         viewModel.onRegisterNameChanged("א")
         viewModel.onRegisterEmailChanged("bad-email")
         viewModel.onRegisterPasswordChanged("123")
@@ -60,6 +74,7 @@ class AuthViewModelTest {
         viewModel.register()
 
         val state = viewModel.registerUiState.value
+        assertEquals(R.string.validation_username_too_short, state.usernameError)
         assertEquals(R.string.validation_name_too_short, state.nameError)
         assertEquals(R.string.validation_email_invalid, state.emailError)
         assertEquals(R.string.validation_password_too_short, state.passwordError)
@@ -68,14 +83,14 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun forgotPasswordValidationStopsOnInvalidEmail() {
+    fun forgotPasswordValidationStopsOnEmptyUsername() {
         val repository = FakeAuthRepository()
         val viewModel = AuthViewModel(repository)
 
-        viewModel.onForgotPasswordEmailChanged("not-an-email")
-        viewModel.sendPasswordResetEmail()
+        viewModel.onForgotPasswordUsernameChanged("")
+        viewModel.requestCode()
 
         val state = viewModel.forgotPasswordUiState.value
-        assertEquals(R.string.validation_email_invalid, state.emailError)
+        assertEquals(R.string.validation_username_empty, state.usernameError)
     }
 }

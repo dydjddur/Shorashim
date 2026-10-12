@@ -98,6 +98,9 @@ fun ShorashimNavHost(
                         familyRepository = appContainer.familyRepository,
                         personRepository = appContainer.personRepository,
                         relationshipRepository = appContainer.relationshipRepository,
+                        invitationRepository = appContainer.invitationRepository,
+                        profileRepository = appContainer.profileRepository,
+                        supabaseClient = appContainer.supabaseClient,
                     )
                 },
             )

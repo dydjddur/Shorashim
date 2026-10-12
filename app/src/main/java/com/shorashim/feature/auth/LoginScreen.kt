@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Card
@@ -116,18 +117,18 @@ fun LoginScreen(
                 }
             }
 
-            // Email Field
+            // Username or Email Field
             AuthTextField(
-                value = uiState.email,
+                value = uiState.usernameOrEmail,
                 onValueChange = onEmailChanged,
-                label = stringResource(R.string.auth_email_label),
-                placeholder = stringResource(R.string.auth_email_hint),
-                leadingIcon = Icons.Outlined.Email,
-                isError = uiState.emailError != null,
-                errorMessage = uiState.emailError?.let { stringResource(it) },
+                label = stringResource(R.string.auth_username_or_email_label),
+                placeholder = stringResource(R.string.auth_username_or_email_hint),
+                leadingIcon = Icons.Outlined.Person,
+                isError = uiState.usernameOrEmailError != null,
+                errorMessage = uiState.usernameOrEmailError?.let { stringResource(it) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
+                    keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
                 keyboardActions = KeyboardActions(

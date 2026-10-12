@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.shorashim.R
 import com.shorashim.core.model.DatePrecision
 import com.shorashim.core.model.LifeStatus
+import com.shorashim.core.ui.component.PersonAvatar
 import com.shorashim.core.model.PartialDate
 import com.shorashim.core.model.Person
 
@@ -109,39 +110,13 @@ fun FamilyTreeNodeCard(
                 horizontalArrangement = Arrangement.Start,
             ) {
                 // Avatar
-                Surface(
+                PersonAvatar(
+                    photoPath = person.photoPath,
+                    firstName = person.firstName,
+                    isDeceased = isDeceased,
+                    size = 44.dp,
                     shape = CircleShape,
-                    color = if (isDeceased) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                    } else {
-                        MaterialTheme.colorScheme.primaryContainer
-                    },
-                    modifier = Modifier.size(44.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isDeceased) {
-                            Text(text = "🕯️", fontSize = 18.sp)
-                        } else {
-                            val initial = person.firstName.trim().firstOrNull()?.toString()
-                            if (initial != null) {
-                                Text(
-                                    text = initial,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(24.dp),
-                                )
-                            }
-                        }
-                    }
-                }
+                )
 
                 Spacer(Modifier.width(10.dp))
 

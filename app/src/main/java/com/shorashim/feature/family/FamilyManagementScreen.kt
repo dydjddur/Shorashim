@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.shorashim.core.ui.component.PersonAvatar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AccountTree
@@ -26,12 +27,14 @@ import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -100,7 +103,11 @@ fun FamilyManagementRoute(
     }
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        viewModel.loadData()
+        if (uiState.family != null) {
+            viewModel.refreshData(showToast = false)
+        } else {
+            viewModel.loadData()
+        }
     }
 
     LaunchedEffect(uiState.toastMessage) {
@@ -131,6 +138,7 @@ fun FamilyManagementRoute(
             viewModel.setMembersDialogOpen(true)
         },
         onCloseMembersDialog = { viewModel.setMembersDialogOpen(false) },
+        onSearchUser = viewModel::searchUser,
         onInviteMember = viewModel::inviteMember,
         onUpdateMemberRole = viewModel::updateMemberRole,
         onRemoveMember = viewModel::removeMember,
@@ -169,7 +177,7 @@ fun FamilyManagementRoute(
         onShareInvite = {
             shareInviteViewModel?.createAndShare(context, familyName = uiState.family?.name)
         },
-        onRefresh = viewModel::loadData,
+        onRefresh = { viewModel.refreshData(showToast = true) },
         modifier = modifier,
     )
 }
@@ -193,7 +201,8 @@ fun FamilyManagementScreen(
     onCloseManagementSheet: () -> Unit,
     onOpenMembersDialog: () -> Unit,
     onCloseMembersDialog: () -> Unit,
-    onInviteMember: (email: String, role: com.shorashim.core.model.MembershipRole) -> Unit,
+    onSearchUser: suspend (username: String) -> com.shorashim.core.model.UserProfile?,
+    onInviteMember: (username: String, role: com.shorashim.core.model.MembershipRole) -> Unit,
     onUpdateMemberRole: (userId: String, role: com.shorashim.core.model.MembershipRole) -> Unit,
     onRemoveMember: (userId: String) -> Unit,
     onDeleteFamilyClicked: () -> Unit,
@@ -316,6 +325,7 @@ fun FamilyManagementScreen(
             members = uiState.members,
             canManageRoles = uiState.family.canManageMembers,
             isOwner = uiState.family.isOwner,
+            onSearchUser = onSearchUser,
             onInviteMember = onInviteMember,
             onUpdateRole = onUpdateMemberRole,
             onRemoveMember = onRemoveMember,
@@ -375,6 +385,23 @@ fun FamilyManagementScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = onRefresh,
+                        enabled = !uiState.isRefreshing,
+                    ) {
+                        if (uiState.isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Refresh,
+                                contentDescription = stringResource(R.string.tree_refresh_action),
+                            )
+                        }
+                    }
                     IconButton(onClick = onOpenManagementSheet) {
                         Icon(
                             imageVector = Icons.Outlined.MoreVert,
@@ -389,31 +416,15 @@ fun FamilyManagementScreen(
         },
         floatingActionButton = {
             if (uiState.family?.canEditTreeContent == true) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                FloatingActionButton(
+                    onClick = onAddPersonClick,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    FloatingActionButton(
-                        onClick = onOpenAddRelationship,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.GroupAdd,
-                            contentDescription = stringResource(R.string.relationship_dialog_title),
-                        )
-                    }
-
-                    FloatingActionButton(
-                        onClick = onAddPersonClick,
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.PersonAdd,
-                            contentDescription = stringResource(R.string.family_people_add),
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Outlined.PersonAdd,
+                        contentDescription = stringResource(R.string.family_people_add),
+                    )
                 }
             }
         },
@@ -478,6 +489,8 @@ fun FamilyManagementScreen(
                         onDeletePersonClick = { p -> personPendingDelete = p },
                         onPublishClick = onPublish,
                         onEmptyAddPersonClick = onAddPersonClick,
+                        onRefreshClick = onRefresh,
+                        isRefreshing = uiState.isRefreshing,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -572,24 +585,13 @@ private fun PersonListItemCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Surface(
+            PersonAvatar(
+                photoPath = person.photoPath,
+                firstName = person.firstName,
+                isDeceased = isDeceased,
+                size = 46.dp,
                 shape = CircleShape,
-                color = if (isDeceased) Color(0xFFD4AF37).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(46.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (isDeceased) {
-                        Text(text = "🕯️", fontSize = 20.sp)
-                    } else {
-                        Icon(
-                            imageVector = Icons.Outlined.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                }
-            }
+            )
 
             Spacer(Modifier.width(14.dp))
 

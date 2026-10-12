@@ -10,9 +10,21 @@ import com.shorashim.core.model.MembershipRole
 import com.shorashim.core.model.Person
 import com.shorashim.core.model.Relationship
 import com.shorashim.core.model.RelationshipType
+import com.shorashim.core.model.UserProfile
 import com.shorashim.data.family.FamilyRepository
 import com.shorashim.data.family.PersonRepository
 import com.shorashim.data.family.RelationshipRepository
+import com.shorashim.data.invitations.InvitationRepository
+import com.shorashim.data.profile.ProfileRepository
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.query.filter.FilterOperation
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +51,7 @@ data class FamilyManagementUiState(
     val isMembersDialogOpen: Boolean = false,
     val isManagementSheetOpen: Boolean = false,
     val isDeleteFamilyConfirmOpen: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
     val toastMessage: String? = null,
 )
@@ -48,7 +61,13 @@ class FamilyManagementViewModel(
     private val familyRepository: FamilyRepository,
     private val personRepository: PersonRepository,
     private val relationshipRepository: RelationshipRepository,
+    private val invitationRepository: InvitationRepository? = null,
+    private val profileRepository: ProfileRepository? = null,
+    private val supabaseClient: SupabaseClient? = null,
 ) : ViewModel() {
+
+    private var realtimeChannel: RealtimeChannel? = null
+    private val realtimeJobs = mutableListOf<Job>()
 
     private val _uiState = MutableStateFlow(
         FamilyManagementUiState(
@@ -60,12 +79,14 @@ class FamilyManagementViewModel(
 
     init {
         loadData()
+        setupRealtime(familyId)
     }
 
     fun selectFamily(newFamilyId: String) {
         if (newFamilyId == _uiState.value.currentFamilyId) return
         _uiState.value = _uiState.value.copy(currentFamilyId = newFamilyId)
         loadData()
+        setupRealtime(newFamilyId)
     }
 
     fun setTab(tab: FamilyViewTab) {
@@ -109,6 +130,48 @@ class FamilyManagementViewModel(
                     error = famResult.exceptionOrNull()?.localizedMessage
                         ?: peopleResult.exceptionOrNull()?.localizedMessage
                         ?: "Failed to load family data",
+                )
+            }
+        }
+    }
+
+    fun refreshData(showToast: Boolean = true) {
+        val fId = _uiState.value.currentFamilyId
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            val allFamResult = familyRepository.getMyFamilies()
+            val famResult = familyRepository.getFamily(fId)
+            val peopleResult = personRepository.getPeople(fId)
+            val relResult = relationshipRepository.getRelationships(fId)
+            val membersResult = familyRepository.getFamilyMembers(fId)
+
+            if (famResult.isSuccess && peopleResult.isSuccess) {
+                val fam = famResult.getOrNull()
+                val allFams = allFamResult.getOrDefault(emptyList())
+                val peopleList = peopleResult.getOrDefault(emptyList())
+                val relList = relResult.getOrDefault(emptyList())
+                val memberList = membersResult.getOrDefault(emptyList())
+                val q = _uiState.value.searchQuery
+
+                val filtered = if (q.isBlank()) peopleList else {
+                    peopleList.filter { it.fullName.contains(q, ignoreCase = true) }
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    family = fam ?: _uiState.value.family,
+                    allFamilies = if (allFams.isNotEmpty()) allFams else _uiState.value.allFamilies,
+                    people = peopleList,
+                    filteredPeople = filtered,
+                    relationships = relList,
+                    members = memberList,
+                    isRefreshing = false,
+                    toastMessage = if (showToast) "עץ המשפחה עודכן בהצלחה" else _uiState.value.toastMessage,
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isRefreshing = false,
+                    error = famResult.exceptionOrNull()?.localizedMessage
+                        ?: peopleResult.exceptionOrNull()?.localizedMessage,
                 )
             }
         }
@@ -174,16 +237,38 @@ class FamilyManagementViewModel(
         }
     }
 
-    fun inviteMember(email: String, role: MembershipRole) {
+    suspend fun searchUser(username: String): UserProfile? {
+        val clean = username.trim().removePrefix("@")
+        if (clean.isBlank()) return null
+        return profileRepository?.searchUserByUsername(clean)?.getOrNull()
+    }
+
+    fun inviteMember(username: String, role: MembershipRole) {
         val fId = _uiState.value.currentFamilyId
+        val clean = username.trim().removePrefix("@")
+        if (clean.isBlank()) return
+
         viewModelScope.launch {
-            familyRepository.inviteMember(fId, email, role)
+            val repo = invitationRepository
+            if (repo == null) {
+                familyRepository.inviteMember(fId, clean, role)
+                    .onSuccess {
+                        loadMembers()
+                        _uiState.value = _uiState.value.copy(toastMessage = "ההזמנה נשלחה בהצלחה!")
+                    }
+                    .onFailure { t ->
+                        _uiState.value = _uiState.value.copy(error = t.localizedMessage)
+                    }
+                return@launch
+            }
+
+            repo.sendInvitationByUsername(fId, clean, role)
                 .onSuccess {
                     loadMembers()
-                    _uiState.value = _uiState.value.copy(toastMessage = "ההזמנה נשלחה בהצלחה!")
+                    _uiState.value = _uiState.value.copy(toastMessage = "ההזמנה נשלחה בהצלחה ל-@$clean!")
                 }
                 .onFailure { t ->
-                    _uiState.value = _uiState.value.copy(error = t.localizedMessage)
+                    _uiState.value = _uiState.value.copy(error = t.localizedMessage ?: "שליחת ההזמנה נכשלה")
                 }
         }
     }
@@ -306,5 +391,109 @@ class FamilyManagementViewModel(
             relationshipRepository.deleteRelationship(relationshipId)
                 .onSuccess { loadData() }
         }
+    }
+
+    private fun setupRealtime(fId: String) {
+        teardownRealtime()
+        val client = supabaseClient ?: return
+
+        viewModelScope.launch {
+            try {
+                val channel = client.realtime.channel("tree_$fId")
+                realtimeChannel = channel
+
+                val peopleFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                    table = "people"
+                    filter(FilterOperation("family_id", FilterOperator.EQ, fId))
+                }
+                val peopleJob = launch {
+                    peopleFlow.collect {
+                        refreshDataSilently()
+                    }
+                }
+                realtimeJobs.add(peopleJob)
+
+                val relFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                    table = "relationships"
+                    filter(FilterOperation("family_id", FilterOperator.EQ, fId))
+                }
+                val relJob = launch {
+                    relFlow.collect {
+                        refreshDataSilently()
+                    }
+                }
+                realtimeJobs.add(relJob)
+
+                val membersFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                    table = "family_members"
+                    filter(FilterOperation("family_id", FilterOperator.EQ, fId))
+                }
+                val membersJob = launch {
+                    membersFlow.collect {
+                        refreshDataSilently()
+                    }
+                }
+                realtimeJobs.add(membersJob)
+
+                channel.subscribe()
+            } catch (t: Throwable) {
+                android.util.Log.w("FamilyMgmtVM", "Failed to setup realtime: ${t.message}")
+            }
+        }
+    }
+
+    internal fun refreshDataSilently() {
+        val fId = _uiState.value.currentFamilyId
+        viewModelScope.launch {
+            val famResult = familyRepository.getFamily(fId)
+            val peopleResult = personRepository.getPeople(fId)
+            val relResult = relationshipRepository.getRelationships(fId)
+            val membersResult = familyRepository.getFamilyMembers(fId)
+
+            if (famResult.isFailure) {
+                _uiState.value = _uiState.value.copy(
+                    error = "הגישה לעץ זה בוטלה או שהעץ אינו קיים",
+                )
+                return@launch
+            }
+
+            val fam = famResult.getOrNull()
+            val peopleList = peopleResult.getOrDefault(emptyList())
+            val relList = relResult.getOrDefault(emptyList())
+            val memberList = membersResult.getOrDefault(emptyList())
+            val q = _uiState.value.searchQuery
+
+            val filtered = if (q.isBlank()) peopleList else {
+                peopleList.filter { it.fullName.contains(q, ignoreCase = true) }
+            }
+
+            _uiState.value = _uiState.value.copy(
+                family = fam,
+                people = peopleList,
+                filteredPeople = filtered,
+                relationships = relList,
+                members = memberList,
+            )
+        }
+    }
+
+    private fun teardownRealtime() {
+        realtimeJobs.forEach { it.cancel() }
+        realtimeJobs.clear()
+        val client = supabaseClient
+        val channel = realtimeChannel
+        if (client != null && channel != null) {
+            viewModelScope.launch {
+                try {
+                    client.realtime.removeChannel(channel)
+                } catch (_: Throwable) {}
+            }
+        }
+        realtimeChannel = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        teardownRealtime()
     }
 }

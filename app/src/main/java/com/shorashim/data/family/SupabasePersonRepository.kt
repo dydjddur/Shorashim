@@ -3,6 +3,7 @@ package com.shorashim.data.family
 import android.util.Log
 import com.shorashim.core.model.Person
 import com.shorashim.core.model.PersonDto
+import com.shorashim.core.model.PersonUpdateDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
@@ -95,9 +96,7 @@ class SupabasePersonRepository(
     override suspend fun updatePerson(person: Person): Result<Person> {
         val supabase = client ?: return Result.failure(IllegalStateException("Supabase client not initialized"))
         return runCatching {
-            val dto = PersonDto(
-                id = person.id,
-                familyId = person.familyId,
+            val dto = PersonUpdateDto(
                 firstName = person.firstName.trim(),
                 lastName = person.lastName?.trim()?.ifBlank { null },
                 additionalNames = person.additionalNames?.trim()?.ifBlank { null },

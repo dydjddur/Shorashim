@@ -204,19 +204,6 @@ fun EventsScreen(
                     }
                 }
             }
-            if (uiState.families.isNotEmpty()) {
-                FilledTonalButton(
-                    onClick = onAddMemorial,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-                    shape = RoundedCornerShape(14.dp),
-                ) {
-                    Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.events_add_memorial_button), fontWeight = FontWeight.SemiBold)
-                }
-            }
         }
     }
 

@@ -17,8 +17,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AlternateEmail
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Shield
@@ -26,6 +29,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -36,36 +40,69 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shorashim.R
 import com.shorashim.core.model.FamilyMember
 import com.shorashim.core.model.MembershipRole
+import com.shorashim.core.model.UserProfile
+import kotlinx.coroutines.delay
 
 @Composable
 fun FamilyMembersDialog(
     members: List<FamilyMember>,
     canManageRoles: Boolean,
     isOwner: Boolean,
-    onInviteMember: (email: String, role: MembershipRole) -> Unit,
+    onSearchUser: suspend (username: String) -> UserProfile?,
+    onInviteMember: (username: String, role: MembershipRole) -> Unit,
     onUpdateRole: (userId: String, role: MembershipRole) -> Unit,
     onRemoveMember: (userId: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var isInviting by remember { mutableStateOf(false) }
-    var inviteEmail by remember { mutableStateOf("") }
+    var inviteUsername by remember { mutableStateOf("") }
     var inviteRole by remember { mutableStateOf(MembershipRole.CONTRIBUTOR) }
-    var roleDropdownOpen by remember { mutableStateOf(false) }
+    var searchedUser by remember { mutableStateOf<UserProfile?>(null) }
+    var isSearching by remember { mutableStateOf(false) }
+    var searchError by remember { mutableStateOf<String?>(null) }
+
+    // Debounced search as user types username
+    LaunchedEffect(inviteUsername) {
+        val clean = inviteUsername.trim().removePrefix("@")
+        if (clean.length < 3) {
+            searchedUser = null
+            searchError = null
+            isSearching = false
+            return@LaunchedEffect
+        }
+        isSearching = true
+        searchError = null
+        delay(400) // debounce
+        val user = onSearchUser(clean)
+        isSearching = false
+        if (user != null) {
+            searchedUser = user
+            searchError = when {
+                members.any { it.userId == user.id } -> "המשתמש כבר חבר בעץ זה"
+                members.any { it.isCurrentUser && it.userId == user.id } -> "לא ניתן להזמין את עצמך"
+                else -> null
+            }
+        } else {
+            searchedUser = null
+            searchError = "שם המשתמש לא נמצא במערכת"
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -90,7 +127,7 @@ fun FamilyMembersDialog(
                     .padding(vertical = 4.dp),
             ) {
                 if (isInviting) {
-                    // Invite Form
+                    // Direct Username Invite Form
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -100,19 +137,99 @@ fun FamilyMembersDialog(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(
-                                text = stringResource(R.string.members_invite_button),
+                                text = "הזמנת חבר משפחה לפי שם משתמש",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             Spacer(Modifier.height(8.dp))
                             OutlinedTextField(
-                                value = inviteEmail,
-                                onValueChange = { inviteEmail = it },
-                                label = { Text(stringResource(R.string.members_email_label)) },
+                                value = inviteUsername,
+                                onValueChange = { inviteUsername = it },
+                                label = { Text(stringResource(R.string.auth_username_label)) },
+                                placeholder = { Text(stringResource(R.string.members_search_username_hint)) },
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.AlternateEmail, contentDescription = null)
+                                },
+                                trailingIcon = {
+                                    if (isSearching) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(18.dp),
+                                            strokeWidth = 2.dp,
+                                        )
+                                    } else if (searchedUser != null && searchError == null) {
+                                        Icon(
+                                            Icons.Outlined.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF2E7D32),
+                                        )
+                                    }
+                                },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth(),
                             )
-                            Spacer(Modifier.height(8.dp))
+
+                            // Error or Preview Card
+                            if (searchError != null) {
+                                Spacer(Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Outlined.ErrorOutline,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = searchError!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            } else if (searchedUser != null) {
+                                Spacer(Modifier.height(8.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                    ),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(32.dp),
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    Icons.Outlined.Person,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                            }
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = searchedUser!!.displayName.ifBlank { searchedUser!!.fullName },
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                            )
+                                            Text(
+                                                text = "@${searchedUser!!.username}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(10.dp))
 
                             // Role Selection
                             Text(
@@ -148,7 +265,7 @@ fun FamilyMembersDialog(
                                                 else -> ""
                                             },
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            textAlign = TextAlign.Center,
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
@@ -168,13 +285,15 @@ fun FamilyMembersDialog(
                                 Spacer(Modifier.width(8.dp))
                                 Button(
                                     onClick = {
-                                        if (inviteEmail.isNotBlank()) {
-                                            onInviteMember(inviteEmail.trim(), inviteRole)
-                                            inviteEmail = ""
+                                        val u = searchedUser
+                                        if (u != null && searchError == null) {
+                                            onInviteMember(u.username ?: inviteUsername.trim().removePrefix("@"), inviteRole)
+                                            inviteUsername = ""
+                                            searchedUser = null
                                             isInviting = false
                                         }
                                     },
-                                    enabled = inviteEmail.isNotBlank(),
+                                    enabled = searchedUser != null && searchError == null,
                                 ) {
                                     Text("שליחת הזמנה")
                                 }
@@ -190,7 +309,7 @@ fun FamilyMembersDialog(
                     ) {
                         Icon(Icons.Outlined.PersonAdd, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.members_invite_button))
+                        Text("הזמנת חבר משפחה לפי שם משתמש")
                     }
                     Spacer(Modifier.height(12.dp))
                 }
@@ -279,11 +398,24 @@ private fun MemberItemRow(
             Spacer(Modifier.width(10.dp))
 
             Column(modifier = Modifier.weight(1f)) {
+                val headerName = member.displayName?.ifBlank { null }
+                    ?: member.username?.let { "@$it" }
+                    ?: "חבר משפחה"
+
                 Text(
-                    text = if (member.isCurrentUser) "${member.userEmail ?: member.userId} (אתה)" else (member.userEmail ?: member.userId),
+                    text = if (member.isCurrentUser) "$headerName (אתה)" else headerName,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyMedium,
                 )
+
+                if (!member.username.isNullOrBlank()) {
+                    Text(
+                        text = "@${member.username}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
                 Text(
                     text = when (member.role) {
                         MembershipRole.OWNER -> stringResource(R.string.role_owner)
@@ -298,7 +430,6 @@ private fun MemberItemRow(
             }
 
             if (canManage && member.role != MembershipRole.OWNER && !member.isCurrentUser) {
-                // Role change dropdown button
                 Box {
                     IconButton(onClick = { roleMenuOpen = true }) {
                         Icon(

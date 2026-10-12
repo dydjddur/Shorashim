@@ -12,6 +12,13 @@ interface InvitationRepository {
         role: MembershipRole = MembershipRole.CONTRIBUTOR,
     ): Result<FamilyInvitation>
 
+    /** Send a direct in-app invitation to a user by their username. */
+    suspend fun sendInvitationByUsername(
+        familyId: String,
+        username: String,
+        role: MembershipRole = MembershipRole.CONTRIBUTOR,
+    ): Result<Unit>
+
     /** Fetch all pending invitations targeting the current user (by email or user_id). */
     suspend fun getMyPendingInvitations(): Result<List<FamilyInvitation>>
 

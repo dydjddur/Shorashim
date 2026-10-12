@@ -24,6 +24,7 @@ data class AddEditPersonUiState(
     val firstName: String = "",
     val lastName: String = "",
     val additionalNames: String = "",
+    val photoPath: String? = null,
     val lifeStatus: LifeStatus = LifeStatus.LIVING,
     val birthYear: String = "",
     val birthMonth: String = "",
@@ -201,6 +202,7 @@ class AddEditPersonViewModel(
                         firstName = person.firstName,
                         lastName = person.lastName.orEmpty(),
                         additionalNames = person.additionalNames.orEmpty(),
+                        photoPath = person.photoPath,
                         lifeStatus = person.lifeStatus,
                         birthYear = bDate.year?.toString().orEmpty(),
                         birthMonth = bDate.month?.toString().orEmpty(),
@@ -234,6 +236,10 @@ class AddEditPersonViewModel(
 
     fun onAdditionalNamesChanged(v: String) {
         _uiState.value = _uiState.value.copy(additionalNames = v)
+    }
+
+    fun onPhotoChanged(v: String?) {
+        _uiState.value = _uiState.value.copy(photoPath = v)
     }
 
     fun onLifeStatusChanged(v: LifeStatus) {
@@ -311,6 +317,7 @@ class AddEditPersonViewModel(
                 firstName = s.firstName.trim(),
                 lastName = s.lastName.trim().ifBlank { null },
                 additionalNames = s.additionalNames.trim().ifBlank { null },
+                photoPath = s.photoPath?.trim()?.ifBlank { null },
                 lifeStatus = s.lifeStatus,
                 birthDate = bDate?.toIsoDateString(),
                 birthDatePrecision = bDate?.precision,

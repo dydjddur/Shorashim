@@ -64,9 +64,33 @@
     <string name="auth_reset_email_sent_title">הקישור נשלח</string>
     <string name="auth_reset_email_sent_message">אם כתובת האימייל קיימת במערכת, נשלח אליה קישור לאיפוס סיסמה. אנא בדקו את תיבת הדואר הנכנס.</string>
 
+    <string name="auth_username_label">שם משתמש</string>
+    <string name="auth_username_hint">username</string>
+    <string name="auth_username_or_email_label">שם משתמש או אימייל</string>
+    <string name="auth_username_or_email_hint">username או name@example.com</string>
+    <string name="auth_email_optional_label">כתובת אימייל (אופציונלי - לשחזור סיסמה בלבד)</string>
+    <string name="auth_reset_code_label">קוד אימות בן 6 ספרות</string>
+    <string name="auth_new_password_label">סיסמה חדשה</string>
+    <string name="auth_new_password_confirm_label">אימות סיסמה חדשה</string>
+    <string name="auth_send_code_button">שליחת קוד אימות</string>
+    <string name="auth_verify_code_button">אימות קוד</string>
+    <string name="auth_reset_password_button">שמירת סיסמה חדשה</string>
+    <string name="auth_claim_username_title">הגדרת שם משתמש ייחודי</string>
+    <string name="auth_claim_username_desc">לחשבונך עדיין לא הוגדר שם משתמש ייחודי. הגדר שם משתמש כדי שחברי משפחה יוכלו למצוא ולהזמין אותך לעצים.</string>
+    <string name="auth_claim_username_button">שמירת שם משתמש</string>
+    <string name="members_search_username_hint">הקלד שם משתמש להזמנה…</string>
+    <string name="members_invite_preview_title">פרטי המשתמש המוזמן:</string>
+    <string name="members_invite_preview_not_found">שם המשתמש לא נמצא במערכת</string>
+    <string name="members_invite_searching">מחפש משתמש…</string>
+
     <!-- Validation messages -->
     <string name="validation_name_empty">יש להזין שם מלא</string>
     <string name="validation_name_too_short">השם קצר מדי (לפחות 2 תווים)</string>
+    <string name="validation_username_empty">יש להזין שם משתמש</string>
+    <string name="validation_username_invalid">שם משתמש חייב להכיל 3-30 תווים (אותיות באנגלית, מספרים וקו תחתון)</string>
+    <string name="validation_username_too_short">שם משתמש חייב להכיל לפחות 3 תווים</string>
+    <string name="validation_code_empty">יש להזין קוד אימות</string>
+    <string name="validation_code_invalid">קוד האימות חייב להכיל 6 ספרות</string>
     <string name="validation_email_empty">יש להזין כתובת אימייל</string>
     <string name="validation_email_invalid">כתובת אימייל לא תקינה</string>
     <string name="validation_password_empty">יש להזין סיסמה</string>
@@ -76,7 +100,7 @@
     <string name="validation_terms_required">יש לאשר את תנאי השימוש ומדיניות הפרטיות</string>
 
     <!-- Supabase error messages -->
-    <string name="auth_error_invalid_credentials">כתובת האימייל או הסיסמה אינם נכונים</string>
+    <string name="auth_error_invalid_credentials">שם המשתמש או הסיסמה אינם נכונים</string>
     <string name="auth_error_email_already_in_use">כתובת האימייל כבר רשומה במערכת</string>
     <string name="auth_error_email_not_confirmed">כתובת האימייל טרם אומתה. אנא בדקו את תיבת הדואר הנכנס שלכם ואשרו את החשבון.</string>
     <string name="auth_error_user_disabled">חשבון זה הושבת על ידי המערכת</string>
@@ -153,6 +177,11 @@
     <string name="person_delete_button">מחיקת אדם</string>
     <string name="person_delete_dialog_title">מחיקת אדם מהעץ</string>
     <string name="person_delete_dialog_message">האם למחוק את %1$s? הקשרים המשפחתיים של אדם זה יוסרו מהעץ.</string>
+    <string name="person_photo_section_title">תמונת אדם</string>
+    <string name="person_add_photo">הוספת תמונה</string>
+    <string name="person_change_photo">החלפת תמונה</string>
+    <string name="person_remove_photo">הסרת תמונה</string>
+    <string name="person_photo_hint">תמונת פנים ברורה תסייע בזיהוי קרובי המשפחה בעץ</string>
 
     <!-- Relationships -->
     <string name="relationship_dialog_title">הוספת קשר משפחתי</string>
@@ -288,6 +317,8 @@
     <string name="invitation_share_action">שיתוף קישור הצטרפות</string>
     <string name="invitation_share_subject">הזמנה לאפליקציית שורשים</string>
     <string name="invitation_share_copied">הקישור הועתק ללוח</string>
-    <string name="invitation_copy_link">העתקת קישור</string>
+    <!-- Tree Refresh -->
+    <string name="tree_refresh_action">רענון עץ המשפחה</string>
+    <string name="tree_refresh_success">עץ המשפחה עודכן בהצלחה</string>
 </resources>
 

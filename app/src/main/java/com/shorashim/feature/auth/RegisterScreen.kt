@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AlternateEmail
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
@@ -57,6 +58,7 @@ fun RegisterRoute(
     RegisterScreen(
         uiState = uiState,
         onNameChanged = viewModel::onRegisterNameChanged,
+        onUsernameChanged = viewModel::onRegisterUsernameChanged,
         onEmailChanged = viewModel::onRegisterEmailChanged,
         onPasswordChanged = viewModel::onRegisterPasswordChanged,
         onConfirmPasswordChanged = viewModel::onRegisterConfirmPasswordChanged,
@@ -75,6 +77,7 @@ fun RegisterRoute(
 fun RegisterScreen(
     uiState: RegisterUiState,
     onNameChanged: (String) -> Unit,
+    onUsernameChanged: (String) -> Unit = {},
     onEmailChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
     onConfirmPasswordChanged: (String) -> Unit,
@@ -185,11 +188,33 @@ fun RegisterScreen(
 
             Spacer(Modifier.height(Spacing.sm))
 
-            // Email Field
+            // Username Field
+            AuthTextField(
+                value = uiState.username,
+                onValueChange = onUsernameChanged,
+                label = stringResource(R.string.auth_username_label),
+                placeholder = stringResource(R.string.auth_username_hint),
+                leadingIcon = Icons.Outlined.AlternateEmail,
+                isError = uiState.usernameError != null,
+                errorMessage = uiState.usernameError?.let { stringResource(it) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    imeAction = ImeAction.Next,
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                ),
+                enabled = !uiState.isLoading,
+            )
+
+            Spacer(Modifier.height(Spacing.sm))
+
+            // Email Field (Optional for recovery)
             AuthTextField(
                 value = uiState.email,
                 onValueChange = onEmailChanged,
-                label = stringResource(R.string.auth_email_label),
+                label = stringResource(R.string.auth_email_optional_label),
                 placeholder = stringResource(R.string.auth_email_hint),
                 leadingIcon = Icons.Outlined.Email,
                 isError = uiState.emailError != null,

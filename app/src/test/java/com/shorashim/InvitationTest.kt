@@ -132,6 +132,12 @@ class InvitationTest {
             )
         )
 
+        override suspend fun sendInvitationByUsername(
+            familyId: String,
+            username: String,
+            role: MembershipRole,
+        ): Result<Unit> = Result.success(Unit)
+
         override suspend fun getMyPendingInvitations(): Result<List<FamilyInvitation>> =
             Result.success(emptyList())
 

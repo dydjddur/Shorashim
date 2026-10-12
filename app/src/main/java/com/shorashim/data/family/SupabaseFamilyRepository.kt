@@ -9,6 +9,7 @@ import com.shorashim.core.model.FamilyMemberDto
 import com.shorashim.core.model.FamilyStatus
 import com.shorashim.core.model.FamilySummary
 import com.shorashim.core.model.MembershipRole
+import com.shorashim.core.model.UserProfileDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
@@ -298,11 +299,35 @@ class SupabaseFamilyRepository(
                 }
                 .decodeList<FamilyMemberDto>()
 
+            val userIds = dtos.map { it.userId }
+            val profilesMap = try {
+                if (userIds.isNotEmpty()) {
+                    supabase.from("profiles")
+                        .select {
+                            filter {
+                                isIn("id", userIds)
+                            }
+                        }
+                        .decodeList<UserProfileDto>()
+                        .associateBy { it.id }
+                } else emptyMap()
+            } catch (t: Throwable) {
+                Log.w("FamilyRepo", "Could not fetch member profiles: ${t.message}")
+                emptyMap()
+            }
+
             dtos.map { dto ->
+                val profile = profilesMap[dto.userId]
+                val disp = profile?.displayName?.ifBlank { profile.fullName }?.ifBlank { null }
+                    ?: profile?.fullName?.ifBlank { null }
+                    ?: profile?.username
                 FamilyMember(
                     familyId = dto.familyId,
                     userId = dto.userId,
                     userEmail = if (dto.userId == currentUserId) getCurrentUserEmail() else null,
+                    displayName = disp,
+                    username = profile?.username,
+                    avatarUrl = profile?.avatarUrl,
                     role = dto.role,
                     isCurrentUser = (dto.userId == currentUserId),
                     createdAt = dto.createdAt,

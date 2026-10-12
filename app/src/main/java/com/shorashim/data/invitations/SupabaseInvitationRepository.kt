@@ -67,6 +67,40 @@ class SupabaseInvitationRepository(
 
     // -----------------------------------------------------------------------
     // Read
+    override suspend fun sendInvitationByUsername(
+        familyId: String,
+        username: String,
+        role: MembershipRole,
+    ): Result<Unit> = runCatching {
+        val clean = username.trim().removePrefix("@")
+        val jsonResult = client.postgrest.rpc(
+            function = "send_tree_invitation",
+            parameters = kotlinx.serialization.json.buildJsonObject {
+                put("p_family_id", familyId)
+                put("p_invitee_username", clean)
+                put("p_role", role.name)
+            },
+        ).data
+
+        val obj = kotlinx.serialization.json.Json.parseToJsonElement(jsonResult).jsonObject
+        val ok = obj["ok"]?.jsonPrimitive?.booleanOrNull ?: false
+        if (!ok) {
+            val err = obj["error"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+            when (err) {
+                "user_not_found" -> error("שם המשתמש @$clean לא נמצא")
+                "cannot_invite_self" -> error("לא ניתן להזמין את עצמך")
+                "already_member" -> error("המשתמש כבר חבר בעץ זה")
+                "invitation_already_pending" -> error("קיימת כבר הזמנה פתוחה למשתמש זה")
+                "unauthorized" -> error("אין לך הרשאה להזמין חברים לעץ זה")
+                "family_not_found" -> error("העץ המשפחתי לא נמצא")
+                else -> error("שגיאה בשליחת ההזמנה: $err")
+            }
+        }
+        Unit
+    }.also { if (it.isFailure) Log.e(TAG, "sendInvitationByUsername failed", it.exceptionOrNull()) }
+
+    // -----------------------------------------------------------------------
+    // Read
     // -----------------------------------------------------------------------
 
     override suspend fun getMyPendingInvitations(): Result<List<FamilyInvitation>> =
@@ -75,9 +109,28 @@ class SupabaseInvitationRepository(
                 ?: error("User not authenticated")
 
             try {
-                client.postgrest.rpc("get_my_pending_invitations")
-                    .decodeList<FamilyInvitationDto>()
-                    .map { it.toDomain() }
+                val raw = client.postgrest.rpc("get_my_pending_invitations").data
+                val array = kotlinx.serialization.json.Json.parseToJsonElement(raw)
+                if (array is kotlinx.serialization.json.JsonArray) {
+                    array.map { elem ->
+                        val obj = elem.jsonObject
+                        FamilyInvitation(
+                            id = obj["id"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                            familyId = obj["family_id"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                            familyName = obj["family_name"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                            token = obj["token"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                            createdBy = obj["created_by"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                            inviterDisplayName = obj["inviter_display_name"]?.jsonPrimitive?.contentOrNull,
+                            inviterUsername = obj["inviter_username"]?.jsonPrimitive?.contentOrNull,
+                            status = InvitationStatus.valueOf(obj["status"]?.jsonPrimitive?.contentOrNull ?: "PENDING"),
+                            role = MembershipRole.valueOf(obj["role"]?.jsonPrimitive?.contentOrNull ?: "CONTRIBUTOR"),
+                            createdAt = obj["created_at"]?.jsonPrimitive?.contentOrNull,
+                            expiresAt = obj["expires_at"]?.jsonPrimitive?.contentOrNull,
+                        )
+                    }
+                } else {
+                    emptyList()
+                }
             } catch (t: Throwable) {
                 Log.w(TAG, "get_my_pending_invitations RPC failed, fallback to table select: ${t.message}")
                 client.postgrest[TABLE]
@@ -119,20 +172,41 @@ class SupabaseInvitationRepository(
 
     override suspend fun acceptInvitationById(invitationId: String): Result<InvitationResolution> =
         runCatching {
-            // Fetch token first, then accept by token
-            val dto = client.postgrest[TABLE]
-                .select { filter { eq("id", invitationId) } }
-                .decodeSingle<FamilyInvitationDto>()
-            acceptInvitationByToken(dto.token).getOrThrow()
+            try {
+                val jsonResult = client.postgrest.rpc(
+                    function = "accept_tree_invitation",
+                    parameters = kotlinx.serialization.json.buildJsonObject {
+                        put("p_invitation_id", invitationId)
+                    },
+                ).data
+                parseResolutionJson(jsonResult)
+            } catch (t: Throwable) {
+                Log.w(TAG, "accept_tree_invitation RPC failed, trying acceptInvitationByToken fallback: ${t.message}")
+                val dto = client.postgrest[TABLE]
+                    .select { filter { eq("id", invitationId) } }
+                    .decodeSingle<FamilyInvitationDto>()
+                acceptInvitationByToken(dto.token).getOrThrow()
+            }
         }.also { if (it.isFailure) Log.e(TAG, "acceptInvitationById failed", it.exceptionOrNull()) }
 
     override suspend fun declineInvitation(invitationId: String): Result<Unit> =
         runCatching {
-            client.postgrest[TABLE]
-                .update({ set("status", "DECLINED") }) {
-                    filter { eq("id", invitationId) }
-                }
-            Unit
+            try {
+                client.postgrest.rpc(
+                    function = "decline_tree_invitation",
+                    parameters = kotlinx.serialization.json.buildJsonObject {
+                        put("p_invitation_id", invitationId)
+                    },
+                )
+                Unit
+            } catch (t: Throwable) {
+                Log.w(TAG, "decline_tree_invitation RPC failed, trying direct update fallback: ${t.message}")
+                client.postgrest[TABLE]
+                    .update({ set("status", "DECLINED") }) {
+                        filter { eq("id", invitationId) }
+                    }
+                Unit
+            }
         }.also { if (it.isFailure) Log.e(TAG, "declineInvitation failed", it.exceptionOrNull()) }
 
     override suspend fun revokeInvitation(invitationId: String): Result<Unit> =
