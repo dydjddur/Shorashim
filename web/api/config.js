@@ -14,7 +14,7 @@ module.exports = (req, res) => {
     process.env.VITE_SUPABASE_URL ||
     process.env.REACT_APP_SUPABASE_URL ||
     process.env.supabase_url ||
-    ''
+    'https://drbhaydqdlupzpyngkdl.supabase.co'
   ).trim();
 
   const supabaseAnonKey = (
@@ -23,7 +23,7 @@ module.exports = (req, res) => {
     process.env.VITE_SUPABASE_ANON_KEY ||
     process.env.REACT_APP_SUPABASE_ANON_KEY ||
     process.env.supabase_anon_key ||
-    ''
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYmhheWRxZGx1cHpweW5na2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTAwNTMsImV4cCI6MjEwNzIyNjA1M30.ITyIGFcp5JpLU5sz_TVFQZOG8KoBe8KeQ8ydKZjVBG4'
   ).trim();
 
   return res.status(200).json({

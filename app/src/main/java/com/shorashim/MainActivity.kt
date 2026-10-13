@@ -112,21 +112,48 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+                        val shouldShowBars = currentRoute == null ||
+                            currentRoute in com.shorashim.core.navigation.ShorashimRoutes.bottomBarRoutes ||
+                            currentRoute in com.shorashim.core.navigation.ShorashimRoutes.topBarRoutes
+
+                        val userProfile by androidx.compose.runtime.produceState<com.shorashim.core.model.UserProfile?>(initialValue = null, currentRoute) {
+                            value = appContainer.profileRepository.getProfile().getOrNull()
+                        }
+
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
-                            bottomBar = {
-                                ShorashimBottomBar(
-                                    currentRoute = currentRoute,
-                                    onNavigate = { destination ->
-                                        navController.navigate(destination.route) {
-                                            popUpTo(ShorashimDestination.FamilyTree.route) {
-                                                saveState = true
+                            topBar = {
+                                if (shouldShowBars) {
+                                    com.shorashim.core.navigation.ShorashimTopBar(
+                                        currentRoute = currentRoute,
+                                        userAvatarUrl = userProfile?.avatarUrl,
+                                        onNavigate = { route ->
+                                            navController.navigate(route) {
+                                                popUpTo(ShorashimDestination.FamilyTree.route) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    },
-                                )
+                                        },
+                                    )
+                                }
+                            },
+                            bottomBar = {
+                                if (shouldShowBars) {
+                                    ShorashimBottomBar(
+                                        currentRoute = currentRoute,
+                                        onNavigate = { destination ->
+                                            navController.navigate(destination.route) {
+                                                popUpTo(ShorashimDestination.FamilyTree.route) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                    )
+                                }
                             },
                         ) { innerPadding ->
                             ShorashimNavHost(

@@ -131,6 +131,14 @@ class FamilyManagementViewModelTest {
         var userProfiles = mutableMapOf<String, UserProfile>()
         override suspend fun getProfile(): Result<UserProfile> = Result.failure(NotImplementedError())
         override suspend fun updateProfile(fullName: String, displayName: String): Result<UserProfile> = Result.failure(NotImplementedError())
+        override suspend fun updateProfile(
+            fullName: String,
+            displayName: String,
+            avatarUrl: String?,
+            isPrivate: Boolean,
+            bio: String?
+        ): Result<UserProfile> = Result.failure(NotImplementedError())
+        override suspend fun setPrivateAccountMode(isPrivate: Boolean): Result<Unit> = Result.success(Unit)
         override suspend fun searchUserByUsername(username: String): Result<UserProfile?> =
             Result.success(userProfiles[username.lowercase()])
         override suspend fun setUsername(username: String): Result<Unit> = Result.success(Unit)

@@ -63,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -90,6 +91,7 @@ fun FamilyManagementRoute(
     onNavigateToEditPerson: (familyId: String, personId: String) -> Unit,
     onNavigateToCreateFamily: () -> Unit = {},
     invitationRepository: InvitationRepository? = null,
+    isReadOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -121,6 +123,7 @@ fun FamilyManagementRoute(
     FamilyManagementScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
+        isReadOnly = isReadOnly,
         onNavigateBack = onNavigateBack,
         onSelectFamily = viewModel::selectFamily,
         onCreateNewTreeClick = onNavigateToCreateFamily,
@@ -177,6 +180,10 @@ fun FamilyManagementRoute(
         onShareInvite = {
             shareInviteViewModel?.createAndShare(context, familyName = uiState.family?.name)
         },
+        onLinkUser = viewModel::linkUserToPerson,
+        onUnlinkUser = viewModel::unlinkUserFromPerson,
+        onGetFriends = viewModel::getFriends,
+        onGetMutualConnections = viewModel::getMutualConnections,
         onRefresh = { viewModel.refreshData(showToast = true) },
         modifier = modifier,
     )
@@ -219,11 +226,39 @@ fun FamilyManagementScreen(
     onAddSpouseClick: (Person) -> Unit,
     onAddSiblingClick: (Person) -> Unit = {},
     onShareInvite: () -> Unit = {},
+    onLinkUser: (personId: String, userId: String) -> Unit = { _, _ -> },
+    onUnlinkUser: (personId: String) -> Unit = {},
+    onGetFriends: (suspend () -> List<com.shorashim.core.model.FriendUser>)? = null,
+    onGetMutualConnections: (suspend (userId: String) -> List<com.shorashim.core.model.MutualFamilyConnection>)? = null,
     onRefresh: () -> Unit,
+    isReadOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     var renameText by remember(uiState.family?.name) { mutableStateOf(uiState.family?.name.orEmpty()) }
     var personPendingDelete by remember { mutableStateOf<Person?>(null) }
+    var viewedPerson by remember { mutableStateOf<Person?>(null) }
+
+    // Person Details and Identity Linking Dialog
+    viewedPerson?.let { p ->
+        PersonDetailDialog(
+            person = p,
+            allPeople = uiState.people,
+            relationships = uiState.relationships,
+            canEdit = !isReadOnly && uiState.family?.canEditTreeContent == true,
+            onLinkUser = { targetUserId ->
+                onLinkUser(p.id, targetUserId)
+                viewedPerson = null
+            },
+            onUnlinkUser = {
+                onUnlinkUser(p.id)
+                viewedPerson = null
+            },
+            onSearchUser = onSearchUser,
+            onGetFriends = onGetFriends,
+            onGetMutualConnections = onGetMutualConnections,
+            onDismiss = { viewedPerson = null },
+        )
+    }
 
     // Deleting a person also removes their relationships, so always ask first.
     personPendingDelete?.let { victim ->
@@ -369,12 +404,38 @@ fun FamilyManagementScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    TreeSwitcherDropdown(
-                        currentFamily = uiState.family,
-                        allFamilies = uiState.allFamilies,
-                        onSelectFamily = onSelectFamily,
-                        onCreateNewTreeClick = onCreateNewTreeClick,
-                    )
+                    if (isReadOnly) {
+                        Column {
+                            Text(
+                                text = uiState.family?.name.orEmpty(),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                Text(
+                                    text = "עץ קהילתי • צפייה בלבד",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
+                    } else {
+                        TreeSwitcherDropdown(
+                            currentFamily = uiState.family,
+                            allFamilies = uiState.allFamilies,
+                            onSelectFamily = onSelectFamily,
+                            onCreateNewTreeClick = onCreateNewTreeClick,
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -402,11 +463,13 @@ fun FamilyManagementScreen(
                             )
                         }
                     }
-                    IconButton(onClick = onOpenManagementSheet) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = "ניהול עץ",
-                        )
+                    if (!isReadOnly) {
+                        IconButton(onClick = onOpenManagementSheet) {
+                            Icon(
+                                imageVector = Icons.Outlined.MoreVert,
+                                contentDescription = "ניהול עץ",
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -415,7 +478,7 @@ fun FamilyManagementScreen(
             )
         },
         floatingActionButton = {
-            if (uiState.family?.canEditTreeContent == true) {
+            if (!isReadOnly && uiState.family?.canEditTreeContent == true) {
                 FloatingActionButton(
                     onClick = onAddPersonClick,
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -478,17 +541,26 @@ fun FamilyManagementScreen(
                 uiState.activeTab == FamilyViewTab.CANVAS -> {
                     // Interactive Canvas View
                     FamilyTreeCanvas(
-                        family = uiState.family ?: return@Column,
+                        family = (uiState.family ?: return@Column).let {
+                            if (isReadOnly) it.copy(currentUserRole = com.shorashim.core.model.MembershipRole.VIEWER) else it
+                        },
                         people = uiState.people,
                         relationships = uiState.relationships,
                         onAddChildClick = onAddChildClick,
                         onAddParentClick = onAddParentClick,
                         onAddSpouseClick = onAddSpouseClick,
                         onAddSiblingClick = onAddSiblingClick,
-                        onEditPersonClick = { p -> onPersonClick(p.id) },
-                        onDeletePersonClick = { p -> personPendingDelete = p },
-                        onPublishClick = onPublish,
-                        onEmptyAddPersonClick = onAddPersonClick,
+                        onEditPersonClick = { p ->
+                            if (!isReadOnly && uiState.family?.canEditTreeContent == true) {
+                                onPersonClick(p.id)
+                            } else {
+                                viewedPerson = p
+                            }
+                        },
+                        onDeletePersonClick = { p -> if (!isReadOnly) personPendingDelete = p },
+                        onPersonDetailsClick = { p -> viewedPerson = p },
+                        onPublishClick = if (!isReadOnly) onPublish else ({}),
+                        onEmptyAddPersonClick = if (!isReadOnly) onAddPersonClick else ({}),
                         onRefreshClick = onRefresh,
                         isRefreshing = uiState.isRefreshing,
                         modifier = Modifier.fillMaxSize(),
@@ -529,9 +601,14 @@ fun FamilyManagementScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = stringResource(R.string.family_people_empty),
+                                    text = if (!isReadOnly && uiState.family?.canEditTreeContent == true) {
+                                        stringResource(R.string.family_people_empty)
+                                    } else {
+                                        stringResource(R.string.community_tree_empty)
+                                    },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 )
                             }
                         } else {
@@ -543,7 +620,13 @@ fun FamilyManagementScreen(
                                 items(uiState.filteredPeople, key = { it.id }) { person ->
                                     PersonListItemCard(
                                         person = person,
-                                        onClick = { onPersonClick(person.id) },
+                                        onClick = {
+                                            if (!isReadOnly && uiState.family?.canEditTreeContent == true) {
+                                                onPersonClick(person.id)
+                                            } else {
+                                                viewedPerson = person
+                                            }
+                                        },
                                     )
                                 }
                             }

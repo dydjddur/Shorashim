@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Undo
@@ -129,20 +130,20 @@ fun TreeManagementBottomSheet(
 
             Spacer(Modifier.height(20.dp))
 
-            // Draft / Publish Section
+            // Private / Public Community Tree Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (family.isDraft) {
-                        Color(0xFFF9A825).copy(alpha = 0.12f)
+                    containerColor = if (family.isPrivate) {
+                        Color(0xFFE65100).copy(alpha = 0.12f)
                     } else {
                         Color(0xFF43A047).copy(alpha = 0.12f)
                     },
                 ),
                 border = BorderStroke(
                     1.dp,
-                    if (family.isDraft) Color(0xFFF9A825) else Color(0xFF43A047),
+                    if (family.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
                 ),
             ) {
                 Row(
@@ -154,17 +155,17 @@ fun TreeManagementBottomSheet(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (family.isDraft) "סטטוס: טיוטה" else "סטטוס: פורסם ומשותף",
+                            text = if (family.isPrivate) "סטטוס: 🔒 עץ פרטי (PRIVATE)" else "סטטוס: 🌐 עץ קהילתי בענן",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = if (family.isDraft) {
-                                "העץ נראה רק לך. לחצו להעלאה כדי לאפשר שיתוף."
+                            text = if (family.isPrivate) {
+                                "העץ מוגדר כפרטי ומוסתר לחלוטין מלשונית הקהילה. רק אתה ובני המשפחה שהוזמנו יכולים לראות אותו."
                             } else {
-                                "העץ פעיל וזמין לכל המשתתפים שהוזמנו."
+                                "העץ מוצג בלשונית הקהילה לצפייה בלבד לאיתור קרובי משפחה לפי שמות משפחה משותפים."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -172,7 +173,7 @@ fun TreeManagementBottomSheet(
                     }
 
                     if (family.canManageMembers) {
-                        if (family.isDraft) {
+                        if (family.isPrivate) {
                             Button(
                                 onClick = onPublish,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF43A047)),
@@ -180,16 +181,16 @@ fun TreeManagementBottomSheet(
                             ) {
                                 Icon(Icons.Outlined.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("העלאה", fontWeight = FontWeight.Bold)
+                                Text("פרסם לקהילה", fontWeight = FontWeight.Bold)
                             }
                         } else {
                             OutlinedButton(
                                 onClick = onUnpublish,
                                 shape = RoundedCornerShape(10.dp),
                             ) {
-                                Icon(Icons.Outlined.Undo, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.tree_unpublish_action))
+                                Text("הפוך לפרטי", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

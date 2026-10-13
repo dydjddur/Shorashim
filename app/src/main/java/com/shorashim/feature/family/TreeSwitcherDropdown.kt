@@ -76,11 +76,11 @@ fun TreeSwitcherDropdown(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (currentFamily.isDraft) Color(0xFFF9A825) else Color(0xFF43A047),
+                                color = if (!currentFamily.canEditTreeContent) Color(0xFF1976D2) else if (currentFamily.isDraft) Color(0xFFF9A825) else Color(0xFF43A047),
                                 modifier = Modifier.padding(end = 4.dp),
                             ) {
                                 Text(
-                                    text = if (currentFamily.isDraft) "טיוטה" else "פורסם",
+                                    text = if (!currentFamily.canEditTreeContent) "עץ קהילתי (צפייה)" else if (currentFamily.isDraft) "טיוטה" else "פורסם",
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,

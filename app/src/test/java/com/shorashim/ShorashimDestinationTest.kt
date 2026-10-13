@@ -13,9 +13,25 @@ class ShorashimDestinationTest {
         assertEquals(
             listOf(
                 ShorashimRoutes.FAMILY_TREE,
+                ShorashimRoutes.COMMUNITY_TREES,
                 ShorashimRoutes.MEMORIALS,
                 ShorashimRoutes.TEHILLIM,
-                ShorashimRoutes.SETTINGS,
+            ),
+            routes,
+        )
+    }
+
+    @Test
+    fun topBarHasFourUniqueRoutes() {
+        val routes = ShorashimRoutes.topBarRoutes
+        assertEquals(4, routes.size)
+        assertEquals(routes.size, routes.toSet().size)
+        assertEquals(
+            listOf(
+                ShorashimRoutes.FRIENDS,
+                ShorashimRoutes.HELP,
+                ShorashimRoutes.DONATIONS,
+                ShorashimRoutes.PROFILE,
             ),
             routes,
         )

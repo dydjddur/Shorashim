@@ -50,7 +50,7 @@ import com.shorashim.core.ui.component.Spacing
 fun RegisterRoute(
     viewModel: AuthViewModel,
     onNavigateBackToLogin: () -> Unit,
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: (email: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.registerUiState.collectAsStateWithLifecycle()
@@ -67,7 +67,12 @@ fun RegisterRoute(
         onTermsAcceptedChanged = viewModel::onTermsAcceptedChanged,
         onOpenTermsDialog = { viewModel.setTermsDialogOpen(true) },
         onCloseTermsDialog = { viewModel.setTermsDialogOpen(false) },
-        onRegisterClicked = { viewModel.register(onRegisterSuccess) },
+        onRegisterClicked = {
+            val email = uiState.email.trim()
+            viewModel.register {
+                onRegisterSuccess(email)
+            }
+        },
         onNavigateBackToLogin = onNavigateBackToLogin,
         modifier = modifier,
     )

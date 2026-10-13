@@ -1,5 +1,6 @@
 package com.shorashim.data.family
 
+import com.shorashim.core.model.MutualFamilyConnection
 import com.shorashim.core.model.Person
 
 interface PersonRepository {
@@ -11,4 +12,6 @@ interface PersonRepository {
     suspend fun deletePerson(personId: String): Result<Unit>
     suspend fun searchPeople(familyId: String, query: String): Result<List<Person>>
     suspend fun updatePersonPosition(personId: String, canvasX: Double, canvasY: Double): Result<Unit>
+    suspend fun linkUserToPerson(personId: String, userId: String?): Result<Unit> = Result.success(Unit)
+    suspend fun getMutualFamilyConnections(targetUserId: String): Result<List<MutualFamilyConnection>> = Result.success(emptyList())
 }

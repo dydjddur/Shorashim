@@ -14,10 +14,19 @@ import com.shorashim.data.family.RelationshipRepository
 import com.shorashim.core.model.PartialDate
 import com.shorashim.core.model.Person
 import com.shorashim.data.family.PersonRepository
+import com.shorashim.core.common.HebrewDates
+import com.shorashim.core.model.HebrewCalendarMath
+import com.shorashim.core.model.HebrewDate
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+enum class CalendarInputType {
+    GREGORIAN,
+    HEBREW,
+}
 
 data class AddEditPersonUiState(
     val isEditing: Boolean = false,
@@ -30,10 +39,20 @@ data class AddEditPersonUiState(
     val birthMonth: String = "",
     val birthDay: String = "",
     val birthPrecision: DatePrecision = DatePrecision.FULL_DATE,
+    val birthCalendarType: CalendarInputType = CalendarInputType.GREGORIAN,
+    val birthHebrewYear: String = "",
+    val birthHebrewMonth: Int = HebrewCalendarMath.TISHREI,
+    val birthHebrewDay: String = "",
+    val birthHebrewFormatted: String = "",
     val deathYear: String = "",
     val deathMonth: String = "",
     val deathDay: String = "",
     val deathPrecision: DatePrecision = DatePrecision.FULL_DATE,
+    val deathCalendarType: CalendarInputType = CalendarInputType.GREGORIAN,
+    val deathHebrewYear: String = "",
+    val deathHebrewMonth: Int = HebrewCalendarMath.TISHREI,
+    val deathHebrewDay: String = "",
+    val deathHebrewFormatted: String = "",
     val biography: String = "",
     val isLoading: Boolean = false,
     val firstNameError: Int? = null,
@@ -197,6 +216,16 @@ class AddEditPersonViewModel(
                     val bDate = PartialDate.fromIso(person.birthDate, person.birthDatePrecision)
                     val dDate = PartialDate.fromIso(person.deathDate, person.deathDatePrecision)
 
+                    val bY = bDate.year?.toString().orEmpty()
+                    val bM = bDate.month?.toString().orEmpty()
+                    val bD = bDate.day?.toString().orEmpty()
+                    val (bHDate, bFormatted) = syncHebrewFromGregorian(bY, bM, bD, bDate.precision)
+
+                    val dY = dDate.year?.toString().orEmpty()
+                    val dM = dDate.month?.toString().orEmpty()
+                    val dD = dDate.day?.toString().orEmpty()
+                    val (dHDate, dFormatted) = syncHebrewFromGregorian(dY, dM, dD, dDate.precision)
+
                     _uiState.value = _uiState.value.copy(
                         isEditing = true,
                         firstName = person.firstName,
@@ -204,14 +233,22 @@ class AddEditPersonViewModel(
                         additionalNames = person.additionalNames.orEmpty(),
                         photoPath = person.photoPath,
                         lifeStatus = person.lifeStatus,
-                        birthYear = bDate.year?.toString().orEmpty(),
-                        birthMonth = bDate.month?.toString().orEmpty(),
-                        birthDay = bDate.day?.toString().orEmpty(),
+                        birthYear = bY,
+                        birthMonth = bM,
+                        birthDay = bD,
                         birthPrecision = bDate.precision,
-                        deathYear = dDate.year?.toString().orEmpty(),
-                        deathMonth = dDate.month?.toString().orEmpty(),
-                        deathDay = dDate.day?.toString().orEmpty(),
+                        birthHebrewYear = bHDate?.year?.toString().orEmpty(),
+                        birthHebrewMonth = bHDate?.month ?: HebrewCalendarMath.TISHREI,
+                        birthHebrewDay = bHDate?.day?.toString().orEmpty(),
+                        birthHebrewFormatted = bFormatted,
+                        deathYear = dY,
+                        deathMonth = dM,
+                        deathDay = dD,
                         deathPrecision = dDate.precision,
+                        deathHebrewYear = dHDate?.year?.toString().orEmpty(),
+                        deathHebrewMonth = dHDate?.month ?: HebrewCalendarMath.TISHREI,
+                        deathHebrewDay = dHDate?.day?.toString().orEmpty(),
+                        deathHebrewFormatted = dFormatted,
                         biography = person.biography.orEmpty(),
                         isLoading = false,
                     )
@@ -223,6 +260,56 @@ class AddEditPersonViewModel(
                     )
                 }
         }
+    }
+
+    private fun syncHebrewFromGregorian(
+        yearStr: String,
+        monthStr: String,
+        dayStr: String,
+        precision: DatePrecision,
+    ): Pair<HebrewDate?, String> {
+        if (precision == DatePrecision.UNKNOWN) return null to ""
+        val y = yearStr.toIntOrNull() ?: return null to ""
+        if (precision == DatePrecision.YEAR_ONLY) {
+            val hYear = y + 3760
+            val formatted = HebrewDates.formatHebrewYear(hYear)
+            return HebrewDate(hYear, HebrewCalendarMath.TISHREI, 1) to "שנת $formatted"
+        }
+        val m = monthStr.toIntOrNull() ?: return null to ""
+        val d = if (precision == DatePrecision.FULL_DATE) dayStr.toIntOrNull() ?: return null to "" else 1
+        val localDate = runCatching { LocalDate.of(y, m, d) }.getOrNull() ?: return null to ""
+        val hDate = HebrewCalendarMath.fromLocalDate(localDate)
+        val formatted = if (precision == DatePrecision.FULL_DATE) {
+            HebrewDates.formatHebrewDate(hDate)
+        } else {
+            val monthName = HebrewCalendarMath.monthName(hDate.year, hDate.month)
+            val yearName = HebrewDates.formatHebrewYear(hDate.year)
+            "$monthName $yearName"
+        }
+        return hDate to formatted
+    }
+
+    private fun syncGregorianFromHebrew(
+        hYearStr: String,
+        hMonth: Int,
+        hDayStr: String,
+        precision: DatePrecision,
+    ): Triple<String, String, String> {
+        if (precision == DatePrecision.UNKNOWN) return Triple("", "", "")
+        val y = HebrewDates.parseGematria(hYearStr) ?: hYearStr.toIntOrNull() ?: return Triple("", "", "")
+        if (precision == DatePrecision.YEAR_ONLY) {
+            val gYear = (y - 3760).coerceAtLeast(1)
+            return Triple(gYear.toString(), "", "")
+        }
+        val maxDays = HebrewCalendarMath.monthLength(y, hMonth)
+        val d = (HebrewDates.parseGematria(hDayStr) ?: hDayStr.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+        val localDate = runCatching { HebrewCalendarMath.toLocalDate(y, hMonth, d) }.getOrNull()
+            ?: return Triple("", "", "")
+        return Triple(
+            localDate.year.toString(),
+            localDate.monthValue.toString(),
+            if (precision == DatePrecision.FULL_DATE) localDate.dayOfMonth.toString() else "",
+        )
     }
 
     fun onFirstNameChanged(v: String) {
@@ -246,36 +333,220 @@ class AddEditPersonViewModel(
         _uiState.value = _uiState.value.copy(lifeStatus = v, dateError = null)
     }
 
+    // --- Birth Date Handlers ---
+
+    fun onBirthCalendarTypeChanged(type: CalendarInputType) {
+        _uiState.value = _uiState.value.copy(birthCalendarType = type)
+    }
+
     fun onBirthYearChanged(v: String) {
-        _uiState.value = _uiState.value.copy(birthYear = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(v, s.birthMonth, s.birthDay, s.birthPrecision)
+        _uiState.value = s.copy(
+            birthYear = v,
+            birthHebrewYear = hDate?.year?.toString() ?: s.birthHebrewYear,
+            birthHebrewMonth = hDate?.month ?: s.birthHebrewMonth,
+            birthHebrewDay = hDate?.day?.toString() ?: s.birthHebrewDay,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onBirthMonthChanged(v: String) {
-        _uiState.value = _uiState.value.copy(birthMonth = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(s.birthYear, v, s.birthDay, s.birthPrecision)
+        _uiState.value = s.copy(
+            birthMonth = v,
+            birthHebrewYear = hDate?.year?.toString() ?: s.birthHebrewYear,
+            birthHebrewMonth = hDate?.month ?: s.birthHebrewMonth,
+            birthHebrewDay = hDate?.day?.toString() ?: s.birthHebrewDay,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onBirthDayChanged(v: String) {
-        _uiState.value = _uiState.value.copy(birthDay = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(s.birthYear, s.birthMonth, v, s.birthPrecision)
+        _uiState.value = s.copy(
+            birthDay = v,
+            birthHebrewYear = hDate?.year?.toString() ?: s.birthHebrewYear,
+            birthHebrewMonth = hDate?.month ?: s.birthHebrewMonth,
+            birthHebrewDay = hDate?.day?.toString() ?: s.birthHebrewDay,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onBirthPrecisionChanged(v: DatePrecision) {
-        _uiState.value = _uiState.value.copy(birthPrecision = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(s.birthYear, s.birthMonth, s.birthDay, v)
+        _uiState.value = s.copy(
+            birthPrecision = v,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    fun onBirthHebrewYearChanged(v: String) {
+        val s = _uiState.value
+        val (gY, gM, gD) = syncGregorianFromHebrew(v, s.birthHebrewMonth, s.birthHebrewDay, s.birthPrecision)
+        val parsedYear = HebrewDates.parseGematria(v) ?: v.toIntOrNull()
+        val formatted = if (parsedYear != null) {
+            val maxDays = HebrewCalendarMath.monthLength(parsedYear, s.birthHebrewMonth)
+            val d = (HebrewDates.parseGematria(s.birthHebrewDay) ?: s.birthHebrewDay.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+            HebrewDates.formatHebrewDate(HebrewDate(parsedYear, s.birthHebrewMonth, d))
+        } else ""
+        _uiState.value = s.copy(
+            birthHebrewYear = v,
+            birthYear = if (gY.isNotEmpty()) gY else s.birthYear,
+            birthMonth = if (gM.isNotEmpty()) gM else s.birthMonth,
+            birthDay = if (gD.isNotEmpty()) gD else s.birthDay,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    fun onBirthHebrewMonthChanged(month: Int) {
+        val s = _uiState.value
+        val (gY, gM, gD) = syncGregorianFromHebrew(s.birthHebrewYear, month, s.birthHebrewDay, s.birthPrecision)
+        val parsedYear = HebrewDates.parseGematria(s.birthHebrewYear) ?: s.birthHebrewYear.toIntOrNull() ?: 5784
+        val maxDays = HebrewCalendarMath.monthLength(parsedYear, month)
+        val d = (HebrewDates.parseGematria(s.birthHebrewDay) ?: s.birthHebrewDay.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+        val formatted = HebrewDates.formatHebrewDate(HebrewDate(parsedYear, month, d))
+        _uiState.value = s.copy(
+            birthHebrewMonth = month,
+            birthYear = if (gY.isNotEmpty()) gY else s.birthYear,
+            birthMonth = if (gM.isNotEmpty()) gM else s.birthMonth,
+            birthDay = if (gD.isNotEmpty()) gD else s.birthDay,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    fun onBirthHebrewDayChanged(v: String) {
+        val s = _uiState.value
+        val (gY, gM, gD) = syncGregorianFromHebrew(s.birthHebrewYear, s.birthHebrewMonth, v, s.birthPrecision)
+        val parsedYear = HebrewDates.parseGematria(s.birthHebrewYear) ?: s.birthHebrewYear.toIntOrNull() ?: 5784
+        val maxDays = HebrewCalendarMath.monthLength(parsedYear, s.birthHebrewMonth)
+        val d = (HebrewDates.parseGematria(v) ?: v.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+        val formatted = HebrewDates.formatHebrewDate(HebrewDate(parsedYear, s.birthHebrewMonth, d))
+        _uiState.value = s.copy(
+            birthHebrewDay = v,
+            birthYear = if (gY.isNotEmpty()) gY else s.birthYear,
+            birthMonth = if (gM.isNotEmpty()) gM else s.birthMonth,
+            birthDay = if (gD.isNotEmpty()) gD else s.birthDay,
+            birthHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    // --- Death Date Handlers ---
+
+    fun onDeathCalendarTypeChanged(type: CalendarInputType) {
+        _uiState.value = _uiState.value.copy(deathCalendarType = type)
     }
 
     fun onDeathYearChanged(v: String) {
-        _uiState.value = _uiState.value.copy(deathYear = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(v, s.deathMonth, s.deathDay, s.deathPrecision)
+        _uiState.value = s.copy(
+            deathYear = v,
+            deathHebrewYear = hDate?.year?.toString() ?: s.deathHebrewYear,
+            deathHebrewMonth = hDate?.month ?: s.deathHebrewMonth,
+            deathHebrewDay = hDate?.day?.toString() ?: s.deathHebrewDay,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onDeathMonthChanged(v: String) {
-        _uiState.value = _uiState.value.copy(deathMonth = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(s.deathYear, v, s.deathDay, s.deathPrecision)
+        _uiState.value = s.copy(
+            deathMonth = v,
+            deathHebrewYear = hDate?.year?.toString() ?: s.deathHebrewYear,
+            deathHebrewMonth = hDate?.month ?: s.deathHebrewMonth,
+            deathHebrewDay = hDate?.day?.toString() ?: s.deathHebrewDay,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onDeathDayChanged(v: String) {
-        _uiState.value = _uiState.value.copy(deathDay = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(s.deathYear, s.deathMonth, v, s.deathPrecision)
+        _uiState.value = s.copy(
+            deathDay = v,
+            deathHebrewYear = hDate?.year?.toString() ?: s.deathHebrewYear,
+            deathHebrewMonth = hDate?.month ?: s.deathHebrewMonth,
+            deathHebrewDay = hDate?.day?.toString() ?: s.deathHebrewDay,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onDeathPrecisionChanged(v: DatePrecision) {
-        _uiState.value = _uiState.value.copy(deathPrecision = v, dateError = null)
+        val s = _uiState.value
+        val (hDate, formatted) = syncHebrewFromGregorian(s.deathYear, s.deathMonth, s.deathDay, v)
+        _uiState.value = s.copy(
+            deathPrecision = v,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    fun onDeathHebrewYearChanged(v: String) {
+        val s = _uiState.value
+        val (gY, gM, gD) = syncGregorianFromHebrew(v, s.deathHebrewMonth, s.deathHebrewDay, s.deathPrecision)
+        val parsedYear = HebrewDates.parseGematria(v) ?: v.toIntOrNull()
+        val formatted = if (parsedYear != null) {
+            val maxDays = HebrewCalendarMath.monthLength(parsedYear, s.deathHebrewMonth)
+            val d = (HebrewDates.parseGematria(s.deathHebrewDay) ?: s.deathHebrewDay.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+            HebrewDates.formatHebrewDate(HebrewDate(parsedYear, s.deathHebrewMonth, d))
+        } else ""
+        _uiState.value = s.copy(
+            deathHebrewYear = v,
+            deathYear = if (gY.isNotEmpty()) gY else s.deathYear,
+            deathMonth = if (gM.isNotEmpty()) gM else s.deathMonth,
+            deathDay = if (gD.isNotEmpty()) gD else s.deathDay,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    fun onDeathHebrewMonthChanged(month: Int) {
+        val s = _uiState.value
+        val (gY, gM, gD) = syncGregorianFromHebrew(s.deathHebrewYear, month, s.deathHebrewDay, s.deathPrecision)
+        val parsedYear = HebrewDates.parseGematria(s.deathHebrewYear) ?: s.deathHebrewYear.toIntOrNull() ?: 5784
+        val maxDays = HebrewCalendarMath.monthLength(parsedYear, month)
+        val d = (HebrewDates.parseGematria(s.deathHebrewDay) ?: s.deathHebrewDay.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+        val formatted = HebrewDates.formatHebrewDate(HebrewDate(parsedYear, month, d))
+        _uiState.value = s.copy(
+            deathHebrewMonth = month,
+            deathYear = if (gY.isNotEmpty()) gY else s.deathYear,
+            deathMonth = if (gM.isNotEmpty()) gM else s.deathMonth,
+            deathDay = if (gD.isNotEmpty()) gD else s.deathDay,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
+    }
+
+    fun onDeathHebrewDayChanged(v: String) {
+        val s = _uiState.value
+        val (gY, gM, gD) = syncGregorianFromHebrew(s.deathHebrewYear, s.deathHebrewMonth, v, s.deathPrecision)
+        val parsedYear = HebrewDates.parseGematria(s.deathHebrewYear) ?: s.deathHebrewYear.toIntOrNull() ?: 5784
+        val maxDays = HebrewCalendarMath.monthLength(parsedYear, s.deathHebrewMonth)
+        val d = (HebrewDates.parseGematria(v) ?: v.toIntOrNull() ?: 1).coerceIn(1, maxDays)
+        val formatted = HebrewDates.formatHebrewDate(HebrewDate(parsedYear, s.deathHebrewMonth, d))
+        _uiState.value = s.copy(
+            deathHebrewDay = v,
+            deathYear = if (gY.isNotEmpty()) gY else s.deathYear,
+            deathMonth = if (gM.isNotEmpty()) gM else s.deathMonth,
+            deathDay = if (gD.isNotEmpty()) gD else s.deathDay,
+            deathHebrewFormatted = formatted,
+            dateError = null,
+        )
     }
 
     fun onBiographyChanged(v: String) {

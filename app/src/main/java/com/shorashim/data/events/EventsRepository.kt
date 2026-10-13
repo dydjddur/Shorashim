@@ -1,9 +1,11 @@
 package com.shorashim.data.events
 
 import android.util.Log
+import com.shorashim.core.common.HebrewDates
 import com.shorashim.core.model.CalendarEvent
 import com.shorashim.core.model.DatePrecision
 import com.shorashim.core.model.EventDateCalculator
+import com.shorashim.core.model.HebrewCalendarMath
 import com.shorashim.core.model.MemorialEvent
 import com.shorashim.core.model.MemorialEventInsertDto
 import com.shorashim.data.family.FamilyRepository
@@ -106,14 +108,22 @@ class DefaultEventsRepository(
                 val treeNames = duplicates.mapNotNull { familyMap[it.familyId] }.distinct()
                 val familyName = treeNames.joinToString(", ").ifBlank { "עץ משפחה" }
 
-                val deathYear = deathDateStr.split("-").firstOrNull()?.toIntOrNull()
-                val yearsSincePassing = if (deathYear != null) nextMemorial.year - deathYear else null
+                val deathLocalDate = runCatching { LocalDate.parse(deathDateStr.trim()) }.getOrNull()
+                val hDeathDate = deathLocalDate?.let { HebrewCalendarMath.fromLocalDate(it) }
+                val hebrewDateDisplay = hDeathDate?.let { HebrewDates.formatHebrewDate(it) }
+                val deathYear = deathLocalDate?.year
+                val yearsSincePassing = if (hDeathDate != null) {
+                    val memorialHYear = HebrewCalendarMath.fromLocalDate(nextMemorial).year
+                    maxOf(1, memorialHYear - hDeathDate.year)
+                } else if (deathYear != null) {
+                    nextMemorial.year - deathYear
+                } else null
                 val formattedOriginalDate = formatIsoDateToDisplay(deathDateStr)
 
                 val description = if (yearsSincePassing != null && yearsSincePassing > 0) {
-                    "אזכרה - שנה $yearsSincePassing לפטירה (נפטר/ה ב-$formattedOriginalDate)"
+                    "אזכרה - שנה $yearsSincePassing לפטירה (נפטר/ה ב-$formattedOriginalDate${if (hebrewDateDisplay != null) ", $hebrewDateDisplay" else ""})"
                 } else {
-                    "אזכרה שנתית (נפטר/ה ב-$formattedOriginalDate)"
+                    "אזכרה שנתית (נפטר/ה ב-$formattedOriginalDate${if (hebrewDateDisplay != null) ", $hebrewDateDisplay" else ""})"
                 }
 
                 memorialCalendarEvents.add(
@@ -126,7 +136,7 @@ class DefaultEventsRepository(
                         familyName = familyName,
                         originalDateStr = formattedOriginalDate,
                         targetDate = nextMemorial,
-                        hebrewDate = null,
+                        hebrewDate = hebrewDateDisplay,
                         description = description,
                         daysUntil = daysUntil,
                         relativeLabel = relativeLabel,
@@ -146,6 +156,9 @@ class DefaultEventsRepository(
                 val daysUntil = EventDateCalculator.calculateDaysUntil(nextDate, today)
                 val relativeLabel = EventDateCalculator.formatRelativeLabel(nextDate, today)
                 val familyName = familyMap[mem.familyId] ?: mem.familyName.ifBlank { "משפחה" }
+                val memLocalDate = runCatching { LocalDate.parse(mem.eventDate.trim()) }.getOrNull()
+                val computedHebrew = memLocalDate?.let { HebrewDates.formatHebrewDate(it) }
+                val finalHebrew = mem.hebrewDate?.ifBlank { null } ?: computedHebrew
 
                 memorialCalendarEvents.add(
                     CalendarEvent.Memorial(
@@ -157,7 +170,7 @@ class DefaultEventsRepository(
                         familyName = familyName,
                         originalDateStr = formatIsoDateToDisplay(mem.eventDate),
                         targetDate = nextDate,
-                        hebrewDate = mem.hebrewDate,
+                        hebrewDate = finalHebrew,
                         description = mem.description,
                         daysUntil = daysUntil,
                         relativeLabel = relativeLabel,

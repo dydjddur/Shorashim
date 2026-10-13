@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -18,6 +19,12 @@ sealed class ShorashimDestination(
         route = ShorashimRoutes.FAMILY_TREE,
         labelRes = R.string.nav_family_tree,
         icon = Icons.Outlined.Park,
+    )
+
+    data object Community : ShorashimDestination(
+        route = ShorashimRoutes.COMMUNITY_TREES,
+        labelRes = R.string.nav_community,
+        icon = Icons.Outlined.Groups,
     )
 
     data object Memorials : ShorashimDestination(
@@ -41,9 +48,9 @@ sealed class ShorashimDestination(
     companion object {
         val bottomBarItems: List<ShorashimDestination> = listOf(
             FamilyTree,
+            Community,
             Memorials,
             Tehillim,
-            Settings,
         )
     }
 }

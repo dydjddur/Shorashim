@@ -22,6 +22,9 @@ class SupabaseProfileRepository(
 
         val metaFullName = currentUser.userMetadata?.get("full_name")?.jsonPrimitive?.content ?: ""
         val metaDisplayName = currentUser.userMetadata?.get("display_name")?.jsonPrimitive?.content ?: metaFullName
+        val metaAvatarUrl = currentUser.userMetadata?.get("avatar_url")?.jsonPrimitive?.content
+        val metaIsPrivate = currentUser.userMetadata?.get("is_private")?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
+        val metaBio = currentUser.userMetadata?.get("bio")?.jsonPrimitive?.content
 
         return runCatching {
             val dto = try {
@@ -43,8 +46,10 @@ class SupabaseProfileRepository(
                     username = dto.username,
                     fullName = dto.fullName.ifBlank { metaFullName },
                     displayName = dto.displayName.ifBlank { metaDisplayName },
-                    avatarUrl = dto.avatarUrl,
+                    avatarUrl = dto.avatarUrl ?: metaAvatarUrl,
                     email = dto.email ?: currentUser.email,
+                    isPrivate = dto.isPrivate || metaIsPrivate,
+                    bio = dto.bio ?: metaBio,
                 )
             } else {
                 UserProfile(
@@ -52,13 +57,26 @@ class SupabaseProfileRepository(
                     username = currentUser.userMetadata?.get("username")?.jsonPrimitive?.content,
                     fullName = metaFullName,
                     displayName = metaDisplayName,
+                    avatarUrl = metaAvatarUrl,
                     email = currentUser.email,
+                    isPrivate = metaIsPrivate,
+                    bio = metaBio,
                 )
             }
         }
     }
 
     override suspend fun updateProfile(fullName: String, displayName: String): Result<UserProfile> {
+        return updateProfile(fullName, displayName, avatarUrl = null, isPrivate = false, bio = null)
+    }
+
+    override suspend fun updateProfile(
+        fullName: String,
+        displayName: String,
+        avatarUrl: String?,
+        isPrivate: Boolean,
+        bio: String?,
+    ): Result<UserProfile> {
         val client = supabase ?: return Result.failure(IllegalStateException("Supabase not configured"))
         val auth = client.auth
         val currentUser = auth.currentUserOrNull() ?: return Result.failure(IllegalStateException("Not authenticated"))
@@ -71,6 +89,9 @@ class SupabaseProfileRepository(
                 data = buildJsonObject {
                     put("full_name", trimmedFullName)
                     put("display_name", trimmedDisplayName)
+                    if (avatarUrl != null) put("avatar_url", avatarUrl)
+                    put("is_private", isPrivate)
+                    if (bio != null) put("bio", bio)
                 }
             }
 
@@ -80,6 +101,9 @@ class SupabaseProfileRepository(
                     id = currentUser.id,
                     fullName = trimmedFullName,
                     displayName = trimmedDisplayName,
+                    avatarUrl = avatarUrl,
+                    isPrivate = isPrivate,
+                    bio = bio,
                 )
                 client.from("profiles").upsert(profileDto) {
                     select()
@@ -93,10 +117,37 @@ class SupabaseProfileRepository(
                 username = currentUser.userMetadata?.get("username")?.jsonPrimitive?.content,
                 fullName = trimmedFullName,
                 displayName = trimmedDisplayName,
+                avatarUrl = avatarUrl,
                 email = currentUser.email,
+                isPrivate = isPrivate,
+                bio = bio,
             )
         }.onFailure { e ->
             Log.e("ProfileRepo", "Failed to update profile", e)
+        }
+    }
+
+    override suspend fun setPrivateAccountMode(isPrivate: Boolean): Result<Unit> {
+        val profileRes = getProfile()
+        val current = profileRes.getOrNull()
+        return if (current != null) {
+            updateProfile(
+                fullName = current.fullName,
+                displayName = current.displayName,
+                avatarUrl = current.avatarUrl,
+                isPrivate = isPrivate,
+                bio = current.bio,
+            ).map { }
+        } else {
+            val client = supabase ?: return Result.failure(IllegalStateException("Supabase not configured"))
+            runCatching {
+                client.auth.updateUser {
+                    data = buildJsonObject {
+                        put("is_private", isPrivate)
+                    }
+                }
+                Unit
+            }
         }
     }
 

@@ -15,6 +15,12 @@ class ShorashimApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         container = AppContainer(this)
+    }
+
+    companion object {
+        lateinit var instance: ShorashimApplication
+            private set
     }
 }

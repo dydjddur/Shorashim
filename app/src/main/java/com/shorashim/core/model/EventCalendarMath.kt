@@ -32,12 +32,63 @@ object EventCalendarMath {
 
     /** Whether the annual [event] falls on [date] (Feb 29 events fall on Feb 28 in non-leap years). */
     fun occursOn(event: CalendarEvent, date: LocalDate): Boolean {
-        if (event.originalIsLeapDay()) {
-            val expectedDay = if (date.isLeapYear) 29 else 28
-            return date.monthValue == 2 && date.dayOfMonth == expectedDay
+        return when (event) {
+            is CalendarEvent.Birthday -> {
+                if (event.originalIsLeapDay()) {
+                    val expectedDay = if (date.isLeapYear) 29 else 28
+                    return date.monthValue == 2 && date.dayOfMonth == expectedDay
+                }
+                val target = event.targetDate
+                target.month == date.month && target.dayOfMonth == date.dayOfMonth
+            }
+            is CalendarEvent.Memorial -> {
+                occursOnMemorial(event, date)
+            }
         }
+    }
+
+    private fun occursOnMemorial(event: CalendarEvent.Memorial, date: LocalDate): Boolean {
+        if (event.targetDate == date) return true
+
+        val origDate = parseOriginalMemorialDate(event.originalDateStr)
+        if (origDate != null) {
+            val hOriginal = HebrewCalendarMath.fromLocalDate(origDate)
+            val hDate = HebrewCalendarMath.fromLocalDate(date)
+            val isLeapTarget = HebrewCalendarMath.isLeapYear(hDate.year)
+            val isLeapOrig = HebrewCalendarMath.isLeapYear(hOriginal.year)
+            val targetMonth = when {
+                hOriginal.month == HebrewCalendarMath.ADAR_I && !isLeapTarget -> HebrewCalendarMath.ADAR
+                hOriginal.month == HebrewCalendarMath.ADAR && isLeapTarget && !isLeapOrig -> HebrewCalendarMath.ADAR
+                else -> hOriginal.month
+            }
+            val maxDays = HebrewCalendarMath.monthLength(hDate.year, targetMonth)
+            val targetDay = minOf(hOriginal.day, maxDays)
+            if (hDate.month == targetMonth && hDate.day == targetDay) {
+                return true
+            }
+        }
+
         val target = event.targetDate
         return target.month == date.month && target.dayOfMonth == date.dayOfMonth
+    }
+
+    private fun parseOriginalMemorialDate(str: String): LocalDate? {
+        if (str.isBlank()) return null
+        return try {
+            if (str.contains("/")) {
+                val parts = str.split("/")
+                if (parts.size == 3) {
+                    val d = parts[0].toInt()
+                    val m = parts[1].toInt()
+                    val y = parts[2].toInt()
+                    LocalDate.of(y, m, d)
+                } else null
+            } else {
+                LocalDate.parse(str.trim())
+            }
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     fun eventsOn(events: List<CalendarEvent>, date: LocalDate): List<CalendarEvent> =

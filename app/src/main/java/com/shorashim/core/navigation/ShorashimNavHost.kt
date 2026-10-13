@@ -25,7 +25,17 @@ import com.shorashim.feature.invitations.InvitationDeepLinkRoute
 import com.shorashim.feature.invitations.InvitationDeepLinkViewModel
 import com.shorashim.feature.invitations.InvitationsRoute
 import com.shorashim.feature.invitations.InvitationsViewModel
+import com.shorashim.feature.donations.DonationsScreen
+import com.shorashim.feature.friends.FriendsRoute
+import com.shorashim.feature.friends.FriendsViewModel
+import com.shorashim.feature.help.HelpScreen
+import com.shorashim.feature.profile.ProfileRoute
+import com.shorashim.feature.profile.ProfileViewModel
 import com.shorashim.feature.settings.SettingsRoute
+import com.shorashim.feature.chat.ChatConversationRoute
+import com.shorashim.feature.chat.ChatConversationViewModel
+import com.shorashim.feature.chat.ChatListRoute
+import com.shorashim.feature.chat.ChatListViewModel
 import com.shorashim.feature.tehillim.TehillimRoute
 import com.shorashim.feature.tehillim.TehillimViewModel
 
@@ -100,6 +110,7 @@ fun ShorashimNavHost(
                         relationshipRepository = appContainer.relationshipRepository,
                         invitationRepository = appContainer.invitationRepository,
                         profileRepository = appContainer.profileRepository,
+                        friendRepository = appContainer.friendRepository,
                         supabaseClient = appContainer.supabaseClient,
                     )
                 },
@@ -224,12 +235,134 @@ fun ShorashimNavHost(
             TehillimRoute(viewModel = viewModel)
         }
 
-        composable(ShorashimDestination.Settings.route) {
-            SettingsRoute(
-                authState = authState,
-                profileRepository = appContainer.profileRepository,
-                onLogout = onLogout,
+        composable(ShorashimRoutes.SETTINGS) {
+            val viewModel: ProfileViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    ProfileViewModel(
+                        profileRepository = appContainer.profileRepository,
+                        familyRepository = appContainer.familyRepository,
+                        friendRepository = appContainer.friendRepository,
+                    )
+                },
             )
+            ProfileRoute(
+                viewModel = viewModel,
+                onLogout = onLogout,
+                onNavigateToTree = { familyId ->
+                    navController.navigate(ShorashimRoutes.familyManagement(familyId))
+                },
+            )
+        }
+
+        composable(ShorashimRoutes.PROFILE) {
+            val viewModel: ProfileViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    ProfileViewModel(
+                        profileRepository = appContainer.profileRepository,
+                        familyRepository = appContainer.familyRepository,
+                        friendRepository = appContainer.friendRepository,
+                    )
+                },
+            )
+            ProfileRoute(
+                viewModel = viewModel,
+                onLogout = onLogout,
+                onNavigateToTree = { familyId ->
+                    navController.navigate(ShorashimRoutes.familyManagement(familyId))
+                },
+            )
+        }
+
+        composable(ShorashimRoutes.FRIENDS) {
+            val viewModel: FriendsViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    FriendsViewModel(
+                        friendRepository = appContainer.friendRepository,
+                        profileRepository = appContainer.profileRepository,
+                    )
+                },
+            )
+            val chatListViewModel: ChatListViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    ChatListViewModel(
+                        chatRepository = appContainer.chatRepository,
+                        friendRepository = appContainer.friendRepository,
+                    )
+                },
+            )
+            FriendsRoute(
+                viewModel = viewModel,
+                chatListViewModel = chatListViewModel,
+                onNavigateToTree = { familyId ->
+                    navController.navigate(ShorashimRoutes.viewCommunityTree(familyId))
+                },
+                onNavigateToChat = { otherUserId, otherUserName ->
+                    navController.navigate(ShorashimRoutes.chatConversation(otherUserId, otherUserName))
+                },
+            )
+        }
+
+        // Dedicated E2EE Chat List Route
+        composable(ShorashimRoutes.CHATS) {
+            val viewModel: ChatListViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    ChatListViewModel(
+                        chatRepository = appContainer.chatRepository,
+                        friendRepository = appContainer.friendRepository,
+                    )
+                },
+            )
+            ChatListRoute(
+                viewModel = viewModel,
+                onOpenConversation = { otherUserId, otherUserName ->
+                    navController.navigate(ShorashimRoutes.chatConversation(otherUserId, otherUserName))
+                },
+            )
+        }
+
+        // Dedicated E2EE Chat Conversation Route
+        composable(
+            route = ShorashimRoutes.CHAT_CONVERSATION,
+            arguments = listOf(
+                navArgument("otherUserId") { type = NavType.StringType },
+                navArgument("otherUserName") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = ""
+                },
+            ),
+        ) { backStackEntry ->
+            val otherUserId = backStackEntry.arguments?.getString("otherUserId").orEmpty()
+            val rawName = backStackEntry.arguments?.getString("otherUserName").orEmpty()
+            val otherUserName = try { java.net.URLDecoder.decode(rawName, "UTF-8") } catch (_: Throwable) { rawName }
+            val viewModel: ChatConversationViewModel = viewModel(
+                key = "ChatConv_$otherUserId",
+                factory = shorashimViewModelFactory {
+                    ChatConversationViewModel(
+                        otherUserId = otherUserId,
+                        otherUserName = otherUserName,
+                        chatRepository = appContainer.chatRepository,
+                        invitationRepository = appContainer.invitationRepository,
+                        familyRepository = appContainer.familyRepository,
+                        supabaseClient = appContainer.supabaseClient,
+                    )
+                },
+            )
+            ChatConversationRoute(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenInvitation = { token ->
+                    navController.navigate(ShorashimRoutes.invitationDeepLink(token))
+                },
+            )
+        }
+
+        composable(ShorashimRoutes.DONATIONS) {
+            DonationsScreen()
+        }
+
+        composable(ShorashimRoutes.HELP) {
+            HelpScreen()
         }
 
         // Phase 5: Pending Invitations list screen
@@ -282,6 +415,55 @@ fun ShorashimNavHost(
                         popUpTo(ShorashimDestination.FamilyTree.route) { inclusive = true }
                     }
                 },
+            )
+        }
+
+        // Phase 7: Community / Public Shared Family Trees (Dedicated Bottom Bar Tab)
+        composable(ShorashimDestination.Community.route) {
+            val viewModel: com.shorashim.feature.community.CommunityTreesViewModel = viewModel(
+                factory = shorashimViewModelFactory {
+                    com.shorashim.feature.community.CommunityTreesViewModel(appContainer.familyRepository)
+                },
+            )
+            com.shorashim.feature.community.CommunityTreesRoute(
+                viewModel = viewModel,
+                onNavigateToTree = { familyId ->
+                    navController.navigate(ShorashimRoutes.viewCommunityTree(familyId))
+                },
+            )
+        }
+
+        // Phase 7: View-Only Community Family Tree Screen
+        composable(
+            route = ShorashimRoutes.VIEW_COMMUNITY_TREE,
+            arguments = listOf(
+                navArgument("familyId") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val familyId = backStackEntry.arguments?.getString("familyId").orEmpty()
+            val viewModel: FamilyManagementViewModel = viewModel(
+                key = "ViewCommunityTree_$familyId",
+                factory = shorashimViewModelFactory {
+                    FamilyManagementViewModel(
+                        familyId = familyId,
+                        familyRepository = appContainer.familyRepository,
+                        personRepository = appContainer.personRepository,
+                        relationshipRepository = appContainer.relationshipRepository,
+                        invitationRepository = null,
+                        profileRepository = appContainer.profileRepository,
+                        supabaseClient = appContainer.supabaseClient,
+                    )
+                },
+            )
+            FamilyManagementRoute(
+                viewModel = viewModel,
+                isReadOnly = true,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddPerson = {},
+                onNavigateToAddRelative = { _, _, _ -> },
+                onNavigateToEditPerson = { _, _ -> },
+                onNavigateToCreateFamily = {},
+                invitationRepository = null,
             )
         }
     }

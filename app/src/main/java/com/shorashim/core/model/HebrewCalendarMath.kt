@@ -131,4 +131,27 @@ object HebrewCalendarMath {
         AV -> "אב"
         else -> "אלול"
     }
+
+    /**
+     * Calculates the exact Gregorian date for a Hebrew anniversary (e.g. Yahrzeit / memorial)
+     * in [targetHebrewYear], handling Hebrew leap years (Adar I / Adar II) and variable month lengths.
+     */
+    fun getHebrewAnniversaryDate(originalDate: HebrewDate, targetHebrewYear: Int): LocalDate {
+        val isTargetLeap = isLeapYear(targetHebrewYear)
+        val isOriginalLeap = isLeapYear(originalDate.year)
+        val targetMonth = when {
+            // Died in Adar I of a leap year, but target year is not leap: observed in Adar (6)
+            originalDate.month == ADAR_I && !isTargetLeap -> ADAR
+            // Died in Adar of a regular year, and target year is leap: observed in Adar II (6)
+            originalDate.month == ADAR && isTargetLeap && !isOriginalLeap -> ADAR
+            else -> originalDate.month
+        }
+        val maxDays = monthLength(targetHebrewYear, targetMonth)
+        val targetDay = minOf(originalDate.day, maxDays)
+        return toLocalDate(targetHebrewYear, targetMonth, targetDay)
+    }
+
+    fun getHebrewAnniversaryDate(originalDate: LocalDate, targetHebrewYear: Int): LocalDate {
+        return getHebrewAnniversaryDate(fromLocalDate(originalDate), targetHebrewYear)
+    }
 }

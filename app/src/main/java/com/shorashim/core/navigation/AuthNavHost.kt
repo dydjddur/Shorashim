@@ -6,13 +6,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.shorashim.feature.auth.AuthViewModel
+import com.shorashim.feature.auth.EmailVerificationPendingScreen
 import com.shorashim.feature.auth.ForgotPasswordRoute
 import com.shorashim.feature.auth.LoginRoute
 import com.shorashim.feature.auth.RegisterRoute
 
 /**
- * Navigation graph for unauthenticated flows (Login, Register, Forgot Password).
+ * Navigation graph for unauthenticated flows (Login, Register, Forgot Password, Email Verification).
  */
 @Composable
 fun AuthNavHost(
@@ -46,8 +49,35 @@ fun AuthNavHost(
                 onNavigateBackToLogin = {
                     navController.popBackStack()
                 },
-                onRegisterSuccess = {
-                    // Auth state flow observer handles navigation automatically
+                onRegisterSuccess = { email ->
+                    if (email.isNotBlank()) {
+                        navController.navigate(ShorashimRoutes.verificationPending(email)) {
+                            popUpTo(ShorashimRoutes.REGISTER) { inclusive = true }
+                        }
+                    } else {
+                        // Registration without email: return to login screen
+                        navController.popBackStack()
+                    }
+                },
+            )
+        }
+
+        composable(
+            route = ShorashimRoutes.VERIFICATION_PENDING,
+            arguments = listOf(
+                navArgument("email") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+            ),
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email").orEmpty()
+            EmailVerificationPendingScreen(
+                email = email,
+                onNavigateToLogin = {
+                    navController.navigate(ShorashimRoutes.LOGIN) {
+                        popUpTo(ShorashimRoutes.LOGIN) { inclusive = true }
+                    }
                 },
             )
         }

@@ -15,51 +15,39 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shorashim.R
-import com.shorashim.core.model.DatePrecision
 import com.shorashim.core.model.LifeStatus
-import com.shorashim.core.ui.component.PersonAvatar
 import com.shorashim.core.model.PartialDate
 import com.shorashim.core.model.Person
+import com.shorashim.core.ui.component.PersonAvatar
 
 @Composable
 fun FamilyTreeNodeCard(
     node: TreeNode,
     canEdit: Boolean,
-    onAddChildClick: (Person) -> Unit,
-    onAddParentClick: (Person) -> Unit,
-    onAddSpouseClick: (Person) -> Unit,
-    onAddSiblingClick: (Person) -> Unit = {},
-    onEditPersonClick: (Person) -> Unit,
-    onDeletePersonClick: (Person) -> Unit,
+    isSelected: Boolean = false,
+    onCardClick: (Person) -> Unit,
+    onDetailsClick: (Person) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
     val person = node.person
     val isDeceased = person.lifeStatus == LifeStatus.DECEASED
 
@@ -78,11 +66,19 @@ fun FamilyTreeNodeCard(
         }
     }
 
+    val borderColor = when {
+        isSelected -> Color(0xFF22C55E) // Vivid green highlight when selected
+        isDeceased -> Color(0xFFD4AF37) // Gold/candle accent for memory
+        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+    }
+
+    val borderWidth = if (isSelected) 2.5.dp else 1.5.dp
+
     Card(
         modifier = modifier
             .width(node.width.dp)
             .height(node.height.dp)
-            .clickable { menuExpanded = true },
+            .clickable { onCardClick(person) },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isDeceased) {
@@ -91,14 +87,10 @@ fun FamilyTreeNodeCard(
                 MaterialTheme.colorScheme.surface
             },
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 10.dp else 6.dp),
         border = BorderStroke(
-            width = 1.5.dp,
-            color = if (isDeceased) {
-                Color(0xFFD4AF37) // Gold/candle accent for memory
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            },
+            width = borderWidth,
+            color = borderColor,
         ),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -110,13 +102,32 @@ fun FamilyTreeNodeCard(
                 horizontalArrangement = Arrangement.Start,
             ) {
                 // Avatar
-                PersonAvatar(
-                    photoPath = person.photoPath,
-                    firstName = person.firstName,
-                    isDeceased = isDeceased,
-                    size = 44.dp,
-                    shape = CircleShape,
-                )
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    PersonAvatar(
+                        photoPath = person.photoPath,
+                        firstName = person.firstName,
+                        isDeceased = isDeceased,
+                        size = 44.dp,
+                        shape = CircleShape,
+                    )
+                    if (person.isLinkedToUser) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF22C55E),
+                            modifier = Modifier.size(16.dp),
+                            border = BorderStroke(1.dp, Color.White),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Link,
+                                    contentDescription = "מקושר לחשבון",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(11.dp),
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(Modifier.width(10.dp))
 
@@ -149,74 +160,16 @@ fun FamilyTreeNodeCard(
                     )
                 }
 
-                // Quick menu icon
+                // Quick details and link indicator
                 IconButton(
-                    onClick = { menuExpanded = true },
+                    onClick = { onDetailsClick(person) },
                     modifier = Modifier.size(28.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.MoreVert,
-                        contentDescription = "פעולות",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        imageVector = if (canEdit) Icons.Outlined.MoreVert else Icons.Outlined.Info,
+                        contentDescription = if (canEdit) "פרטים וקישור חשבון" else "פרטים",
+                        tint = if (isSelected) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
-                    )
-                }
-            }
-
-            // Dropdown Menu for Node Actions
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-            ) {
-                if (canEdit) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.tree_add_child)) },
-                        onClick = {
-                            menuExpanded = false
-                            onAddChildClick(person)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.tree_add_parent)) },
-                        onClick = {
-                            menuExpanded = false
-                            onAddParentClick(person)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.tree_add_spouse)) },
-                        onClick = {
-                            menuExpanded = false
-                            onAddSpouseClick(person)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.tree_add_sibling)) },
-                        onClick = {
-                            menuExpanded = false
-                            onAddSiblingClick(person)
-                        },
-                    )
-                }
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.tree_quick_edit)) },
-                    onClick = {
-                        menuExpanded = false
-                        onEditPersonClick(person)
-                    },
-                )
-                if (canEdit) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.person_delete_button),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onDeletePersonClick(person)
-                        },
                     )
                 }
             }

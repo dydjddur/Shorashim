@@ -204,6 +204,10 @@ fun AddEditMemorialEventDialog(
                     onValueChange = {
                         eventDate = it
                         dateError = false
+                        val parsed = runCatching { java.time.LocalDate.parse(it.trim()) }.getOrNull()
+                        if (parsed != null) {
+                            hebrewDate = com.shorashim.core.common.HebrewDates.formatHebrewDate(parsed)
+                        }
                     },
                     label = { Text(stringResource(R.string.events_date_label)) },
                     placeholder = { Text("לדוגמה: 2024-05-15") },
@@ -213,12 +217,12 @@ fun AddEditMemorialEventDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                // 5. Hebrew Date (Optional)
+                // 5. Hebrew Date (Auto-calculated / customizable)
                 OutlinedTextField(
                     value = hebrewDate,
                     onValueChange = { hebrewDate = it },
                     label = { Text(stringResource(R.string.events_hebrew_date_label)) },
-                    placeholder = { Text("לדוגמה: י״ד באייר") },
+                    placeholder = { Text("לדוגמה: י״ד באייר ה׳תשפ״ד") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )

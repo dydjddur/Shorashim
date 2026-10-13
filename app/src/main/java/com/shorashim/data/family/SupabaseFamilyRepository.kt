@@ -9,6 +9,9 @@ import com.shorashim.core.model.FamilyMemberDto
 import com.shorashim.core.model.FamilyStatus
 import com.shorashim.core.model.FamilySummary
 import com.shorashim.core.model.MembershipRole
+import com.shorashim.core.model.PersonDto
+import com.shorashim.core.model.PublicFamilyTree
+import com.shorashim.core.model.PublicFamilyTreeDto
 import com.shorashim.core.model.UserProfileDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -40,11 +43,6 @@ class SupabaseFamilyRepository(
         val userId = getCurrentUserId() ?: return Result.failure(IllegalStateException("User not authenticated"))
 
         return runCatching {
-            // Fetch families (RLS allows owners and members)
-            val dtos = supabase.from("families")
-                .select()
-                .decodeList<FamilyDto>()
-
             // Query member roles for current user
             val memberRoles = runCatching {
                 supabase.from("family_members")
@@ -57,7 +55,17 @@ class SupabaseFamilyRepository(
                     .associateBy({ it.familyId }, { it.role })
             }.getOrDefault(emptyMap())
 
-            val families = dtos.map { dto ->
+            // Fetch families from server
+            val dtos = supabase.from("families")
+                .select()
+                .decodeList<FamilyDto>()
+
+            // Filter strictly: only trees created by the user OR joined via link/invitation
+            val myDtos = dtos.filter { dto ->
+                dto.ownerId == userId || memberRoles.containsKey(dto.id)
+            }
+
+            val families = myDtos.map { dto ->
                 val peopleCount = runCatching {
                     supabase.from("people")
                         .select {
@@ -175,7 +183,7 @@ class SupabaseFamilyRepository(
                 val insertReq = FamilyCreateRequest(
                     name = name.trim(),
                     ownerId = userId,
-                    status = FamilyStatus.DRAFT,
+                    status = FamilyStatus.PUBLISHED,
                     description = description?.trim()?.ifBlank { null },
                 )
                 supabase.from("families").insert(insertReq) {
@@ -188,7 +196,7 @@ class SupabaseFamilyRepository(
                 name = dto.name,
                 description = dto.description,
                 ownerId = dto.ownerId,
-                status = FamilyStatus.DRAFT,
+                status = dto.status,
                 createdAt = dto.createdAt,
                 updatedAt = dto.updatedAt,
                 personCount = 0,
@@ -389,6 +397,141 @@ class SupabaseFamilyRepository(
                 }
             }
             Unit
+        }
+    }
+
+    override suspend fun getPublicTrees(query: String?): Result<List<PublicFamilyTree>> {
+        val supabase = client ?: return Result.failure(IllegalStateException("Supabase client not initialized"))
+        val currentUserId = getCurrentUserId()
+
+        return runCatching {
+            // 1. Try high-performance RPC function first
+            val rpcTrees = try {
+                supabase.postgrest.rpc("get_public_trees_summary").decodeList<PublicFamilyTreeDto>()
+            } catch (t: Throwable) {
+                Log.w("FamilyRepo", "RPC get_public_trees_summary unavailable, falling back to manual query: ${t.message}")
+                null
+            }
+
+            val list: List<PublicFamilyTree> = if (rpcTrees != null) {
+                rpcTrees.map { dto ->
+                    PublicFamilyTree(
+                        id = dto.id,
+                        name = dto.name,
+                        description = dto.description,
+                        ownerId = dto.ownerId,
+                        ownerName = dto.ownerName,
+                        status = dto.status,
+                        personCount = dto.personCount ?: 0,
+                        surnames = dto.surnames ?: emptyList(),
+                        createdAt = dto.createdAt,
+                        updatedAt = dto.updatedAt,
+                        isUserTree = currentUserId != null && dto.ownerId == currentUserId,
+                    )
+                }
+            } else {
+                // Fallback: Query families table for PUBLISHED families
+                val famDtos = supabase.from("families")
+                    .select {
+                        filter {
+                            eq("status", "PUBLISHED")
+                        }
+                    }
+                    .decodeList<FamilyDto>()
+
+                famDtos.map { famDto ->
+                    val people = runCatching {
+                        supabase.from("people")
+                            .select {
+                                filter {
+                                    eq("family_id", famDto.id)
+                                }
+                            }
+                            .decodeList<PersonDto>()
+                    }.getOrDefault(emptyList())
+
+                    val surnames = people
+                        .mapNotNull { it.lastName?.trim() }
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                        .sorted()
+
+                    val ownerProfile = runCatching {
+                        supabase.from("profiles")
+                            .select {
+                                filter {
+                                    eq("id", famDto.ownerId)
+                                }
+                            }
+                            .decodeSingle<UserProfileDto>()
+                    }.getOrNull()
+
+                    val ownerName = ownerProfile?.displayName?.ifBlank { null }
+                        ?: ownerProfile?.fullName?.ifBlank { null }
+                        ?: "יוצר העץ"
+
+                    PublicFamilyTree(
+                        id = famDto.id,
+                        name = famDto.name,
+                        description = famDto.description,
+                        ownerId = famDto.ownerId,
+                        ownerName = ownerName,
+                        status = famDto.status,
+                        personCount = people.size,
+                        surnames = surnames,
+                        createdAt = famDto.createdAt,
+                        updatedAt = famDto.updatedAt,
+                        isUserTree = currentUserId != null && famDto.ownerId == currentUserId,
+                    )
+                }
+            }
+
+            if (query.isNullOrBlank()) {
+                list
+            } else {
+                val q = query.trim()
+                list.filter { tree ->
+                    tree.name.contains(q, ignoreCase = true) ||
+                        tree.description?.contains(q, ignoreCase = true) == true ||
+                        tree.surnames.any { it.contains(q, ignoreCase = true) } ||
+                        tree.ownerName?.contains(q, ignoreCase = true) == true
+                }
+            }
+        }.onFailure { e ->
+            Log.e("FamilyRepo", "Failed to fetch public trees", e)
+        }
+    }
+
+    override suspend fun getMySurnames(): Result<List<String>> {
+        val supabase = client ?: return Result.failure(IllegalStateException("Supabase client not initialized"))
+        val userId = getCurrentUserId() ?: return Result.success(emptyList())
+
+        return runCatching {
+            val myFamilies = getMyFamilies().getOrDefault(emptyList())
+            val surnames = mutableSetOf<String>()
+
+            for (family in myFamilies) {
+                val people = runCatching {
+                    supabase.from("people")
+                        .select {
+                            filter {
+                                eq("family_id", family.id)
+                            }
+                        }
+                        .decodeList<PersonDto>()
+                }.getOrDefault(emptyList())
+
+                for (person in people) {
+                    val ln = person.lastName?.trim()
+                    if (!ln.isNullOrBlank()) {
+                        surnames.add(ln)
+                    }
+                }
+            }
+
+            surnames.sorted()
+        }.onFailure { e ->
+            Log.e("FamilyRepo", "Failed to get user surnames", e)
         }
     }
 }

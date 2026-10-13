@@ -169,4 +169,42 @@ class JewishCalendarTest {
         assertEquals("טו", HebrewDates.dayLabel(HebrewCalendarMath.toLocalDate(5786, HebrewCalendarMath.TISHREI, 15)))
         assertEquals("ל", HebrewDates.dayLabel(HebrewCalendarMath.toLocalDate(5786, HebrewCalendarMath.TISHREI, 30)))
     }
+
+    @Test
+    fun `formatHebrewDay and parseGematria`() {
+        assertEquals("א׳", HebrewDates.formatHebrewDay(1))
+        assertEquals("ט״ו", HebrewDates.formatHebrewDay(15))
+        assertEquals("ט״ז", HebrewDates.formatHebrewDay(16))
+        assertEquals("כ״ד", HebrewDates.formatHebrewDay(24))
+        assertEquals("ל׳", HebrewDates.formatHebrewDay(30))
+
+        assertEquals(1, HebrewDates.parseGematria("א"))
+        assertEquals(1, HebrewDates.parseGematria("א׳"))
+        assertEquals(15, HebrewDates.parseGematria("טו"))
+        assertEquals(15, HebrewDates.parseGematria("ט״ו"))
+        assertEquals(16, HebrewDates.parseGematria("טז"))
+        assertEquals(24, HebrewDates.parseGematria("כ״ד"))
+        assertEquals(5784, HebrewDates.parseGematria("תשפ״ד"))
+        assertEquals(5784, HebrewDates.parseGematria("ה׳תשפ״ד"))
+        assertEquals(5785, HebrewDates.parseGematria("תשפ״ה"))
+    }
+
+    @Test
+    fun `formatHebrewYear`() {
+        assertEquals("ה׳תשפ״ד", HebrewDates.formatHebrewYear(5784))
+        assertEquals("ה׳תשפ״ו", HebrewDates.formatHebrewYear(5786))
+        assertEquals("תשפ״ד", HebrewDates.formatHebrewYear(5784, includeThousands = false))
+    }
+
+    @Test
+    fun `hebrew anniversary calculation`() {
+        // Person died on 15 Nissan 5780 (Passover 1)
+        val nissan15 = HebrewCalendarMath.toLocalDate(5780, HebrewCalendarMath.NISAN, 15)
+        val anniv5784 = HebrewCalendarMath.getHebrewAnniversaryDate(nissan15, 5784)
+        val annivHebrew = HebrewCalendarMath.fromLocalDate(anniv5784)
+
+        assertEquals(5784, annivHebrew.year)
+        assertEquals(HebrewCalendarMath.NISAN, annivHebrew.month)
+        assertEquals(15, annivHebrew.day)
+    }
 }

@@ -30,6 +30,8 @@ enum class FamilyStatus {
     PUBLISHED,
     @SerialName("ARCHIVED")
     ARCHIVED,
+    @SerialName("PRIVATE")
+    PRIVATE,
 }
 
 @Serializable
@@ -105,6 +107,7 @@ data class Family(
     val canManageMembers: Boolean get() = currentUserRole == MembershipRole.OWNER || currentUserRole == MembershipRole.ADMIN
     val canEditTreeContent: Boolean get() = currentUserRole != MembershipRole.VIEWER
     val isDraft: Boolean get() = status == FamilyStatus.DRAFT
+    val isPrivate: Boolean get() = status != FamilyStatus.PUBLISHED
 }
 
 @Serializable
@@ -162,6 +165,8 @@ data class PersonInsertDto(
     val canvasY: Double = 0.0,
     @SerialName("created_by")
     val createdBy: String? = null,
+    @SerialName("linked_user_id")
+    val linkedUserId: String? = null,
 )
 
 @Serializable
@@ -189,6 +194,8 @@ data class PersonUpdateDto(
     val canvasX: Double = 0.0,
     @SerialName("canvas_y")
     val canvasY: Double = 0.0,
+    @SerialName("linked_user_id")
+    val linkedUserId: String? = null,
 )
 
 @Serializable
@@ -221,6 +228,8 @@ data class PersonDto(
     val canvasY: Double = 0.0,
     @SerialName("created_by")
     val createdBy: String? = null,
+    @SerialName("linked_user_id")
+    val linkedUserId: String? = null,
     @SerialName("created_at")
     val createdAt: String? = null,
     @SerialName("updated_at")
@@ -243,10 +252,12 @@ data class Person(
     val biography: String? = null,
     val canvasX: Double = 0.0,
     val canvasY: Double = 0.0,
+    val linkedUserId: String? = null,
     val createdAt: String? = null,
 ) {
     val fullName: String
         get() = if (lastName.isNullOrBlank()) firstName else "$firstName $lastName"
+    val isLinkedToUser: Boolean get() = !linkedUserId.isNullOrBlank()
 }
 
 @Serializable
@@ -448,6 +459,9 @@ data class UserProfileDto(
     @SerialName("avatar_url")
     val avatarUrl: String? = null,
     val email: String? = null,
+    @SerialName("is_private")
+    val isPrivate: Boolean = false,
+    val bio: String? = null,
     @SerialName("updated_at")
     val updatedAt: String? = null,
 )
@@ -460,6 +474,8 @@ data class UserProfile(
     val displayName: String = "",
     val avatarUrl: String? = null,
     val email: String? = null,
+    val isPrivate: Boolean = false,
+    val bio: String? = null,
 )
 
 // ---------------------------------------------------------------------------
@@ -526,3 +542,42 @@ data class InvitationResolution(
 
 /** How a person that is being added from a tree card relates to the card's person (the "anchor"). */
 enum class NewPersonRelation { PARENT, CHILD, SPOUSE, SIBLING }
+
+// ---------------------------------------------------------------------------
+// Phase 7: Public Community Trees
+// ---------------------------------------------------------------------------
+
+@Serializable
+data class PublicFamilyTreeDto(
+    val id: String = "",
+    val name: String = "",
+    val description: String? = null,
+    @SerialName("owner_id")
+    val ownerId: String = "",
+    @SerialName("owner_name")
+    val ownerName: String? = null,
+    val status: FamilyStatus = FamilyStatus.PUBLISHED,
+    @SerialName("person_count")
+    val personCount: Int? = 0,
+    val surnames: List<String>? = emptyList(),
+    @SerialName("created_at")
+    val createdAt: String? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null,
+)
+
+@Serializable
+data class PublicFamilyTree(
+    val id: String,
+    val name: String,
+    val description: String? = null,
+    val ownerId: String,
+    val ownerName: String? = null,
+    val status: FamilyStatus = FamilyStatus.PUBLISHED,
+    val personCount: Int = 0,
+    val surnames: List<String> = emptyList(),
+    val createdAt: String? = null,
+    val updatedAt: String? = null,
+    val isUserTree: Boolean = false,
+)
+

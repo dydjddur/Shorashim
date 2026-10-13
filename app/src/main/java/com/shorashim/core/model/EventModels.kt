@@ -87,7 +87,8 @@ object EventDateCalculator {
 
     /**
      * Calculates the next upcoming memorial occurrence for a memorial date.
-     * If the date has already passed in the current year, returns next year's annual anniversary.
+     * Uses the authentic Hebrew calendar Yahrzeit anniversary (according to Jewish tradition).
+     * If this year's Hebrew anniversary has already passed, returns next Hebrew year's occurrence.
      */
     fun calculateNextMemorialDate(
         eventDateStr: String,
@@ -100,16 +101,14 @@ object EventDateCalculator {
             return null
         }
 
-        val month = originalDate.monthValue
-        val day = originalDate.dayOfMonth
+        val originalHDate = HebrewCalendarMath.fromLocalDate(originalDate)
+        val currentHYear = HebrewCalendarMath.fromLocalDate(today).year
 
-        val currentYear = today.year
-        val thisYearCandidate = makeOccurrence(currentYear, month, day)
-
+        val thisYearCandidate = HebrewCalendarMath.getHebrewAnniversaryDate(originalHDate, currentHYear)
         return if (!thisYearCandidate.isBefore(today)) {
             thisYearCandidate
         } else {
-            makeOccurrence(currentYear + 1, month, day)
+            HebrewCalendarMath.getHebrewAnniversaryDate(originalHDate, currentHYear + 1)
         }
     }
 

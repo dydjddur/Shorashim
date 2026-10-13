@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">שורשים</string>
     <string name="nav_family_tree">עץ משפחה</string>
+    <string name="nav_community">קהילה</string>
     <string name="nav_memorials">אירועים</string>
     <string name="nav_events">אירועים</string>
     <string name="nav_tehillim">תהילים</string>
@@ -82,6 +83,16 @@
     <string name="members_invite_preview_title">פרטי המשתמש המוזמן:</string>
     <string name="members_invite_preview_not_found">שם המשתמש לא נמצא במערכת</string>
     <string name="members_invite_searching">מחפש משתמש…</string>
+
+    <!-- Email Verification Pending Screen -->
+    <string name="verification_pending_title">אימות חשבון</string>
+    <string name="verification_pending_subtitle">ממתין לאימות כתובת המייל</string>
+    <string name="verification_pending_sent_to">שלחנו קישור אימות לחשבון שלך לכתובת:</string>
+    <string name="verification_pending_instruction">כדי להשלים את ההרשמה ולהתחבר לאפליקציה, יש לפתוח את ההודעה שנשלחה וללחוץ על קישור האימות.</string>
+    <string name="verification_pending_open_email_btn">פתח את אפליקציית האימייל / Gmail</string>
+    <string name="verification_pending_done_btn">סיימתי לאמת – מעבר להתחברות</string>
+    <string name="verification_pending_spam_hint">💡 לא קיבלת את המייל? בדוק גם בתיקיית דואר זבל (Spam) או בלשונית קידומי מכירות (Promotions).</string>
+    <string name="verification_no_email_app_found">לא נמצאה אפליקציית דוא״ל מותקנת במכשיר</string>
 
     <!-- Validation messages -->
     <string name="validation_name_empty">יש להזין שם מלא</string>
@@ -232,6 +243,7 @@
     <string name="tree_add_spouse">הוספת בן/בת זוג</string>
     <string name="tree_quick_edit">עריכת פרטים</string>
     <string name="tree_empty_add_first">העץ ריק כרגע. לחצו להוספת האדם הראשון!</string>
+    <string name="community_tree_empty">אין כרגע אנשים בעץ</string>
 
     <!-- Members & Roles -->
     <string name="members_title">משתתפים והרשאות</string>

@@ -44,6 +44,7 @@ class EventsRepositoryTest {
         override suspend fun updateMemberRole(familyId: String, userId: String, role: MembershipRole): Result<Unit> = Result.success(Unit)
         override suspend fun inviteMember(familyId: String, email: String, role: MembershipRole): Result<Unit> = Result.success(Unit)
         override suspend fun removeMember(familyId: String, userId: String): Result<Unit> = Result.success(Unit)
+        override suspend fun setFamilyPrivacy(familyId: String, isPrivate: Boolean): Result<Family> = Result.success(families.first())
         override fun observeFamilySummary(): Flow<FamilySummary> = MutableStateFlow(FamilySummary())
     }
 

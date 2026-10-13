@@ -3,6 +3,8 @@ package com.shorashim.feature.settings
 import android.content.pm.PackageManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -66,6 +68,8 @@ fun SettingsRoute(
     authState: AuthState = AuthState.Unauthenticated,
     profileRepository: ProfileRepository? = null,
     onLogout: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToHelp: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -79,6 +83,8 @@ fun SettingsRoute(
         authState = authState,
         profileRepository = profileRepository,
         onLogout = onLogout,
+        onNavigateToProfile = onNavigateToProfile,
+        onNavigateToHelp = onNavigateToHelp,
         modifier = modifier,
     )
 }
@@ -89,12 +95,15 @@ fun SettingsScreen(
     authState: AuthState = AuthState.Unauthenticated,
     profileRepository: ProfileRepository? = null,
     onLogout: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToHelp: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var isSavingProfile by remember { mutableStateOf(false) }
     var profileErrorMessage by remember { mutableStateOf<String?>(null) }
+    var notificationsEnabled by remember { mutableStateOf(true) }
     var userDisplayName by remember(authState) {
         mutableStateOf((authState as? AuthState.Authenticated)?.user?.displayName.orEmpty())
     }
@@ -156,27 +165,76 @@ fun SettingsScreen(
         AccountCard(
             authState = authState,
             displayName = userDisplayName,
-            onEditProfileClicked = { showEditProfileDialog = true },
+            onEditProfileClicked = onNavigateToProfile,
             onLogoutClicked = { showLogoutDialog = true },
         )
 
         SnackbarHost(hostState = snackbarHostState)
 
-        SettingsInfoCard(
-            icon = Icons.Outlined.Park,
-            title = stringResource(R.string.settings_about_title),
-            body = stringResource(R.string.settings_about_body),
-        )
-        SettingsInfoCard(
-            icon = Icons.Outlined.Lock,
-            title = stringResource(R.string.settings_privacy_title),
-            body = stringResource(R.string.settings_privacy_body),
-        )
-        SettingsInfoCard(
-            icon = Icons.Outlined.Notifications,
-            title = stringResource(R.string.settings_notifications_title),
-            body = stringResource(R.string.settings_notifications_body),
-        )
+        // Preferences Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "העדפות והתראות",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "תזכורות לאזכרות וימי זיכרון",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        )
+                        Text(
+                            text = "קבלת התראה יום לפני תאריך האזכרה העברי",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    androidx.compose.material3.Switch(
+                        checked = notificationsEnabled,
+                        onCheckedChange = { notificationsEnabled = it },
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToHelp() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = "מרכז עזרה, מדריכים ושאלות נפוצות",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.Park,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),

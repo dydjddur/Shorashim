@@ -94,6 +94,7 @@ fun FamilyTreeCanvas(
     onAddSiblingClick: (Person) -> Unit = {},
     onEditPersonClick: (Person) -> Unit,
     onDeletePersonClick: (Person) -> Unit,
+    onPersonDetailsClick: ((Person) -> Unit)? = null,
     onPublishClick: () -> Unit,
     onEmptyAddPersonClick: () -> Unit,
     onRefreshClick: (() -> Unit)? = null,
@@ -103,6 +104,7 @@ fun FamilyTreeCanvas(
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var hasInitialView by remember { mutableStateOf(false) }
+    var selectedPersonId by remember { mutableStateOf<String?>(null) }
 
     val (nodes, connections) = remember(people, relationships) {
         TreeLayoutEngine.calculateLayout(people, relationships)
@@ -190,20 +192,27 @@ fun FamilyTreeCanvas(
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = stringResource(R.string.tree_empty_add_first),
+                            text = if (family.canEditTreeContent) {
+                                stringResource(R.string.tree_empty_add_first)
+                            } else {
+                                stringResource(R.string.community_tree_empty)
+                            },
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
                             color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = onEmptyAddPersonClick,
-                            shape = RoundedCornerShape(12.dp),
-                        ) {
-                            Icon(Icons.Outlined.Add, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.family_people_add))
+                        if (family.canEditTreeContent) {
+                            Spacer(Modifier.height(16.dp))
+                            Button(
+                                onClick = onEmptyAddPersonClick,
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Icon(Icons.Outlined.Add, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.family_people_add))
+                            }
                         }
                     }
                 }
@@ -218,6 +227,9 @@ fun FamilyTreeCanvas(
                     .fillMaxSize()
                     .pointerInput(contentWidth, contentHeight, viewportW, viewportH) {
                         detectTransformGestures { centroid, pan, zoom, _ ->
+                            if (pan.getDistance() > 4f || zoom != 1f) {
+                                selectedPersonId = null
+                            }
                             val newScale = (scale * zoom).coerceIn(MIN_SCALE, MAX_SCALE)
                             val ratio = newScale / scale
                             val zoomed = centroid - (centroid - offset) * ratio
@@ -304,17 +316,60 @@ fun FamilyTreeCanvas(
                         FamilyTreeNodeCard(
                             node = node,
                             canEdit = family.canEditTreeContent,
-                            onAddChildClick = onAddChildClick,
-                            onAddParentClick = onAddParentClick,
-                            onAddSpouseClick = onAddSpouseClick,
-                            onAddSiblingClick = onAddSiblingClick,
-                            onEditPersonClick = onEditPersonClick,
-                            onDeletePersonClick = onDeletePersonClick,
+                            isSelected = (selectedPersonId == node.person.id),
+                            onCardClick = { person ->
+                                if (family.canEditTreeContent) {
+                                    selectedPersonId = if (selectedPersonId == person.id) null else person.id
+                                } else {
+                                    onPersonDetailsClick?.invoke(person) ?: onEditPersonClick(person)
+                                }
+                            },
+                            onDetailsClick = { person ->
+                                onPersonDetailsClick?.invoke(person) ?: onEditPersonClick(person)
+                            },
                             modifier = Modifier.absoluteOffset {
                                 IntOffset(
                                     x = ((node.x + shiftX) * d).roundToInt(),
                                     y = ((node.y + shiftY) * d).roundToInt(),
                                 )
+                            },
+                        )
+                    }
+
+                    // Honeycomb hexagonal relationship & action controls for selected member
+                    val selectedNode = if (selectedPersonId != null && family.canEditTreeContent) {
+                        nodes.find { it.person.id == selectedPersonId }
+                    } else null
+
+                    if (selectedNode != null) {
+                        HexagonalRelationshipControls(
+                            node = selectedNode,
+                            d = d,
+                            shiftX = shiftX,
+                            shiftY = shiftY,
+                            onAddChildClick = { p ->
+                                selectedPersonId = null
+                                onAddChildClick(p)
+                            },
+                            onAddParentClick = { p ->
+                                selectedPersonId = null
+                                onAddParentClick(p)
+                            },
+                            onAddSpouseClick = { p ->
+                                selectedPersonId = null
+                                onAddSpouseClick(p)
+                            },
+                            onAddSiblingClick = { p ->
+                                selectedPersonId = null
+                                onAddSiblingClick(p)
+                            },
+                            onEditPersonClick = { p ->
+                                selectedPersonId = null
+                                onEditPersonClick(p)
+                            },
+                            onDeletePersonClick = { p ->
+                                selectedPersonId = null
+                                onDeletePersonClick(p)
                             },
                         )
                     }

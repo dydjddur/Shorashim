@@ -63,6 +63,7 @@ class FamilyManagementViewModel(
     private val relationshipRepository: RelationshipRepository,
     private val invitationRepository: InvitationRepository? = null,
     private val profileRepository: ProfileRepository? = null,
+    private val friendRepository: com.shorashim.data.friends.FriendRepository? = null,
     private val supabaseClient: SupabaseClient? = null,
 ) : ViewModel() {
 
@@ -105,7 +106,12 @@ class FamilyManagementViewModel(
 
             if (famResult.isSuccess && peopleResult.isSuccess) {
                 val fam = famResult.getOrNull()
-                val allFams = allFamResult.getOrDefault(emptyList())
+                val rawFams = allFamResult.getOrDefault(emptyList())
+                val allFams = if (fam != null && rawFams.none { it.id == fam.id }) {
+                    rawFams + fam
+                } else {
+                    rawFams
+                }
                 val peopleList = peopleResult.getOrDefault(emptyList())
                 val relList = relResult.getOrDefault(emptyList())
                 val memberList = membersResult.getOrDefault(emptyList())
@@ -147,7 +153,12 @@ class FamilyManagementViewModel(
 
             if (famResult.isSuccess && peopleResult.isSuccess) {
                 val fam = famResult.getOrNull()
-                val allFams = allFamResult.getOrDefault(emptyList())
+                val rawFams = allFamResult.getOrDefault(emptyList())
+                val allFams = if (fam != null && rawFams.none { it.id == fam.id }) {
+                    rawFams + fam
+                } else {
+                    rawFams
+                }
                 val peopleList = peopleResult.getOrDefault(emptyList())
                 val relList = relResult.getOrDefault(emptyList())
                 val memberList = membersResult.getOrDefault(emptyList())
@@ -215,7 +226,7 @@ class FamilyManagementViewModel(
                     _uiState.value = _uiState.value.copy(
                         family = updated,
                         isLoading = false,
-                        toastMessage = "העץ הוחזר למצב טיוטה",
+                        toastMessage = "העץ הוגדר כפרטי (PRIVATE) ומוסתר מהקהילה",
                     )
                 }
                 .onFailure { t ->
@@ -241,6 +252,40 @@ class FamilyManagementViewModel(
         val clean = username.trim().removePrefix("@")
         if (clean.isBlank()) return null
         return profileRepository?.searchUserByUsername(clean)?.getOrNull()
+    }
+
+    suspend fun getFriends(): List<com.shorashim.core.model.FriendUser> {
+        return friendRepository?.getFriends()?.getOrDefault(emptyList()) ?: emptyList()
+    }
+
+    fun linkUserToPerson(personId: String, userId: String) {
+        viewModelScope.launch {
+            personRepository.linkUserToPerson(personId, userId)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(toastMessage = "האדם קושר בהצלחה לחשבון המשתמש!")
+                    refreshData(showToast = false)
+                }
+                .onFailure { t ->
+                    _uiState.value = _uiState.value.copy(error = t.localizedMessage)
+                }
+        }
+    }
+
+    fun unlinkUserFromPerson(personId: String) {
+        viewModelScope.launch {
+            personRepository.linkUserToPerson(personId, null)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(toastMessage = "הקישור לחשבון המשתמש בוטל בהצלחה")
+                    refreshData(showToast = false)
+                }
+                .onFailure { t ->
+                    _uiState.value = _uiState.value.copy(error = t.localizedMessage)
+                }
+        }
+    }
+
+    suspend fun getMutualConnections(userId: String): List<com.shorashim.core.model.MutualFamilyConnection> {
+        return personRepository.getMutualFamilyConnections(userId).getOrDefault(emptyList())
     }
 
     fun inviteMember(username: String, role: MembershipRole) {
