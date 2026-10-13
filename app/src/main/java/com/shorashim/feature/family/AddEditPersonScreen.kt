@@ -109,22 +109,12 @@ fun AddEditPersonRoute(
         onAdditionalNamesChanged = viewModel::onAdditionalNamesChanged,
         onPhotoChanged = viewModel::onPhotoChanged,
         onLifeStatusChanged = viewModel::onLifeStatusChanged,
-        onBirthYearChanged = viewModel::onBirthYearChanged,
-        onBirthMonthChanged = viewModel::onBirthMonthChanged,
-        onBirthDayChanged = viewModel::onBirthDayChanged,
+        onBirthDateChosen = viewModel::onBirthDateChosen,
         onBirthPrecisionChanged = viewModel::onBirthPrecisionChanged,
         onBirthCalendarTypeChanged = viewModel::onBirthCalendarTypeChanged,
-        onBirthHebrewYearChanged = viewModel::onBirthHebrewYearChanged,
-        onBirthHebrewMonthChanged = viewModel::onBirthHebrewMonthChanged,
-        onBirthHebrewDayChanged = viewModel::onBirthHebrewDayChanged,
-        onDeathYearChanged = viewModel::onDeathYearChanged,
-        onDeathMonthChanged = viewModel::onDeathMonthChanged,
-        onDeathDayChanged = viewModel::onDeathDayChanged,
+        onDeathDateChosen = viewModel::onDeathDateChosen,
         onDeathPrecisionChanged = viewModel::onDeathPrecisionChanged,
         onDeathCalendarTypeChanged = viewModel::onDeathCalendarTypeChanged,
-        onDeathHebrewYearChanged = viewModel::onDeathHebrewYearChanged,
-        onDeathHebrewMonthChanged = viewModel::onDeathHebrewMonthChanged,
-        onDeathHebrewDayChanged = viewModel::onDeathHebrewDayChanged,
         onBiographyChanged = viewModel::onBiographyChanged,
         onSaveClicked = { viewModel.save(onNavigateBack) },
         onDeleteClicked = { viewModel.setDeleteConfirmOpen(true) },
@@ -132,6 +122,13 @@ fun AddEditPersonRoute(
         onDeleteConfirmed = { viewModel.delete(onNavigateBack) },
         onCoParentSelected = viewModel::onCoParentSelected,
         onLinkToExistingParentChanged = viewModel::onLinkToExistingParentChanged,
+        linking = PersonLinkingActions(
+            onLinkUser = { viewModel.linkUser(it) },
+            onUnlinkUser = { viewModel.linkUser(null) },
+            onSearchUser = viewModel::searchUser,
+            onGetFriends = viewModel::getFriends,
+            onGetMutualConnections = viewModel::getMutualConnections,
+        ),
         modifier = modifier,
     )
 }
@@ -146,22 +143,12 @@ fun AddEditPersonScreen(
     onAdditionalNamesChanged: (String) -> Unit,
     onPhotoChanged: (String?) -> Unit = {},
     onLifeStatusChanged: (LifeStatus) -> Unit,
-    onBirthYearChanged: (String) -> Unit,
-    onBirthMonthChanged: (String) -> Unit,
-    onBirthDayChanged: (String) -> Unit,
+    onBirthDateChosen: (Int, Int?, Int?) -> Unit,
     onBirthPrecisionChanged: (DatePrecision) -> Unit,
     onBirthCalendarTypeChanged: (CalendarInputType) -> Unit = {},
-    onBirthHebrewYearChanged: (String) -> Unit = {},
-    onBirthHebrewMonthChanged: (Int) -> Unit = {},
-    onBirthHebrewDayChanged: (String) -> Unit = {},
-    onDeathYearChanged: (String) -> Unit,
-    onDeathMonthChanged: (String) -> Unit,
-    onDeathDayChanged: (String) -> Unit,
+    onDeathDateChosen: (Int, Int?, Int?) -> Unit,
     onDeathPrecisionChanged: (DatePrecision) -> Unit,
     onDeathCalendarTypeChanged: (CalendarInputType) -> Unit = {},
-    onDeathHebrewYearChanged: (String) -> Unit = {},
-    onDeathHebrewMonthChanged: (Int) -> Unit = {},
-    onDeathHebrewDayChanged: (String) -> Unit = {},
     onBiographyChanged: (String) -> Unit,
     onSaveClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
@@ -170,6 +157,7 @@ fun AddEditPersonScreen(
     modifier: Modifier = Modifier,
     onCoParentSelected: (String?) -> Unit = {},
     onLinkToExistingParentChanged: (Boolean) -> Unit = {},
+    linking: PersonLinkingActions? = null,
 ) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
@@ -514,18 +502,9 @@ fun AddEditPersonScreen(
                     calendarType = uiState.birthCalendarType,
                     onCalendarTypeChange = onBirthCalendarTypeChanged,
                     year = uiState.birthYear,
-                    onYearChange = onBirthYearChanged,
                     month = uiState.birthMonth,
-                    onMonthChange = onBirthMonthChanged,
                     day = uiState.birthDay,
-                    onDayChange = onBirthDayChanged,
-                    hebrewYear = uiState.birthHebrewYear,
-                    onHebrewYearChange = onBirthHebrewYearChanged,
-                    hebrewMonth = uiState.birthHebrewMonth,
-                    onHebrewMonthChange = onBirthHebrewMonthChanged,
-                    hebrewDay = uiState.birthHebrewDay,
-                    onHebrewDayChange = onBirthHebrewDayChanged,
-                    hebrewFormatted = uiState.birthHebrewFormatted,
+                    onDateChosen = onBirthDateChosen,
                 )
 
                 // Death Date Section (if deceased)
@@ -538,18 +517,9 @@ fun AddEditPersonScreen(
                         calendarType = uiState.deathCalendarType,
                         onCalendarTypeChange = onDeathCalendarTypeChanged,
                         year = uiState.deathYear,
-                        onYearChange = onDeathYearChanged,
                         month = uiState.deathMonth,
-                        onMonthChange = onDeathMonthChanged,
                         day = uiState.deathDay,
-                        onDayChange = onDeathDayChanged,
-                        hebrewYear = uiState.deathHebrewYear,
-                        onHebrewYearChange = onDeathHebrewYearChanged,
-                        hebrewMonth = uiState.deathHebrewMonth,
-                        onHebrewMonthChange = onDeathHebrewMonthChanged,
-                        hebrewDay = uiState.deathHebrewDay,
-                        onHebrewDayChange = onDeathHebrewDayChanged,
-                        hebrewFormatted = uiState.deathHebrewFormatted,
+                        onDateChosen = onDeathDateChosen,
                     )
                 }
 
@@ -577,6 +547,12 @@ fun AddEditPersonScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
+                val person = uiState.loadedPerson
+                if (uiState.isEditing && person != null && linking != null) {
+                    Spacer(Modifier.height(Spacing.md))
+                    PersonLinkSection(person = person, actions = linking)
+                }
+
                 if (uiState.generalError != null) {
                     Spacer(Modifier.height(Spacing.sm))
                     Text(
@@ -598,320 +574,6 @@ fun AddEditPersonScreen(
                     isLoading = uiState.isLoading,
                     enabled = !uiState.isLoading,
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun DateInputSection(
-    sectionTitle: String,
-    precision: DatePrecision,
-    onPrecisionChange: (DatePrecision) -> Unit,
-    calendarType: CalendarInputType,
-    onCalendarTypeChange: (CalendarInputType) -> Unit,
-    year: String,
-    onYearChange: (String) -> Unit,
-    month: String,
-    onMonthChange: (String) -> Unit,
-    day: String,
-    onDayChange: (String) -> Unit,
-    hebrewYear: String,
-    onHebrewYearChange: (String) -> Unit,
-    hebrewMonth: Int,
-    onHebrewMonthChange: (Int) -> Unit,
-    hebrewDay: String,
-    onHebrewDayChange: (String) -> Unit,
-    hebrewFormatted: String,
-    modifier: Modifier = Modifier,
-) {
-    var monthDropdownExpanded by remember { mutableStateOf(false) }
-    var dayDropdownExpanded by remember { mutableStateOf(false) }
-
-    val parsedHYear = remember(hebrewYear) {
-        HebrewDates.parseGematria(hebrewYear) ?: hebrewYear.toIntOrNull() ?: 5784
-    }
-    val validMonths = remember(parsedHYear) {
-        HebrewCalendarMath.monthsOf(parsedHYear).map { m ->
-            m to HebrewCalendarMath.monthName(parsedHYear, m)
-        }
-    }
-    val currentMonthName = remember(parsedHYear, hebrewMonth) {
-        HebrewCalendarMath.monthName(parsedHYear, hebrewMonth)
-    }
-    val maxDaysInMonth = remember(parsedHYear, hebrewMonth) {
-        HebrewCalendarMath.monthLength(parsedHYear, hebrewMonth)
-    }
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = sectionTitle,
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-        )
-
-        Spacer(Modifier.height(Spacing.xs))
-
-        // Precision selector chips
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-        ) {
-            FilterChip(
-                selected = precision == DatePrecision.FULL_DATE,
-                onClick = { onPrecisionChange(DatePrecision.FULL_DATE) },
-                label = { Text("מלא", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = precision == DatePrecision.YEAR_MONTH,
-                onClick = { onPrecisionChange(DatePrecision.YEAR_MONTH) },
-                label = { Text("חודש ושנה", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = precision == DatePrecision.YEAR_ONLY,
-                onClick = { onPrecisionChange(DatePrecision.YEAR_ONLY) },
-                label = { Text("שנה", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = precision == DatePrecision.UNKNOWN,
-                onClick = { onPrecisionChange(DatePrecision.UNKNOWN) },
-                label = { Text("לא ידוע", style = MaterialTheme.typography.labelSmall) },
-            )
-        }
-
-        if (precision != DatePrecision.UNKNOWN) {
-            Spacer(Modifier.height(Spacing.xs))
-
-            // Calendar selector: Gregorian vs Hebrew
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                SegmentedButton(
-                    selected = calendarType == CalendarInputType.GREGORIAN,
-                    onClick = { onCalendarTypeChange(CalendarInputType.GREGORIAN) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    icon = {},
-                ) {
-                    Text("לוח לועזי 📅", style = MaterialTheme.typography.labelMedium)
-                }
-                SegmentedButton(
-                    selected = calendarType == CalendarInputType.HEBREW,
-                    onClick = { onCalendarTypeChange(CalendarInputType.HEBREW) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    icon = {},
-                ) {
-                    Text("לוח עברי 📜", style = MaterialTheme.typography.labelMedium)
-                }
-            }
-            Spacer(Modifier.height(Spacing.xs))
-
-            if (calendarType == CalendarInputType.GREGORIAN) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    // Day field (if FULL_DATE)
-                    if (precision == DatePrecision.FULL_DATE) {
-                        OutlinedTextField(
-                            value = day,
-                            onValueChange = onDayChange,
-                            label = { Text("יום") },
-                            placeholder = { Text("15") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(0.8f),
-                        )
-                    }
-
-                    // Month field (if YEAR_MONTH or FULL_DATE)
-                    if (precision == DatePrecision.YEAR_MONTH || precision == DatePrecision.FULL_DATE) {
-                        OutlinedTextField(
-                            value = month,
-                            onValueChange = onMonthChange,
-                            label = { Text("חודש") },
-                            placeholder = { Text("05") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(0.8f),
-                        )
-                    }
-
-                    // Year field
-                    OutlinedTextField(
-                        value = year,
-                        onValueChange = onYearChange,
-                        label = { Text("שנה") },
-                        placeholder = { Text("1980") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                if (hebrewFormatted.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Text(
-                                text = "📜 תאריך עברי מחושב:",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                            Text(
-                                text = hebrewFormatted,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
-            } else {
-                var monthDropdownExpanded by remember { mutableStateOf(false) }
-                var dayDropdownExpanded by remember { mutableStateOf(false) }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    // Hebrew Day (if FULL_DATE)
-                    if (precision == DatePrecision.FULL_DATE) {
-                        OutlinedTextField(
-                            value = hebrewDay,
-                            onValueChange = onHebrewDayChange,
-                            label = { Text("יום") },
-                            placeholder = { Text("ט״ו") },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(0.85f),
-                        )
-                    }
-
-                    // Hebrew Month (if YEAR_MONTH or FULL_DATE)
-                    if (precision == DatePrecision.YEAR_MONTH || precision == DatePrecision.FULL_DATE) {
-                        Box(modifier = Modifier.weight(1.35f)) {
-                            OutlinedTextField(
-                                value = currentMonthName,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("חודש") },
-                                trailingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.ArrowDropDown,
-                                        contentDescription = "בחר חודש",
-                                        modifier = Modifier
-                                            .size(22.dp)
-                                            .clickable { monthDropdownExpanded = true },
-                                    )
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { monthDropdownExpanded = true },
-                            )
-                            DropdownMenu(
-                                expanded = monthDropdownExpanded,
-                                onDismissRequest = { monthDropdownExpanded = false },
-                            ) {
-                                validMonths.forEach { (code, name) ->
-                                    DropdownMenuItem(
-                                        text = { Text(name) },
-                                        onClick = {
-                                            onHebrewMonthChange(code)
-                                            monthDropdownExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Hebrew Year
-                    OutlinedTextField(
-                        value = hebrewYear,
-                        onValueChange = onHebrewYearChange,
-                        label = { Text("שנה") },
-                        placeholder = { Text("תשפ״ד") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                // If FULL_DATE, provide quick Day dropdown helper
-                if (precision == DatePrecision.FULL_DATE) {
-                    Box(modifier = Modifier.padding(top = 2.dp)) {
-                        TextButton(
-                            onClick = { dayDropdownExpanded = true },
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp),
-                        ) {
-                            Text(
-                                text = "📅 בחר יום מהרשימה (א׳–ל׳)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = dayDropdownExpanded,
-                            onDismissRequest = { dayDropdownExpanded = false },
-                        ) {
-                            (1..maxDaysInMonth).forEach { d ->
-                                val dayFormatted = HebrewDates.formatHebrewDay(d)
-                                DropdownMenuItem(
-                                    text = { Text("$dayFormatted ($d)") },
-                                    onClick = {
-                                        onHebrewDayChange(dayFormatted)
-                                        dayDropdownExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                }
-
-                val syncedGregorian = remember(year, month, day, precision) {
-                    when (precision) {
-                        DatePrecision.FULL_DATE -> if (day.isNotBlank() && month.isNotBlank() && year.isNotBlank()) "$day/$month/$year" else ""
-                        DatePrecision.YEAR_MONTH -> if (month.isNotBlank() && year.isNotBlank()) "$month/$year" else ""
-                        DatePrecision.YEAR_ONLY -> year
-                        DatePrecision.UNKNOWN -> ""
-                    }
-                }
-                if (syncedGregorian.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Text(
-                                text = "📅 תאריך לועזי מתואם:",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                            Text(
-                                text = syncedGregorian,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
             }
         }
     }

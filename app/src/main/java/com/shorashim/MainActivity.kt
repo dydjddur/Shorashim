@@ -93,6 +93,11 @@ class MainActivity : ComponentActivity() {
                         ShorashimLoadingState()
                     }
                     is AuthState.Authenticated -> {
+                        // Publish this device's E2EE public key as soon as the user is signed in, so friends can
+                        // message them even before they ever open the chat tab.
+                        androidx.compose.runtime.LaunchedEffect(state.user.uid) {
+                            appContainer.chatRepository.ensurePublicKeyPublished()
+                        }
                         val navController = rememberNavController()
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentRoute = navBackStackEntry?.destination?.route

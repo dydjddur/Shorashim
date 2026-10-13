@@ -172,6 +172,8 @@ fun ShorashimNavHost(
                         relation = relation,
                         anchorId = anchorId,
                         familyRepository = appContainer.familyRepository,
+                        profileRepository = appContainer.profileRepository,
+                        friendRepository = appContainer.friendRepository,
                     )
                 },
             )

@@ -45,7 +45,6 @@ fun FamilyTreeNodeCard(
     canEdit: Boolean,
     isSelected: Boolean = false,
     onCardClick: (Person) -> Unit,
-    onDetailsClick: (Person) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val person = node.person
@@ -54,7 +53,7 @@ fun FamilyTreeNodeCard(
     val bDate = PartialDate.fromIso(person.birthDate, person.birthDatePrecision)
     val dDate = PartialDate.fromIso(person.deathDate, person.deathDatePrecision)
 
-    val datesText = remember(person) {
+    val datesText: String? = remember(person) {
         val bYear = bDate.year?.toString()
         val dYear = dDate.year?.toString()
         when {
@@ -62,7 +61,7 @@ fun FamilyTreeNodeCard(
             bYear != null -> "נולד/ה ב-$bYear"
             dYear != null -> "נפטר/ה ב-$dYear"
             isDeceased -> "ז״ל 🕯️"
-            else -> "חי/ה"
+            else -> null
         }
     }
 
@@ -107,7 +106,7 @@ fun FamilyTreeNodeCard(
                         photoPath = person.photoPath,
                         firstName = person.firstName,
                         isDeceased = isDeceased,
-                        size = 44.dp,
+                        size = 52.dp,
                         shape = CircleShape,
                     )
                     if (person.isLinkedToUser) {
@@ -140,37 +139,23 @@ fun FamilyTreeNodeCard(
                         text = person.fullName,
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
+                            fontSize = 15.sp,
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
 
-                    Spacer(Modifier.height(3.dp))
-
-                    Text(
-                        text = datesText,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-
-                // Quick details and link indicator
-                IconButton(
-                    onClick = { onDetailsClick(person) },
-                    modifier = Modifier.size(28.dp),
-                ) {
-                    Icon(
-                        imageVector = if (canEdit) Icons.Outlined.MoreVert else Icons.Outlined.Info,
-                        contentDescription = if (canEdit) "פרטים וקישור חשבון" else "פרטים",
-                        tint = if (isSelected) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp),
-                    )
+                    if (datesText != null) {
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = datesText,
+                            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }

@@ -152,3 +152,16 @@ Adaptive icon: רקע `#0F3D30` + עץ אורן קווי `#4FD8A5`, שכבת mon
 - **בקרות משושים:** מצוירות במרחב המסך (לא בתוך שכבת הזום) בגודל יחסי ל-viewport (22% מהרוחב, 64–104dp), הכרטיס הנבחר מתמרכז באנימציה, והמיקום נבחר מול התנגשויות עם הכרטיס/זה עם זה/קצה המסך. הקשה ברקע סוגרת. ⚠️ האפליקציה RTL — כל מה שממוקם בקואורדינטות מסך חייב `TopLeftAbsolute`/`absoluteOffset`.
 - **גרסה:** `1.2.0` (`versionCode 2`). בדיקת העדכון באפליקציה משווה את תג ה-Release (`api/version.js`) ל-`versionName`.
 - **נתוני אמת בשרת הנוכחי:** שני עצים מפורסמים בקהילה (וקנין, תורג'מן); "שטרית" פרטי.
+
+---
+
+## 🔄 עדכון (אחרי v1.2.0) — עריכת אדם, תאריכים, צ'אט אמיתי
+
+- **כרטיס אדם בעץ:** בלי תג "חי/ה", בלי שלוש נקודות (לחיצה על הכרטיס פותחת את המשושים). חלון "פרטי אדם" נמחק; **קישור לחשבון משתמש** עבר למסך "עריכת פרטי אדם" (`PersonLinking.kt`). צופים (תצוגת קהילה) רואים את הכרטיס בלבד.
+- **תאריכי לידה/פטירה (`PersonDateField.kt`):** לוח לועזי = ה-DatePicker של Material (Android); לוח עברי = גלגלים של יום/חודש/שנה באותיות (כ״ב · תשרי · תשפ״ה). השדה מציג תמיד את שני הלוחות. מקור האמת ב-ViewModel נשאר תאריך לועזי (year/month/day).
+- **צ'אט — שורש הבעיה:** טבלאות `user_public_keys`, `conversations`, `chat_messages`, `friends`, `friend_requests` ועמודות `profiles.is_private/bio`, `people.linked_user_id` **לא קיימות בשרת החי** (מיגרציות 20261013 לא הורצו). לכן הצ'אט והחברים עבדו רק "מקומית" — הודעות שנראו כנשלחו לא הגיעו לאף אחד. **להריץ `supabase/APPLY_PENDING.sql` ב-SQL Editor.**
+- **תיקוני קוד בצ'אט:** נמחקו נפילות שקטות ל-SharedPreferences ו"מפתח הדגמה" שיוצר זוג מפתחות לצד שני; הודעה נחשבת כנשלחה רק אם נכתבה לשרת; אי אפשר לכתוב למי שלא פרסם מפתח (הודעת שגיאה ברורה); המפתח הציבורי מתפרסם מיד אחרי התחברות; סקירת הודעות כל 4 שניות כגיבוי ל-Realtime; ספירת הודעות שלא נקראו; הודעה אחרונה לפי `created_at`.
+- **הצפנה:** RSA-OAEP עם פרמטרים מפורשים (SHA-256 + MGF1-SHA-1) לשני הצדדים — הצירוף היחיד שכל Android Keystore תומך בו לפענוח; נבדק על מכשיר אמיתי (`ChatCryptoDeviceTest`: נמען ושולח מפענחים, צד שלישי נכשל, חבלה ב-ciphertext נדחית, המפתח יציב בין הפעלות). הרצה: `./gradlew assembleDebug assembleDebugAndroidTest`, התקנה ידנית עם `adb install -t` ואז `adb shell am instrument -w com.example.remember_me.test/androidx.test.runner.AndroidJUnitRunner`. ⚠️ **לא** להשתמש ב-`connectedAndroidTest` של Gradle על טלפון עם נתונים — הוא מסיר את האפליקציה בסיום ומוחק את ההתחברות.
+- **חברים אמיתיים:** `SupabaseFriendRepository` נכתב מחדש מעל `friends`/`friend_requests` ופונקציות `send_friend_request` / `respond_friend_request` / `get_my_friend_requests` / `remove_friend` (`20261014_friends_chat_realtime.sql`). קודם, בקשת חברות נשמרה רק במכשיר השולח.
+- **מגבלה ידועה:** אם המשתמש מתקין מחדש / מחליף מכשיר, מפתח ה-RSA ב-Keystore אובד ומפתח חדש מחליף את הישן — הודעות ישנות יוצגו כ"לא ניתן לפענוח". גיבוי/סנכרון מפתחות בין מכשירים טרם נבנה.
+- **Vercel:** `/api/resolve_invitation` מחזיר `missing_configuration` כשחסרים משתני סביבה; דף הנחיתה נופל חזרה ל-`/api/config`, ולכן עובד. עדיף להגדיר `SUPABASE_URL` ו-`SUPABASE_ANON_KEY` בפרויקט ה-Vercel.

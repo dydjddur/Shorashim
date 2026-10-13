@@ -236,29 +236,6 @@ fun FamilyManagementScreen(
 ) {
     var renameText by remember(uiState.family?.name) { mutableStateOf(uiState.family?.name.orEmpty()) }
     var personPendingDelete by remember { mutableStateOf<Person?>(null) }
-    var viewedPerson by remember { mutableStateOf<Person?>(null) }
-
-    // Person Details and Identity Linking Dialog
-    viewedPerson?.let { p ->
-        PersonDetailDialog(
-            person = p,
-            allPeople = uiState.people,
-            relationships = uiState.relationships,
-            canEdit = !isReadOnly && uiState.family?.canEditTreeContent == true,
-            onLinkUser = { targetUserId ->
-                onLinkUser(p.id, targetUserId)
-                viewedPerson = null
-            },
-            onUnlinkUser = {
-                onUnlinkUser(p.id)
-                viewedPerson = null
-            },
-            onSearchUser = onSearchUser,
-            onGetFriends = onGetFriends,
-            onGetMutualConnections = onGetMutualConnections,
-            onDismiss = { viewedPerson = null },
-        )
-    }
 
     // Deleting a person also removes their relationships, so always ask first.
     personPendingDelete?.let { victim ->
@@ -553,12 +530,10 @@ fun FamilyManagementScreen(
                         onEditPersonClick = { p ->
                             if (!isReadOnly && uiState.family?.canEditTreeContent == true) {
                                 onPersonClick(p.id)
-                            } else {
-                                viewedPerson = p
                             }
                         },
                         onDeletePersonClick = { p -> if (!isReadOnly) personPendingDelete = p },
-                        onPersonDetailsClick = { p -> viewedPerson = p },
+                        onPersonDetailsClick = {},
                         onPublishClick = if (!isReadOnly) onPublish else ({}),
                         onEmptyAddPersonClick = if (!isReadOnly) onAddPersonClick else ({}),
                         onRefreshClick = onRefresh,
@@ -623,8 +598,6 @@ fun FamilyManagementScreen(
                                         onClick = {
                                             if (!isReadOnly && uiState.family?.canEditTreeContent == true) {
                                                 onPersonClick(person.id)
-                                            } else {
-                                                viewedPerson = person
                                             }
                                         },
                                     )

@@ -44,7 +44,16 @@ class ChatCryptoManager(
         private const val TAG = "ChatCrypto"
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val KEY_ALIAS_PREFIX = "shorashim_chat_rsa_"
-        private const val RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding"
+        /**
+         * RSA-OAEP with SHA-256 as the main digest and **SHA-1 as the MGF1 digest**. This is the only OAEP
+         * combination every Android Keystore (API 23+) implements for *private-key* operations, so using the exact
+         * same explicit parameters for encrypt and decrypt is what makes a peer's message decryptable on their
+         * device. (Relying on provider defaults produced "cannot decrypt" errors because Conscrypt and the Keystore
+         * disagree on the default MGF1 digest.)
+         */
+        private const val RSA_TRANSFORMATION = "RSA/ECB/OAEPPadding"
+        private val OAEP_PARAMS: OAEPParameterSpec
+            get() = OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT)
         private const val AES_TRANSFORMATION = "AES/GCM/NoPadding"
         private const val AES_KEY_SIZE = 256
         private const val GCM_IV_LENGTH = 12
@@ -104,11 +113,7 @@ class ChatCryptoManager(
                 alias,
                 KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
             )
-                .setDigests(
-                    KeyProperties.DIGEST_SHA256,
-                    KeyProperties.DIGEST_SHA512,
-                    KeyProperties.DIGEST_SHA1,
-                )
+                .setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA1)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
                 .setKeySize(2048)
                 .build()
@@ -116,9 +121,10 @@ class ChatCryptoManager(
             kpg.initialize(spec)
             return kpg.generateKeyPair()
         } catch (e: Throwable) {
-            try {
-                Log.w(TAG, "AndroidKeyStore unavailable, falling back to local provider: ${e.message}")
-            } catch (_: Throwable) {}
+            // On a real device a Keystore failure must surface: silently using a throw-away in-memory key would
+            // publish a public key whose private half is lost when the process dies, making every message to this
+            // user undecryptable. The in-memory pair exists only for plain-JVM unit tests (SDK_INT == 0).
+            if (Build.VERSION.SDK_INT > 0) throw IllegalStateException("Secure key storage is unavailable: ${e.message}", e)
         }
 
         // 2. Fallback for unit testing and devices without AndroidKeyStore
@@ -225,58 +231,25 @@ class ChatCryptoManager(
     }
 
     private fun encryptKeyWithRsa(keyBytes: ByteArray, publicKey: PublicKey): ByteArray {
-        val rsaCipher = getRsaCipher()
-        try {
-            rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey)
-            return rsaCipher.doFinal(keyBytes)
-        } catch (e: Throwable) {
-            // Some providers need explicit OAEPParameterSpec
-            val oaepParams = OAEPParameterSpec(
-                "SHA-256",
-                "MGF1",
-                MGF1ParameterSpec.SHA256,
-                PSource.PSpecified.DEFAULT,
-            )
-            rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepParams)
-            return rsaCipher.doFinal(keyBytes)
-        }
+        val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey, OAEP_PARAMS)
+        return cipher.doFinal(keyBytes)
     }
 
     private fun decryptKeyWithRsa(encryptedKey: ByteArray, privateKey: PrivateKey): ByteArray {
-        val rsaCipher = getRsaCipher()
-        try {
-            rsaCipher.init(Cipher.DECRYPT_MODE, privateKey)
-            return rsaCipher.doFinal(encryptedKey)
-        } catch (e: Throwable) {
-            return try {
-                val oaepParams = OAEPParameterSpec(
-                    "SHA-256",
-                    "MGF1",
-                    MGF1ParameterSpec.SHA1,
-                    PSource.PSpecified.DEFAULT,
-                )
-                val c2 = Cipher.getInstance("RSA/ECB/OAEPPadding")
-                c2.init(Cipher.DECRYPT_MODE, privateKey, oaepParams)
-                c2.doFinal(encryptedKey)
-            } catch (t: Throwable) {
-                val c3 = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")
-                val oaepParams2 = OAEPParameterSpec(
-                    "SHA-256",
-                    "MGF1",
-                    MGF1ParameterSpec.SHA256,
-                    PSource.PSpecified.DEFAULT,
-                )
-                c3.init(Cipher.DECRYPT_MODE, privateKey, oaepParams2)
-                c3.doFinal(encryptedKey)
-            }
-        }
+        val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
+        cipher.init(Cipher.DECRYPT_MODE, privateKey, OAEP_PARAMS)
+        return cipher.doFinal(encryptedKey)
     }
 
-    private fun getRsaCipher(): Cipher {
-        return try {
-            Cipher.getInstance(RSA_TRANSFORMATION)
-        } catch (e: Throwable) {
-            Cipher.getInstance("RSA/ECB/OAEPPadding")
+    /** Deletes this user's key pair (used by tests and when a user explicitly resets encryption). */
+    @Synchronized
+    fun deleteKeyPair(userId: String) {
+        fallbackKeyPairs.remove(userId)
+        runCatching {
+            val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+            keyStore.load(null)
+            keyStore.deleteEntry(getAlias(userId))
         }
     }
 }

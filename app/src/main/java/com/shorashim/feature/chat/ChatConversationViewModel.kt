@@ -63,6 +63,7 @@ class ChatConversationViewModel(
 
     private var realtimeChannel: RealtimeChannel? = null
     private var realtimeJob: Job? = null
+    private var pollJob: Job? = null
 
     init {
         initializeConversation()
@@ -93,6 +94,26 @@ class ChatConversationViewModel(
 
             loadMessages(convId)
             setupRealtime(convId)
+            startPolling(convId)
+        }
+    }
+
+    /**
+     * Safety net next to Realtime: if the `supabase_realtime` publication does not include chat_messages (or the
+     * socket drops), a new message from the other person still shows up within a few seconds.
+     */
+    private fun startPolling(convId: String) {
+        pollJob?.cancel()
+        pollJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(4_000)
+                val result = chatRepository.getMessages(convId)
+                val msgs = result.getOrNull() ?: continue
+                if (msgs.map { it.id } != _uiState.value.messages.map { it.id }) {
+                    _uiState.value = _uiState.value.copy(messages = msgs)
+                    chatRepository.markMessagesAsRead(convId)
+                }
+            }
         }
     }
 
@@ -266,6 +287,7 @@ class ChatConversationViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        pollJob?.cancel()
         teardownRealtime()
     }
 }

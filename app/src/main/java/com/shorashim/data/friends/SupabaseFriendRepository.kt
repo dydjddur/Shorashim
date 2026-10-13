@@ -1,11 +1,9 @@
 package com.shorashim.data.friends
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
 import com.shorashim.core.model.Family
 import com.shorashim.core.model.FamilyDto
-import com.shorashim.core.model.FamilyStatus
 import com.shorashim.core.model.FriendRequest
 import com.shorashim.core.model.FriendSuggestion
 import com.shorashim.core.model.FriendUser
@@ -13,241 +11,209 @@ import com.shorashim.core.model.UserProfileDto
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
-import kotlinx.serialization.encodeToString
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.util.UUID
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
+private const val TAG = "FriendRepo"
+
+@Serializable
+private data class FriendRowDto(
+    @SerialName("friend_id") val friendId: String = "",
+)
+
+@Serializable
+private data class SentRequestRowDto(
+    @SerialName("to_user_id") val toUserId: String = "",
+)
+
+@Serializable
+private data class FriendRequestRowDto(
+    val id: String = "",
+    @SerialName("from_user_id") val fromUserId: String = "",
+    val username: String? = null,
+    @SerialName("display_name") val displayName: String? = null,
+    @SerialName("full_name") val fullName: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+/**
+ * Server-backed friendships. Requests and friendships live in Supabase (`friend_requests`, `friends`) and are changed
+ * only through the SECURITY DEFINER functions of 20261014_friends_chat_realtime.sql, so both sides always see the
+ * same state. (An earlier version kept everything in SharedPreferences, which meant the other person never received
+ * a request.)
+ */
 class SupabaseFriendRepository(
     private val supabase: SupabaseClient?,
-    context: Context,
+    @Suppress("UNUSED_PARAMETER") context: Context? = null,
 ) : FriendRepository {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("shorashim_friends_prefs", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
 
-    init {
-        try {
-            val rawFriends = prefs.getString("local_friends", null)
-            if (!rawFriends.isNullOrBlank()) {
-                val list = runCatching { json.decodeFromString<List<FriendUser>>(rawFriends) }.getOrDefault(emptyList())
-                val cleaned = list.filterNot { it.id.startsWith("friend_default_") }
-                if (cleaned.size != list.size) {
-                    prefs.edit().putString("local_friends", json.encodeToString(cleaned)).apply()
-                }
-            }
-            val rawReqs = prefs.getString("pending_requests", null)
-            if (!rawReqs.isNullOrBlank()) {
-                val list = runCatching { json.decodeFromString<List<FriendRequest>>(rawReqs) }.getOrDefault(emptyList())
-                val cleaned = list.filterNot { it.id == "req_1" || it.fromUserId == "usr_101" }
-                if (cleaned.size != list.size) {
-                    prefs.edit().putString("pending_requests", json.encodeToString(cleaned)).apply()
-                }
-            }
-            val friendIds = prefs.getStringSet("friend_ids", null)
-            if (friendIds != null) {
-                val cleaned = friendIds.filterNot { it.startsWith("friend_default_") || it in setOf("avi_levi", "sara_israeli") }.toSet()
-                if (cleaned.size != friendIds.size) {
-                    prefs.edit().putStringSet("friend_ids", cleaned).apply()
-                }
-            }
-        } catch (_: Throwable) {}
-    }
+    private fun requireClient(): SupabaseClient = supabase ?: error("Supabase לא מוגדר")
 
-    override suspend fun getFriends(): Result<List<FriendUser>> {
-        val client = supabase ?: return Result.success(getLocalFriends())
-        val currentUserId = client.auth.currentUserOrNull()?.id
+    private fun currentUserId(client: SupabaseClient): String =
+        client.auth.currentUserOrNull()?.id ?: error("המשתמש אינו מחובר")
 
-        return runCatching {
-            val localFriendIds = getLocalFriendIdSet()
-            if (localFriendIds.isEmpty()) {
-                return@runCatching getLocalFriends()
-            }
+    private fun nameOf(p: UserProfileDto): String =
+        p.displayName.ifBlank { p.fullName.ifBlank { p.username ?: "משתמש" } }
 
-            // Fetch profiles from Supabase
-            val profiles = try {
-                client.from("profiles")
-                    .select()
-                    .decodeList<UserProfileDto>()
-                    .filter { it.id != currentUserId }
-            } catch (e: Throwable) {
-                Log.w("FriendRepo", "Could not query profiles for friends, using local: ${e.message}")
-                emptyList()
-            }
+    override suspend fun getFriends(): Result<List<FriendUser>> = runCatching {
+        val client = requireClient()
+        val me = currentUserId(client)
 
-            if (profiles.isNotEmpty()) {
-                val friendsList = mutableListOf<FriendUser>()
-                for (p in profiles) {
-                    val isExplicitFriend = localFriendIds.contains(p.id) || (!p.username.isNullOrBlank() && localFriendIds.contains(p.username))
-                    if (isExplicitFriend) {
-                        // Count their trees
-                        val treeCount = try {
-                            client.from("families")
-                                .select { filter { eq("owner_id", p.id) } }
-                                .decodeList<FamilyDto>()
-                                .size
-                        } catch (_: Throwable) {
-                            0
-                        }
+        val friendIds = client.from("friends")
+            .select { filter { eq("user_id", me) } }
+            .decodeList<FriendRowDto>()
+            .map { it.friendId }
+            .distinct()
+        if (friendIds.isEmpty()) return@runCatching emptyList()
 
-                        friendsList.add(
-                            FriendUser(
-                                id = p.id,
-                                username = p.username,
-                                displayName = p.displayName.ifBlank { p.fullName.ifBlank { p.username ?: "משתמש" } },
-                                avatarUrl = p.avatarUrl,
-                                isOnline = false,
-                                lastSeenText = "חבר באפליקציה",
-                                isPrivateProfile = p.isPrivate,
-                                treeCount = treeCount,
-                            )
-                        )
-                    }
-                }
-                if (friendsList.isNotEmpty()) {
-                    return@runCatching friendsList
-                }
-            }
-            getLocalFriends()
-        }
-    }
+        val profiles = client.from("profiles")
+            .select { filter { isIn("id", friendIds) } }
+            .decodeList<UserProfileDto>()
 
-    override suspend fun getFriendSuggestions(): Result<List<FriendSuggestion>> {
-        val client = supabase ?: return Result.success(getDefaultSuggestions())
-        val currentUserId = client.auth.currentUserOrNull()?.id
-
-        return runCatching {
-            val profiles = try {
-                client.from("profiles")
-                    .select()
-                    .decodeList<UserProfileDto>()
-                    .filter { it.id != currentUserId }
-            } catch (e: Throwable) {
-                Log.w("FriendRepo", "Could not query profiles for suggestions: ${e.message}")
-                emptyList()
-            }
-
-            val suggestions = mutableListOf<FriendSuggestion>()
-            val localFriendIds = getLocalFriendIdSet()
-
-            for (p in profiles) {
-                if (localFriendIds.contains(p.id) || localFriendIds.contains(p.username)) continue
-
-                val reasons = listOf(
-                    "שם משפחה תואם בקהילה",
-                    "חבר משותף",
-                    "קרוב משפחה אפשרי לפי שושלת",
-                    "פעיל בעצי קהילה",
-                )
-                val reasonIndex = kotlin.math.abs(p.id.hashCode()) % reasons.size
-
-                suggestions.add(
-                    FriendSuggestion(
-                        id = p.id,
-                        username = p.username,
-                        displayName = p.displayName.ifBlank { p.fullName.ifBlank { p.username ?: "משתמש" } },
-                        avatarUrl = p.avatarUrl,
-                        reason = reasons[reasonIndex],
-                    )
-                )
-            }
-
-            suggestions
-        }
-    }
-
-    override suspend fun getPendingRequests(): Result<List<FriendRequest>> {
-        return runCatching {
-            val raw = prefs.getString("pending_requests", null)
-            if (!raw.isNullOrBlank()) {
-                val list = runCatching { json.decodeFromString<List<FriendRequest>>(raw) }.getOrDefault(emptyList())
-                list.filterNot { it.id == "req_1" || it.fromUserId == "usr_101" }
-            } else {
-                emptyList()
-            }
-        }
-    }
-
-    override suspend fun sendFriendRequest(targetUserIdOrUsername: String): Result<Unit> {
-        return runCatching {
-            val clean = targetUserIdOrUsername.trim().removePrefix("@")
-            val sent = prefs.getStringSet("sent_requests", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-            sent.add(clean)
-            prefs.edit().putStringSet("sent_requests", sent).apply()
-            Unit
-        }
-    }
-
-    override suspend fun respondToFriendRequest(requestId: String, accept: Boolean): Result<Unit> {
-        return runCatching {
-            val currentRequests = getPendingRequests().getOrDefault(emptyList()).toMutableList()
-            val req = currentRequests.firstOrNull { it.id == requestId }
-            if (req != null) {
-                currentRequests.removeAll { it.id == requestId }
-                prefs.edit().putString("pending_requests", json.encodeToString(currentRequests)).apply()
-
-                if (accept) {
-                    val friends = getLocalFriends().toMutableList()
-                    friends.add(
-                        FriendUser(
-                            id = req.fromUserId,
-                            username = req.fromUsername,
-                            displayName = req.fromDisplayName,
-                            avatarUrl = req.fromAvatarUrl,
-                            isOnline = true,
-                            lastSeenText = "מחובר עכשיו",
-                            treeCount = 1,
-                        )
-                    )
-                    saveLocalFriends(friends)
-                    val friendIds = getLocalFriendIdSet().toMutableSet()
-                    friendIds.add(req.fromUserId)
-                    if (!req.fromUsername.isNullOrBlank()) friendIds.add(req.fromUsername)
-                    prefs.edit().putStringSet("friend_ids", friendIds).apply()
-                }
-            }
-            Unit
-        }
-    }
-
-    override suspend fun removeFriend(friendUserId: String): Result<Unit> {
-        return runCatching {
-            val friends = getLocalFriends().filter { it.id != friendUserId }
-            saveLocalFriends(friends)
-            val friendIds = getLocalFriendIdSet().toMutableSet()
-            friendIds.remove(friendUserId)
-            prefs.edit().putStringSet("friend_ids", friendIds).apply()
-            Unit
-        }
-    }
-
-    override suspend fun getFriendTrees(friendUserId: String): Result<List<Family>> {
-        val client = supabase ?: return Result.success(emptyList())
-
-        return runCatching {
-            // First check if friend has a private profile
-            val profile = try {
-                client.from("profiles")
-                    .select { filter { eq("id", friendUserId) } }
-                    .decodeSingleOrNull<UserProfileDto>()
-            } catch (_: Throwable) {
-                null
-            }
-
-            if (profile?.isPrivate == true) {
-                // If profile is set to private, do not return their trees
-                return@runCatching emptyList()
-            }
-
-            val dtos = client.from("families")
-                .select {
-                    filter {
-                        eq("owner_id", friendUserId)
-                    }
-                }
+        val treeCounts = runCatching {
+            client.from("families")
+                .select { filter { isIn("owner_id", friendIds) } }
                 .decodeList<FamilyDto>()
+                .groupingBy { it.ownerId }
+                .eachCount()
+        }.getOrDefault(emptyMap())
 
-            dtos.map { dto ->
+        profiles.map { p ->
+            FriendUser(
+                id = p.id,
+                username = p.username,
+                displayName = nameOf(p),
+                avatarUrl = p.avatarUrl,
+                isOnline = false,
+                lastSeenText = "חבר באפליקציה",
+                isPrivateProfile = p.isPrivate,
+                treeCount = treeCounts[p.id] ?: 0,
+            )
+        }.sortedBy { it.displayName }
+    }.onFailure { Log.e(TAG, "getFriends failed", it) }
+
+    override suspend fun getFriendSuggestions(): Result<List<FriendSuggestion>> = runCatching {
+        val client = requireClient()
+        val me = currentUserId(client)
+
+        val friendIds = client.from("friends")
+            .select { filter { eq("user_id", me) } }
+            .decodeList<FriendRowDto>().map { it.friendId }.toSet()
+        val requestedIds = runCatching {
+            client.from("friend_requests")
+                .select { filter { eq("from_user_id", me); eq("status", "PENDING") } }
+                .decodeList<SentRequestRowDto>().map { it.toUserId }.toSet()
+        }.getOrDefault(emptySet())
+
+        client.from("profiles")
+            .select {
+                filter { neq("id", me) }
+                limit(60)
+            }
+            .decodeList<UserProfileDto>()
+            .filter { it.id !in friendIds && it.id !in requestedIds && !it.isPrivate && !it.username.isNullOrBlank() }
+            .take(20)
+            .map { p ->
+                FriendSuggestion(
+                    id = p.id,
+                    username = p.username,
+                    displayName = nameOf(p),
+                    avatarUrl = p.avatarUrl,
+                    reason = "משתמש באפליקציית שורשים",
+                )
+            }
+    }.onFailure { Log.e(TAG, "getFriendSuggestions failed", it) }
+
+    override suspend fun getPendingRequests(): Result<List<FriendRequest>> = runCatching {
+        val client = requireClient()
+        client.postgrest.rpc("get_my_friend_requests")
+            .decodeList<FriendRequestRowDto>()
+            .map { r ->
+                FriendRequest(
+                    id = r.id,
+                    fromUserId = r.fromUserId,
+                    fromUsername = r.username,
+                    fromDisplayName = r.displayName?.ifBlank { null }
+                        ?: r.fullName?.ifBlank { null }
+                        ?: r.username
+                        ?: "משתמש",
+                    fromAvatarUrl = r.avatarUrl,
+                    createdAt = r.createdAt.orEmpty(),
+                )
+            }
+    }.onFailure { Log.e(TAG, "getPendingRequests failed", it) }
+
+    override suspend fun sendFriendRequest(targetUserIdOrUsername: String): Result<Unit> = runCatching {
+        val client = requireClient()
+        val raw = client.postgrest.rpc(
+            function = "send_friend_request",
+            parameters = buildJsonObject { put("p_target", targetUserIdOrUsername.trim()) },
+        ).data
+        val obj = json.parseToJsonElement(raw).jsonObject
+        if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) {
+            when (obj["error"]?.jsonPrimitive?.contentOrNull) {
+                "user_not_found" -> error("המשתמש לא נמצא")
+                "cannot_add_self" -> error("לא ניתן להוסיף את עצמך כחבר")
+                "already_friends" -> error("אתם כבר חברים")
+                "already_pending" -> error("כבר שלחת בקשת חברות למשתמש זה")
+                "not_authenticated" -> error("יש להתחבר מחדש")
+                else -> error("שליחת הבקשה נכשלה")
+            }
+        }
+        Unit
+    }.onFailure { Log.e(TAG, "sendFriendRequest failed", it) }
+
+    override suspend fun respondToFriendRequest(requestId: String, accept: Boolean): Result<Unit> = runCatching {
+        val client = requireClient()
+        val raw = client.postgrest.rpc(
+            function = "respond_friend_request",
+            parameters = buildJsonObject {
+                put("p_request_id", requestId)
+                put("p_accept", accept)
+            },
+        ).data
+        val obj = json.parseToJsonElement(raw).jsonObject
+        if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) {
+            error("הבקשה לא נמצאה או שכבר טופלה")
+        }
+        Unit
+    }.onFailure { Log.e(TAG, "respondToFriendRequest failed", it) }
+
+    override suspend fun removeFriend(friendUserId: String): Result<Unit> = runCatching {
+        val client = requireClient()
+        client.postgrest.rpc(
+            function = "remove_friend",
+            parameters = buildJsonObject { put("p_friend_id", friendUserId) },
+        )
+        Unit
+    }.onFailure { Log.e(TAG, "removeFriend failed", it) }
+
+    override suspend fun getFriendTrees(friendUserId: String): Result<List<Family>> = runCatching {
+        val client = requireClient()
+        val profile = runCatching {
+            client.from("profiles")
+                .select { filter { eq("id", friendUserId) } }
+                .decodeSingleOrNull<UserProfileDto>()
+        }.getOrNull()
+
+        // A private profile hides its trees.
+        if (profile?.isPrivate == true) return@runCatching emptyList()
+
+        client.from("families")
+            .select { filter { eq("owner_id", friendUserId) } }
+            .decodeList<FamilyDto>()
+            .map { dto ->
                 Family(
                     id = dto.id,
                     name = dto.name,
@@ -258,27 +224,7 @@ class SupabaseFriendRepository(
                     updatedAt = dto.updatedAt,
                 )
             }
-        }
-    }
-
-    private fun getLocalFriendIdSet(): Set<String> {
-        return prefs.getStringSet("friend_ids", emptySet()) ?: emptySet()
-    }
-
-    private fun getLocalFriends(): List<FriendUser> {
-        val raw = prefs.getString("local_friends", null)
-        if (!raw.isNullOrBlank()) {
-            val list = runCatching { json.decodeFromString<List<FriendUser>>(raw) }.getOrDefault(emptyList())
-            return list.filterNot { it.id.startsWith("friend_default_") }
-        }
-        return emptyList()
-    }
-
-    private fun saveLocalFriends(friends: List<FriendUser>) {
-        prefs.edit().putString("local_friends", json.encodeToString(friends)).apply()
-    }
-
-    private fun getDefaultSuggestions(): List<FriendSuggestion> {
-        return emptyList()
-    }
+            // Only trees the friend made public are visible to others.
+            .filter { it.isPublic }
+    }.onFailure { Log.e(TAG, "getFriendTrees failed", it) }
 }

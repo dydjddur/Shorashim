@@ -355,9 +355,6 @@ fun FamilyTreeCanvas(
                                     onPersonDetailsClick?.invoke(person) ?: onEditPersonClick(person)
                                 }
                             },
-                            onDetailsClick = { person ->
-                                onPersonDetailsClick?.invoke(person) ?: onEditPersonClick(person)
-                            },
                             modifier = Modifier.absoluteOffset {
                                 IntOffset(
                                     x = ((node.x + shiftX) * d).roundToInt(),
