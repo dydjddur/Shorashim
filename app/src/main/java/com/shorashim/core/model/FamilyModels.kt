@@ -107,7 +107,17 @@ data class Family(
     val canManageMembers: Boolean get() = currentUserRole == MembershipRole.OWNER || currentUserRole == MembershipRole.ADMIN
     val canEditTreeContent: Boolean get() = currentUserRole != MembershipRole.VIEWER
     val isDraft: Boolean get() = status == FamilyStatus.DRAFT
-    val isPrivate: Boolean get() = status != FamilyStatus.PUBLISHED
+    /** Visible in the community tab. Everything else (DRAFT / PRIVATE / ARCHIVED) is hidden from it. */
+    val isPublic: Boolean get() = status == FamilyStatus.PUBLISHED
+    val isPrivate: Boolean get() = !isPublic
+
+    /**
+     * Applies the result of a status/name update (which the repository returns without member role or person
+     * count) onto this family, keeping what only the original knows. Without this the card showed "0 people"
+     * and lost the user's role (hiding the management buttons) right after toggling privacy.
+     */
+    fun withUpdate(updated: Family): Family =
+        copy(name = updated.name, description = updated.description, status = updated.status, updatedAt = updated.updatedAt)
 }
 
 @Serializable

@@ -56,21 +56,22 @@ val HoneycombHexagonShape: Shape = GenericShape { size, _ ->
 /**
  * Hexagonal honeycomb-style interface for the selected person in the family tree.
  *
- * Positions per specification:
- * - Top: הורים (emoji: 👪)
- * - Right: אח/אחות (emoji: 🤝)
- * - Left: בן/בת זוג (emoji: 💍)
- * - Bottom: ילד/ילדה (emoji: 👪)
+ * It is drawn in **screen space** (not inside the zoomed map layer) so the hexagons keep a comfortable touch size
+ * at every zoom level: their size is a fraction of the viewport width (clamped to 64-104dp), and they are anchored
+ * to the card's current on-screen rectangle and nudged back inside the viewport if they would be clipped.
  *
- * Beneath the selected person:
- * - Two small hexagonal buttons: Edit and Delete.
+ * Positions: top = parents, right = sibling, left = spouse, bottom = child; edit and delete sit right under the card.
  */
 @Composable
 fun HexagonalRelationshipControls(
     node: TreeNode,
+    scale: Float,
+    mapOffset: androidx.compose.ui.geometry.Offset,
     d: Float, // screen density factor
     shiftX: Float,
     shiftY: Float,
+    viewportW: Float,
+    viewportH: Float,
     onAddChildClick: (Person) -> Unit,
     onAddParentClick: (Person) -> Unit,
     onAddSpouseClick: (Person) -> Unit,
@@ -81,108 +82,148 @@ fun HexagonalRelationshipControls(
 ) {
     val person = node.person
 
-    // Card dimensions in layout units (dp)
-    val cardW = node.width
-    val cardH = node.height
-    val cardX = node.x + shiftX
-    val cardY = node.y + shiftY
+    // Card rectangle on screen, in pixels.
+    val cardW = node.width * d * scale
+    val cardH = node.height * d * scale
+    val cardLeft = mapOffset.x + (node.x + shiftX) * d * scale
+    val cardTop = mapOffset.y + (node.y + shiftY) * d * scale
+    val cardRight = cardLeft + cardW
+    val cardBottom = cardTop + cardH
+    val cx = cardLeft + cardW / 2f
+    val cy = cardTop + cardH / 2f
 
-    val relHexSize = 56f
-    val actionHexSize = 34f
+    // Touch targets relative to the viewport (never tiny, never huge).
+    val bigW = (viewportW * 0.22f).coerceIn(64f * d, 104f * d)
+    val bigH = bigW * 1.1f
+    val smallW = bigW * 0.62f
+    val smallH = smallW * 1.1f
+    val gap = 6f * d
+    val edge = 4f * d
+    val top = 12f * d
 
-    // 1. TOP: הורים (centered horizontally, above the card)
+    val card = Box4(cardLeft, cardTop, cardRight, cardBottom).inflate(2f * d)
+    val placed = mutableListOf<Box4>()
+
+    // Choose the first candidate that is fully on screen and overlaps neither the card nor an earlier control;
+    // when nothing fits, keep the preferred spot clamped into the viewport.
+    fun place(w: Float, h: Float, candidates: List<Pair<Float, Float>>): Pair<Float, Float> {
+        val chosen = candidates.firstOrNull { (x, y) ->
+            val r = Box4(x, y, x + w, y + h)
+            x >= edge && y >= top && r.right <= viewportW - edge && r.bottom <= viewportH - edge &&
+                !r.intersects(card) && placed.none { it.intersects(r) }
+        } ?: candidates.first().let { (x, y) ->
+            x.coerceIn(edge, maxOf(edge, viewportW - w - edge)) to y.coerceIn(top, maxOf(top, viewportH - h - edge))
+        }
+        placed.add(Box4(chosen.first, chosen.second, chosen.first + w, chosen.second + h))
+        return chosen
+    }
+
+    // Candidate anchors around the card (top-left corner of the hexagon), most natural first.
+    val above = cardTop - gap - bigH
+    val below = cardBottom + gap
+    val leftX = cardLeft - gap - bigW
+    val rightX = cardRight + gap
+    val midY = cy - bigH / 2f
+    val cxBig = cx - bigW / 2f
+
+    // 1. TOP: parents
+    val parents = place(bigW, bigH, listOf(cxBig to above, (cardLeft - bigW * 0.3f) to above, (cardRight - bigW * 0.7f) to above))
+    // 2. BOTTOM: child
+    val child = place(bigW, bigH, listOf(cxBig to below, (cardLeft - bigW * 0.3f) to below, (cardRight - bigW * 0.7f) to below))
+    // 3. RIGHT: sibling
+    val sibling = place(bigW, bigH, listOf(
+        rightX to midY,
+        (rightX + bigW + gap) to midY,
+        (cardRight - bigW * 0.7f) to above,
+        (cardRight - bigW * 0.7f) to below,
+        leftX to midY,
+    ))
+    // 4. LEFT: spouse
+    val spouse = place(bigW, bigH, listOf(
+        leftX to midY,
+        (leftX - bigW - gap) to midY,
+        (cardLeft - bigW * 0.3f) to above,
+        (cardLeft - bigW * 0.3f) to below,
+        rightX to midY,
+        (rightX + bigW + gap) to midY,
+    ))
+    // 5. Edit & delete: small hexagons flanking the parents hexagon (top row), so they never fight with the sides
+    val rowY = parents.second + (bigH - smallH) / 2f
+    val edit = place(smallW, smallH, listOf(
+        (parents.first - smallW - gap) to rowY,
+        (parents.first - smallW - gap) to (below + bigH + gap),
+    ))
+    val delete = place(smallW, smallH, listOf(
+        (parents.first + bigW + gap) to rowY,
+        (parents.first + bigW + gap) to (below + bigH + gap),
+    ))
+
     HexagonRelationshipButton(
         emoji = "👪",
         label = "הורים",
         borderColor = MaterialTheme.colorScheme.primary,
         onClick = { onAddParentClick(person) },
-        modifier = Modifier.absoluteOffset {
-            IntOffset(
-                x = ((cardX + cardW / 2f - relHexSize / 2f) * d).roundToInt(),
-                y = ((cardY - relHexSize * 0.65f) * d).roundToInt(),
-            )
-        },
-        sizeDp = relHexSize,
+        modifier = Modifier.absoluteOffset { IntOffset(parents.first.roundToInt(), parents.second.roundToInt()) },
+        widthPx = bigW,
+        heightPx = bigH,
+        densityFactor = d,
     )
-
-    // 2. RIGHT: אח/אחות (to the right of the card, centered vertically)
+    HexagonRelationshipButton(
+        emoji = "👶",
+        label = "ילד/ילדה",
+        borderColor = MaterialTheme.colorScheme.primary,
+        onClick = { onAddChildClick(person) },
+        modifier = Modifier.absoluteOffset { IntOffset(child.first.roundToInt(), child.second.roundToInt()) },
+        widthPx = bigW,
+        heightPx = bigH,
+        densityFactor = d,
+    )
     HexagonRelationshipButton(
         emoji = "🤝",
         label = "אח/אחות",
         borderColor = MaterialTheme.colorScheme.tertiary,
         onClick = { onAddSiblingClick(person) },
-        modifier = Modifier.absoluteOffset {
-            IntOffset(
-                x = ((cardX + cardW + 8f) * d).roundToInt(),
-                y = ((cardY + cardH / 2f - relHexSize / 2f) * d).roundToInt(),
-            )
-        },
-        sizeDp = relHexSize,
+        modifier = Modifier.absoluteOffset { IntOffset(sibling.first.roundToInt(), sibling.second.roundToInt()) },
+        widthPx = bigW,
+        heightPx = bigH,
+        densityFactor = d,
     )
-
-    // 3. LEFT: בן/בת זוג (to the left of the card, centered vertically)
     HexagonRelationshipButton(
         emoji = "💍",
         label = "בן/בת זוג",
         borderColor = Color(0xFFC48B47),
         onClick = { onAddSpouseClick(person) },
-        modifier = Modifier.absoluteOffset {
-            IntOffset(
-                x = ((cardX - relHexSize - 8f) * d).roundToInt(),
-                y = ((cardY + cardH / 2f - relHexSize / 2f) * d).roundToInt(),
-            )
-        },
-        sizeDp = relHexSize,
+        modifier = Modifier.absoluteOffset { IntOffset(spouse.first.roundToInt(), spouse.second.roundToInt()) },
+        widthPx = bigW,
+        heightPx = bigH,
+        densityFactor = d,
     )
-
-    // 4. ACTION BUTTONS: Edit & Delete (directly beneath the card)
-    val editDeleteCenterY = cardY + cardH + 4f
-    // Edit (left side of center)
     HexagonActionButton(
         icon = Icons.Outlined.Edit,
         iconTint = MaterialTheme.colorScheme.primary,
         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
         onClick = { onEditPersonClick(person) },
         contentDescription = "ערוך פרטי אדם",
-        modifier = Modifier.absoluteOffset {
-            IntOffset(
-                x = ((cardX + cardW / 2f - actionHexSize - 4f) * d).roundToInt(),
-                y = (editDeleteCenterY * d).roundToInt(),
-            )
-        },
-        sizeDp = actionHexSize,
+        modifier = Modifier.absoluteOffset { IntOffset(edit.first.roundToInt(), edit.second.roundToInt()) },
+        widthPx = smallW,
+        heightPx = smallH,
     )
-
-    // Delete (right side of center)
     HexagonActionButton(
         icon = Icons.Outlined.Delete,
         iconTint = MaterialTheme.colorScheme.error,
         borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
         onClick = { onDeletePersonClick(person) },
         contentDescription = "מחק אדם מהעץ",
-        modifier = Modifier.absoluteOffset {
-            IntOffset(
-                x = ((cardX + cardW / 2f + 4f) * d).roundToInt(),
-                y = (editDeleteCenterY * d).roundToInt(),
-            )
-        },
-        sizeDp = actionHexSize,
+        modifier = Modifier.absoluteOffset { IntOffset(delete.first.roundToInt(), delete.second.roundToInt()) },
+        widthPx = smallW,
+        heightPx = smallH,
     )
+}
 
-    // 5. BOTTOM: ילד/ילדה (centered horizontally, below the edit/delete buttons)
-    HexagonRelationshipButton(
-        emoji = "👪",
-        label = "ילד/ילדה",
-        borderColor = MaterialTheme.colorScheme.primary,
-        onClick = { onAddChildClick(person) },
-        modifier = Modifier.absoluteOffset {
-            IntOffset(
-                x = ((cardX + cardW / 2f - relHexSize / 2f) * d).roundToInt(),
-                y = ((editDeleteCenterY + actionHexSize + 6f) * d).roundToInt(),
-            )
-        },
-        sizeDp = relHexSize,
-    )
+/** Axis-aligned screen rectangle in pixels, used to keep the controls from covering each other or the card. */
+private data class Box4(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+    fun inflate(by: Float) = Box4(left - by, top - by, right + by, bottom + by)
+    fun intersects(o: Box4) = left < o.right && o.left < right && top < o.bottom && o.top < bottom
 }
 
 @Composable
@@ -191,48 +232,41 @@ private fun HexagonRelationshipButton(
     label: String,
     borderColor: Color,
     onClick: () -> Unit,
+    widthPx: Float,
+    heightPx: Float,
+    densityFactor: Float,
     modifier: Modifier = Modifier,
-    sizeDp: Float = 56f,
 ) {
-    Box(
+    val widthDp = (widthPx / densityFactor).dp
+    val heightDp = (heightPx / densityFactor).dp
+    val emojiSp = (widthPx / densityFactor * 0.30f).sp
+    val labelSp = (widthPx / densityFactor * 0.15f).coerceAtLeast(11f).sp
+    Surface(
         modifier = modifier
-            .size(sizeDp.dp)
-            .shadow(4.dp, shape = HoneycombHexagonShape)
+            .size(width = widthDp, height = heightDp)
+            .shadow(6.dp, shape = HoneycombHexagonShape)
             .clip(HoneycombHexagonShape)
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick)
-            .background(Color.Transparent),
-        contentAlignment = Alignment.Center,
+            .clickable(onClick = onClick),
+        shape = HoneycombHexagonShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(2.5.dp, borderColor),
     ) {
-        // Outline border
-        Surface(
+        Column(
             modifier = Modifier.fillMaxSize(),
-            shape = HoneycombHexagonShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(2.dp, borderColor),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable(onClick = onClick),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = emoji,
-                    fontSize = 17.sp,
-                    lineHeight = 18.sp,
-                )
-                Spacer(Modifier.height(1.dp))
-                Text(
-                    text = label,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 10.sp,
-                )
-            }
+            Text(text = emoji, fontSize = emojiSp, lineHeight = emojiSp * 1.05f)
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = label,
+                fontSize = labelSp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                lineHeight = labelSp * 1.05f,
+                maxLines = 1,
+            )
         }
     }
 }
@@ -244,37 +278,30 @@ private fun HexagonActionButton(
     borderColor: Color,
     onClick: () -> Unit,
     contentDescription: String,
+    widthPx: Float,
+    heightPx: Float,
     modifier: Modifier = Modifier,
-    sizeDp: Float = 34f,
 ) {
-    Box(
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
+    val widthDp = (widthPx / density).dp
+    val heightDp = (heightPx / density).dp
+    Surface(
         modifier = modifier
-            .size(sizeDp.dp)
-            .shadow(3.dp, shape = HoneycombHexagonShape)
+            .size(width = widthDp, height = heightDp)
+            .shadow(4.dp, shape = HoneycombHexagonShape)
             .clip(HoneycombHexagonShape)
-            .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
+        shape = HoneycombHexagonShape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(2.dp, borderColor),
     ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            shape = HoneycombHexagonShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.5.dp, borderColor),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable(onClick = onClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = contentDescription,
-                    tint = iconTint,
-                    modifier = Modifier.size(17.dp),
-                )
-            }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = iconTint,
+                modifier = Modifier.size(widthDp * 0.42f),
+            )
         }
     }
 }

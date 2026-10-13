@@ -417,10 +417,10 @@ fun FamilyCard(
 
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = if (family.isDraft) Color(0xFFE65100) else Color(0xFF43A047),
+                        color = if (family.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
                     ) {
                         Text(
-                            text = if (family.isDraft) "🔒 פרטי" else "🌐 קהילתי",
+                            text = if (family.isPrivate) "🔒 פרטי" else "🌐 קהילתי",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,

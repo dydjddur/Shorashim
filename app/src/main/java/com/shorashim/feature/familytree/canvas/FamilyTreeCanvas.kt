@@ -3,6 +3,9 @@ package com.shorashim.feature.familytree.canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -105,6 +108,8 @@ fun FamilyTreeCanvas(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var hasInitialView by remember { mutableStateOf(false) }
     var selectedPersonId by remember { mutableStateOf<String?>(null) }
+    // Hexagon controls appear once the map has finished centring the selected card.
+    var controlsReady by remember { mutableStateOf(false) }
 
     val (nodes, connections) = remember(people, relationships) {
         TreeLayoutEngine.calculateLayout(people, relationships)
@@ -170,6 +175,29 @@ fun FamilyTreeCanvas(
             }
         }
 
+        // Selecting a card smoothly centres it (and shrinks the map if the card is huge) so there is always room
+        // around it for the big hexagon controls, whatever the zoom level or position was.
+        LaunchedEffect(selectedPersonId) {
+            controlsReady = false
+            val node = nodes.find { it.person.id == selectedPersonId } ?: return@LaunchedEffect
+            if (viewportW <= 0f) return@LaunchedEffect
+            val maxScale = (viewportW * 0.5f) / (node.width * d)
+            val targetScale = minOf(scale, maxScale).coerceAtLeast(MIN_SCALE)
+            val cardCx = (node.x + shiftX + node.width / 2f) * d
+            val cardCy = (node.y + shiftY + node.height / 2f) * d
+            val target = Offset(viewportW / 2f - cardCx * targetScale, viewportH * 0.46f - cardCy * targetScale)
+            val startScale = scale
+            val startOffset = offset
+            animate(0f, 1f, animationSpec = tween(durationMillis = 260)) { t, _ ->
+                scale = startScale + (targetScale - startScale) * t
+                offset = Offset(
+                    startOffset.x + (target.x - startOffset.x) * t,
+                    startOffset.y + (target.y - startOffset.y) * t,
+                )
+            }
+            controlsReady = true
+        }
+
         if (people.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -225,6 +253,9 @@ fun FamilyTreeCanvas(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { selectedPersonId = null })
+                    }
                     .pointerInput(contentWidth, contentHeight, viewportW, viewportH) {
                         detectTransformGestures { centroid, pan, zoom, _ ->
                             if (pan.getDistance() > 4f || zoom != 1f) {
@@ -335,50 +366,57 @@ fun FamilyTreeCanvas(
                             },
                         )
                     }
-
-                    // Honeycomb hexagonal relationship & action controls for selected member
-                    val selectedNode = if (selectedPersonId != null && family.canEditTreeContent) {
-                        nodes.find { it.person.id == selectedPersonId }
-                    } else null
-
-                    if (selectedNode != null) {
-                        HexagonalRelationshipControls(
-                            node = selectedNode,
-                            d = d,
-                            shiftX = shiftX,
-                            shiftY = shiftY,
-                            onAddChildClick = { p ->
-                                selectedPersonId = null
-                                onAddChildClick(p)
-                            },
-                            onAddParentClick = { p ->
-                                selectedPersonId = null
-                                onAddParentClick(p)
-                            },
-                            onAddSpouseClick = { p ->
-                                selectedPersonId = null
-                                onAddSpouseClick(p)
-                            },
-                            onAddSiblingClick = { p ->
-                                selectedPersonId = null
-                                onAddSiblingClick(p)
-                            },
-                            onEditPersonClick = { p ->
-                                selectedPersonId = null
-                                onEditPersonClick(p)
-                            },
-                            onDeletePersonClick = { p ->
-                                selectedPersonId = null
-                                onDeletePersonClick(p)
-                            },
-                        )
-                    }
                 }
             }
         }
 
-        // Draft notice & publish CTA
-        if (family.isDraft) {
+        // Honeycomb hexagonal relationship & action controls for the selected member. Drawn in screen space so
+        // the touch targets stay comfortable at every zoom level.
+        val selectedNode = if (selectedPersonId != null && family.canEditTreeContent) {
+            nodes.find { it.person.id == selectedPersonId }
+        } else null
+        if (selectedNode != null && controlsReady) {
+            // Absolute top-left origin: the app is RTL, so the default Start alignment would anchor at the right edge.
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = TopLeftAbsolute) {
+            HexagonalRelationshipControls(
+                node = selectedNode,
+                scale = scale,
+                mapOffset = offset,
+                d = d,
+                shiftX = shiftX,
+                shiftY = shiftY,
+                viewportW = viewportW,
+                viewportH = viewportH,
+                onAddChildClick = { p ->
+                    selectedPersonId = null
+                    onAddChildClick(p)
+                },
+                onAddParentClick = { p ->
+                    selectedPersonId = null
+                    onAddParentClick(p)
+                },
+                onAddSpouseClick = { p ->
+                    selectedPersonId = null
+                    onAddSpouseClick(p)
+                },
+                onAddSiblingClick = { p ->
+                    selectedPersonId = null
+                    onAddSiblingClick(p)
+                },
+                onEditPersonClick = { p ->
+                    selectedPersonId = null
+                    onEditPersonClick(p)
+                },
+                onDeletePersonClick = { p ->
+                    selectedPersonId = null
+                    onDeletePersonClick(p)
+                },
+            )
+            }
+        }
+
+        // Private-tree notice & publish-to-community CTA
+        if (family.isPrivate) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -394,18 +432,18 @@ fun FamilyTreeCanvas(
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "📝", fontSize = 18.sp)
+                    Text(text = "🌐", fontSize = 18.sp)
                     Spacer(Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "עץ זה נמצא במצב טיוטה",
+                            text = "🔒 העץ פרטי ומוסתר מהקהילה",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "לחצו להעלאה כדי לשתף עם המשפחה",
+                            text = "לחצו על \"פרסום\" כדי שקרובי משפחה יוכלו למצוא אותו בקהילה",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -426,7 +464,7 @@ fun FamilyTreeCanvas(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "העלאה",
+                                text = "פרסום",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
                             )

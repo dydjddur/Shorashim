@@ -259,22 +259,34 @@ class SupabaseFamilyRepository(
         }
     }
 
+    /**
+     * Hides the tree from the community. Uses the dedicated PRIVATE status so a later migration or a "draft" flow
+     * can never silently flip it back to public; falls back to DRAFT on databases whose status CHECK constraint
+     * does not know PRIVATE yet. Both are treated as private by [Family.isPrivate] and by the community RPC.
+     */
     override suspend fun unpublishFamily(familyId: String): Result<Family> {
         val supabase = client ?: return Result.failure(IllegalStateException("Supabase client not initialized"))
+        suspend fun setStatus(status: String): FamilyDto = supabase.from("families").update(
+            buildJsonObject { put("status", status) },
+        ) {
+            filter { eq("id", familyId) }
+            select()
+        }.decodeSingle<FamilyDto>()
+
         return runCatching {
-            val dto = supabase.from("families").update(
-                buildJsonObject { put("status", "DRAFT") },
-            ) {
-                filter { eq("id", familyId) }
-                select()
-            }.decodeSingle<FamilyDto>()
+            val dto = try {
+                setStatus("PRIVATE")
+            } catch (t: Throwable) {
+                Log.w("FamilyRepo", "PRIVATE status rejected (${t.message}); falling back to DRAFT")
+                setStatus("DRAFT")
+            }
 
             Family(
                 id = dto.id,
                 name = dto.name,
                 description = dto.description,
                 ownerId = dto.ownerId,
-                status = FamilyStatus.DRAFT,
+                status = dto.status,
                 createdAt = dto.createdAt,
                 updatedAt = dto.updatedAt,
             )

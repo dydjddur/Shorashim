@@ -139,7 +139,7 @@ class ProfileViewModel(
                 _uiState.update { state ->
                     state.copy(
                         families = state.families.map {
-                            if (it.id == familyId && updatedFamily != null) updatedFamily else it
+                            if (it.id == familyId && updatedFamily != null) it.withUpdate(updatedFamily) else it
                         },
                         successMessage = if (makePrivate) "העץ הוגדר כפרטי והוסתר מהקהילה" else "העץ הוגדר כקהילתי ופורסם בענן",
                     )

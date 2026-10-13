@@ -8,9 +8,11 @@
 CREATE INDEX IF NOT EXISTS idx_people_last_name ON public.people(last_name);
 
 -- 2. Ensure all existing trees are marked as PUBLISHED so community can view them
-UPDATE public.families 
-SET status = 'PUBLISHED' 
-WHERE status IS NULL OR status = 'DRAFT';
+-- NOTE: only rows without a status are touched. Trees an owner made private (status DRAFT or PRIVATE) must stay
+-- private even if this migration is re-run, otherwise "make private" would silently be undone.
+UPDATE public.families
+SET status = 'PUBLISHED'
+WHERE status IS NULL;
 
 -- 3. Update create_family function so new trees are automatically PUBLISHED
 CREATE OR REPLACE FUNCTION public.create_family(p_name TEXT, p_description TEXT DEFAULT NULL)

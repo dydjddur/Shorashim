@@ -206,7 +206,7 @@ class FamilyManagementViewModel(
             familyRepository.publishFamily(fId)
                 .onSuccess { updated ->
                     _uiState.value = _uiState.value.copy(
-                        family = updated,
+                        family = _uiState.value.family?.withUpdate(updated) ?: updated,
                         isLoading = false,
                         toastMessage = "העץ פורסם בהצלחה!",
                     )
@@ -224,7 +224,7 @@ class FamilyManagementViewModel(
             familyRepository.unpublishFamily(fId)
                 .onSuccess { updated ->
                     _uiState.value = _uiState.value.copy(
-                        family = updated,
+                        family = _uiState.value.family?.withUpdate(updated) ?: updated,
                         isLoading = false,
                         toastMessage = "העץ הוגדר כפרטי (PRIVATE) ומוסתר מהקהילה",
                     )
@@ -240,7 +240,10 @@ class FamilyManagementViewModel(
         viewModelScope.launch {
             familyRepository.renameFamily(fId, newName)
                 .onSuccess { updated ->
-                    _uiState.value = _uiState.value.copy(family = updated, isRenaming = false)
+                    _uiState.value = _uiState.value.copy(
+                        family = _uiState.value.family?.withUpdate(updated) ?: updated,
+                        isRenaming = false,
+                    )
                 }
                 .onFailure { t ->
                     _uiState.value = _uiState.value.copy(error = t.localizedMessage)

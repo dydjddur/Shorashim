@@ -76,11 +76,11 @@ fun TreeSwitcherDropdown(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (!currentFamily.canEditTreeContent) Color(0xFF1976D2) else if (currentFamily.isDraft) Color(0xFFF9A825) else Color(0xFF43A047),
+                                color = if (!currentFamily.canEditTreeContent) Color(0xFF1976D2) else if (currentFamily.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
                                 modifier = Modifier.padding(end = 4.dp),
                             ) {
                                 Text(
-                                    text = if (!currentFamily.canEditTreeContent) "עץ קהילתי (צפייה)" else if (currentFamily.isDraft) "טיוטה" else "פורסם",
+                                    text = if (!currentFamily.canEditTreeContent) "עץ קהילתי (צפייה)" else if (currentFamily.isPrivate) "🔒 פרטי" else "🌐 קהילתי",
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -123,10 +123,10 @@ fun TreeSwitcherDropdown(
                             Spacer(Modifier.width(12.dp))
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (fam.isDraft) Color(0xFFF9A825) else Color(0xFF43A047),
+                                color = if (fam.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
                             ) {
                                 Text(
-                                    text = if (fam.isDraft) "טיוטה" else "פורסם",
+                                    text = if (fam.isPrivate) "🔒 פרטי" else "🌐 קהילתי",
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
