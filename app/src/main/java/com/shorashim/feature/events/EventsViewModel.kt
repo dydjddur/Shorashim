@@ -42,20 +42,33 @@ class EventsViewModel(
     val uiState: StateFlow<EventsUiState> = _uiState.asStateFlow()
 
     init {
-        loadEvents()
+        loadEvents(isSilent = false)
         loadFamiliesAndPeople()
+        startSilentPolling()
     }
 
-    fun loadEvents() {
+    private fun startSilentPolling() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            while (true) {
+                kotlinx.coroutines.delay(30_000)
+                loadEvents(isSilent = true)
+                loadFamiliesAndPeople()
+            }
+        }
+    }
+
+    fun loadEvents(isSilent: Boolean = false) {
+        viewModelScope.launch {
+            if (!isSilent && _uiState.value.events.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            }
             val result = eventsRepository.loadUpcomingEvents()
             result.onSuccess { events ->
                 _uiState.update { it.copy(isLoading = false, events = events) }
                 // Schedule local notifications for birthdays and memorials
                 scheduleAllNotifications(events)
             }.onFailure { err ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
+                _uiState.update { it.copy(isLoading = false, errorMessage = if (isSilent && _uiState.value.events.isNotEmpty()) null else err.message) }
             }
         }
     }

@@ -19,13 +19,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,32 +58,12 @@ fun AppUpdateDialog(
     var dontAskAgain by remember { mutableStateOf(false) }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        AlertDialog(
+        ShorashimDialog(
             onDismissRequest = { onDismiss(dontAskAgain) },
-            icon = {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SystemUpdate,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            },
-            title = {
-                Text(
-                    text = stringResource(R.string.update_dialog_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
+            heroIcon = Icons.Default.SystemUpdate,
+            title = stringResource(R.string.update_dialog_title),
+            subtitle = "גרסה חדשה של שורשים זמינה להורדה",
+            content = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = stringResource(
@@ -157,9 +139,7 @@ fun AppUpdateDialog(
                         }
                         onDismiss(dontAskAgain)
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    shape = RoundedCornerShape(12.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.update_dialog_action_update),
@@ -168,8 +148,10 @@ fun AppUpdateDialog(
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { onDismiss(dontAskAgain) }
+                OutlinedButton(
+                    onClick = { onDismiss(dontAskAgain) },
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 ) {
                     Text(
                         text = stringResource(R.string.update_dialog_action_later)

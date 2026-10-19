@@ -112,6 +112,7 @@
 
     <!-- Supabase error messages -->
     <string name="auth_error_invalid_credentials">שם המשתמש או הסיסמה אינם נכונים</string>
+    <string name="auth_error_username_taken">שם המשתמש כבר תפוס במערכת, אנא בחרו שם אחר</string>
     <string name="auth_error_email_already_in_use">כתובת האימייל כבר רשומה במערכת</string>
     <string name="auth_error_email_not_confirmed">כתובת האימייל טרם אומתה. אנא בדקו את תיבת הדואר הנכנס שלכם ואשרו את החשבון.</string>
     <string name="auth_error_user_disabled">חשבון זה הושבת על ידי המערכת</string>

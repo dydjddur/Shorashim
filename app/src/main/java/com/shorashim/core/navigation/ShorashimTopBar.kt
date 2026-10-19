@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.VolunteerActivism
@@ -70,7 +70,7 @@ fun ShorashimTopBar(
             // 2. עזרה (Help)
             TopBarCard(
                 title = "עזרה",
-                icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                icon = Icons.Outlined.HelpOutline,
                 isSelected = currentRoute == ShorashimRoutes.HELP,
                 onClick = { onNavigate(ShorashimRoutes.HELP) },
             )

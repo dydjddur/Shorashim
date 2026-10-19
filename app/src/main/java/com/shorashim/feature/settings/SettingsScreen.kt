@@ -32,7 +32,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -111,38 +111,18 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
 
     if (showLogoutDialog) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = {
-                Text(
-                    text = stringResource(R.string.settings_logout_confirm_title),
-                    style = MaterialTheme.typography.titleLarge,
-                )
+            onConfirm = {
+                showLogoutDialog = false
+                onLogout()
             },
-            text = {
-                Text(
-                    text = stringResource(R.string.settings_logout_confirm_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        onLogout()
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) {
-                    Text(stringResource(R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            title = stringResource(R.string.settings_logout_confirm_title),
+            message = stringResource(R.string.settings_logout_confirm_message),
+            confirmText = stringResource(R.string.settings_logout_short),
+            dismissText = "הישאר מחובר",
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            isDestructive = true,
         )
     }
 
@@ -328,12 +308,22 @@ private fun AccountCard(
                                 color = scheme.onSurface,
                                 maxLines = 1,
                             )
-                            Text(
-                                text = authState.user.email,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = scheme.onSurfaceVariant,
-                                maxLines = 1,
-                            )
+                            if (!authState.user.username.isNullOrBlank()) {
+                                Text(
+                                    text = "\u200E@${authState.user.username}",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = scheme.primary,
+                                    maxLines = 1,
+                                )
+                            }
+                            if (authState.user.email.isNotBlank()) {
+                                Text(
+                                    text = authState.user.email,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = scheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
                             Spacer(Modifier.height(4.dp))
                             Surface(shape = RoundedCornerShape(8.dp), color = scheme.primary.copy(alpha = 0.16f)) {
                                 Text(

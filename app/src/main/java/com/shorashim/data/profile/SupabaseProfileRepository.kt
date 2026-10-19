@@ -153,7 +153,7 @@ class SupabaseProfileRepository(
 
     override suspend fun searchUserByUsername(username: String): Result<UserProfile?> {
         val client = supabase ?: return Result.failure(IllegalStateException("Supabase not configured"))
-        val clean = username.trim().removePrefix("@")
+        val clean = username.trim().removePrefix("@").lowercase()
         if (clean.isBlank()) return Result.success(null)
 
         return runCatching {
@@ -184,9 +184,54 @@ class SupabaseProfileRepository(
         }
     }
 
+    override suspend fun searchUsers(query: String): Result<List<UserProfile>> {
+        val client = supabase ?: return Result.failure(IllegalStateException("Supabase not configured"))
+        val q = query.trim().removePrefix("@").lowercase()
+        if (q.isBlank()) return Result.success(emptyList())
+
+        return runCatching {
+            val me = client.auth.currentUserOrNull()?.id
+
+            // 1. Try dedicated search RPC first
+            val rpcList = runCatching {
+                client.postgrest.rpc(
+                    function = "search_app_users",
+                    parameters = buildJsonObject { put("p_query", q) },
+                ).decodeList<UserProfileDto>()
+            }.getOrNull()
+
+            val list = if (!rpcList.isNullOrEmpty()) {
+                rpcList
+            } else {
+                client.from("profiles")
+                    .select {
+                        limit(100)
+                    }
+                    .decodeList<UserProfileDto>()
+                    .filter { p ->
+                        p.username?.lowercase()?.contains(q) == true ||
+                        p.fullName.lowercase().contains(q) ||
+                        p.displayName.lowercase().contains(q)
+                    }
+            }
+
+            list.filter { p ->
+                p.id != me && (!p.isPrivate || !p.username.isNullOrBlank())
+            }.map { p ->
+                UserProfile(
+                    id = p.id,
+                    username = p.username,
+                    fullName = p.fullName,
+                    displayName = p.displayName.ifBlank { p.fullName.ifBlank { p.username.orEmpty() } },
+                    avatarUrl = p.avatarUrl,
+                )
+            }
+        }
+    }
+
     override suspend fun setUsername(username: String): Result<Unit> {
         val client = supabase ?: return Result.failure(IllegalStateException("Supabase not configured"))
-        val clean = username.trim().removePrefix("@")
+        val clean = username.trim().removePrefix("@").lowercase()
         return runCatching {
             val res = client.postgrest.rpc(
                 function = "set_my_username",

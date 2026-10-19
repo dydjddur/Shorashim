@@ -45,6 +45,14 @@ private data class FriendRequestRowDto(
     @SerialName("created_at") val createdAt: String? = null,
 )
 
+@Serializable
+private data class CommunityUserRowDto(
+    val id: String = "",
+    val username: String? = null,
+    @SerialName("display_name") val displayName: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+)
+
 /**
  * Server-backed friendships. Requests and friendships live in Supabase (`friend_requests`, `friends`) and are changed
  * only through the SECURITY DEFINER functions of 20261014_friends_chat_realtime.sql, so both sides always see the
@@ -116,21 +124,43 @@ class SupabaseFriendRepository(
                 .decodeList<SentRequestRowDto>().map { it.toUserId }.toSet()
         }.getOrDefault(emptySet())
 
+        // 1. Try dedicated SECURITY DEFINER RPC first (guaranteed to return users)
+        val rpcSuggestions = runCatching {
+            client.postgrest.rpc("get_community_users")
+                .decodeList<CommunityUserRowDto>()
+                .filter { it.id !in friendIds && it.id != me }
+                .take(30)
+                .map { u ->
+                    FriendSuggestion(
+                        id = u.id,
+                        username = u.username,
+                        displayName = u.displayName?.ifBlank { null } ?: u.username ?: "משתמש",
+                        avatarUrl = u.avatarUrl,
+                        reason = if (u.id in requestedIds) "בקשת חברות ממתינה" else "משתמש באפליקציית שורשים",
+                    )
+                }
+        }.getOrNull()
+
+        if (!rpcSuggestions.isNullOrEmpty()) {
+            return@runCatching rpcSuggestions
+        }
+
+        // 2. Direct profiles table fallback
         client.from("profiles")
             .select {
                 filter { neq("id", me) }
-                limit(60)
+                limit(100)
             }
             .decodeList<UserProfileDto>()
-            .filter { it.id !in friendIds && it.id !in requestedIds && !it.isPrivate && !it.username.isNullOrBlank() }
-            .take(20)
+            .filter { it.id !in friendIds && (!it.isPrivate || !it.username.isNullOrBlank()) }
+            .take(30)
             .map { p ->
                 FriendSuggestion(
                     id = p.id,
                     username = p.username,
                     displayName = nameOf(p),
                     avatarUrl = p.avatarUrl,
-                    reason = "משתמש באפליקציית שורשים",
+                    reason = if (p.id in requestedIds) "בקשת חברות ממתינה" else "משתמש באפליקציית שורשים",
                 )
             }
     }.onFailure { Log.e(TAG, "getFriendSuggestions failed", it) }

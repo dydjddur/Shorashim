@@ -29,7 +29,6 @@ import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import com.shorashim.core.ui.component.ShorashimSnackbarHost
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -49,7 +49,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,11 +60,15 @@ import androidx.compose.foundation.border
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
+import com.shorashim.core.ui.component.ShorashimDialog
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shorashim.core.model.Family
 import com.shorashim.core.model.FriendRequest
@@ -92,6 +98,10 @@ fun FriendsRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.loadData(isSilent = true)
+    }
 
     LaunchedEffect(uiState.actionMessage, uiState.errorMessage) {
         val msg = uiState.actionMessage ?: uiState.errorMessage
@@ -133,9 +143,10 @@ fun FriendsScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var friendPendingRemove by remember { mutableStateOf<FriendUser?>(null) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Tab Row for Friends vs E2EE Chats
+        // Tab Row for Friends vs Add Friends vs Chats
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = MaterialTheme.colorScheme.surface,
@@ -171,374 +182,651 @@ fun FriendsScreen(
                 text = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
+                            imageVector = Icons.Outlined.PersonAdd,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "הוספת חברים",
+                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    }
+                },
+            )
+            Tab(
+                selected = selectedTab == 2,
+                onClick = { selectedTab = 2 },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
                             imageVector = Icons.AutoMirrored.Outlined.Chat,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "שיחות מוצפנות (E2EE)",
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
+                            text = "צ'אטים",
+                            fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal,
                         )
                     }
                 },
             )
         }
 
-        if (selectedTab == 1 && chatListViewModel != null) {
-            ChatListRoute(
-                viewModel = chatListViewModel,
-                onOpenConversation = onOpenChat,
-                modifier = Modifier.weight(1f),
-            )
-        } else {
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                if (uiState.isLoading && uiState.friends.isEmpty()) {
-                    ShorashimLoadingState(modifier = Modifier.fillMaxSize())
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-            ) {
-                // 1. Search Bar for Friends
-                item {
-                    OutlinedTextField(
-                        value = uiState.searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        placeholder = { Text("חיפוש חברים לפי שם משתמש @ או שם...") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                        trailingIcon = {
-                            if (uiState.isSearching) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        },
-                        singleLine = true,
-                    )
-                }
-
-                // If search found someone
-                if (uiState.searchResult != null) {
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            when (selectedTab) {
+                0 -> {
+                    // Tab 0: Friends list & Pending requests
+                    if (uiState.isLoading && uiState.friends.isEmpty() && uiState.pendingRequests.isEmpty()) {
+                        ShorashimLoadingState(modifier = Modifier.fillMaxSize())
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    PersonAvatar(
-                                        photoPath = uiState.searchResult.avatarUrl,
-                                        firstName = uiState.searchResult.displayName,
-                                        modifier = Modifier.size(44.dp),
+                            // 1. Pending Requests (if any)
+                            if (uiState.pendingRequests.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "בקשות חברות ממתינות (${uiState.pendingRequests.size}):",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary,
                                     )
-                                    Spacer(Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = uiState.searchResult.displayName,
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                        )
-                                        Text(
-                                            text = "@${uiState.searchResult.username}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
                                 }
 
-                                Button(
-                                    onClick = { onSendRequest(uiState.searchResult.id) },
-                                    shape = RoundedCornerShape(10.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.PersonAdd,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
+                                items(uiState.pendingRequests, key = { "req_${it.id}" }) { req ->
+                                    FriendRequestCard(
+                                        request = req,
+                                        onAccept = { onRespondRequest(req.id, true) },
+                                        onDecline = { onRespondRequest(req.id, false) },
                                     )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("שלח בקשה", fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            // 2. My Friends Header
+                            item {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "החברים שלי (${uiState.friends.size})",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                    if (uiState.friends.isNotEmpty()) {
+                                        TextButton(onClick = { selectedTab = 1 }) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.PersonAdd,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = Color(0xFF22C55E),
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                "הוסף חברים",
+                                                color = Color(0xFF22C55E),
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.labelMedium,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 3. Friends List or Empty State
+                            if (uiState.friends.isEmpty()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(18.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(24.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(64.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF22C55E).copy(alpha = 0.15f)),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.People,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF22C55E),
+                                                    modifier = Modifier.size(34.dp),
+                                                )
+                                            }
+                                            Spacer(Modifier.height(16.dp))
+                                            Text(
+                                                text = "אין עדיין חברים ברשימה",
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            Text(
+                                                text = "התחבר לחברים ומשפחה כדי לצפות בעצי המשפחה שלהם ולשוחח בצ'אט.",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                            )
+                                            Spacer(Modifier.height(18.dp))
+                                            Button(
+                                                onClick = { selectedTab = 1 },
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.PersonAdd,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(
+                                                    "מעבר להוספת חברים",
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                items(uiState.friends, key = { "friend_${it.id}" }) { friend ->
+                                    FriendItemCard(
+                                        friend = friend,
+                                        onViewTrees = { onViewFriendTrees(friend) },
+                                        onOpenChat = { onOpenChat(friend.id, friend.displayName) },
+                                        onRemove = { friendPendingRemove = friend },
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                // 2. Pending Requests
-                if (uiState.pendingRequests.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "בקשות חברות ממתינות (${uiState.pendingRequests.size}):",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+                1 -> {
+                    // Tab 1: "הוספת חברים" - Add Friends (Search + App Community Users)
+                    if (uiState.isLoading && uiState.suggestions.isEmpty() && uiState.searchResults.isEmpty()) {
+                        ShorashimLoadingState(modifier = Modifier.fillMaxSize())
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                        ) {
+                            // Search Bar for Users
+                            item {
+                                OutlinedTextField(
+                                    value = uiState.searchQuery,
+                                    onValueChange = onSearchQueryChange,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    placeholder = { Text("חיפוש משתמשים לפי שם משתמש @ או שם...") },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Search,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        if (uiState.isSearching) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(18.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        } else if (uiState.searchQuery.isNotEmpty()) {
+                                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Close,
+                                                    contentDescription = "נקה חיפוש",
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                            }
+                                        }
+                                    },
+                                    singleLine = true,
+                                )
+                            }
 
-                    items(uiState.pendingRequests, key = { it.id }) { req ->
-                        FriendRequestCard(
-                            request = req,
-                            onAccept = { onRespondRequest(req.id, true) },
-                            onDecline = { onRespondRequest(req.id, false) },
-                        )
+                            // If search returned results
+                            if (uiState.searchResults.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "תוצאות חיפוש (${uiState.searchResults.size}):",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+
+                                items(uiState.searchResults, key = { "search_${it.id}" }) { user ->
+                                    val isAlreadyFriend = uiState.friends.any { it.id == user.id }
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.weight(1f),
+                                            ) {
+                                                PersonAvatar(
+                                                    photoPath = user.avatarUrl,
+                                                    firstName = user.displayName,
+                                                    modifier = Modifier.size(44.dp),
+                                                )
+                                                Spacer(Modifier.width(12.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = user.displayName,
+                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                    )
+                                                    if (!user.username.isNullOrBlank()) {
+                                                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                                            Text(
+                                                                text = "@${user.username.removePrefix("@")}",
+                                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                                                color = Color(0xFF22C55E),
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis,
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Spacer(Modifier.width(8.dp))
+
+                                            if (isAlreadyFriend) {
+                                                OutlinedButton(
+                                                    onClick = { onOpenChat(user.id, user.displayName) },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.AutoMirrored.Outlined.Chat,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp),
+                                                    )
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("צ'אט", fontWeight = FontWeight.Bold)
+                                                }
+                                            } else {
+                                                Button(
+                                                    onClick = { onSendRequest(user.id) },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.PersonAdd,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp),
+                                                    )
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text("הוסף חבר", fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (uiState.searchQuery.isNotBlank() && !uiState.isSearching) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        ) {
+                                            Text(
+                                                text = "לא נמצאו משתמשים עבור \"${uiState.searchQuery}\"",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Community / App users section
+                            item {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "💡 משתמשים באפליקציית שורשים",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    text = "אנשים הרשומים באפליקציה שתוכל להוסיף לרשימת החברים שלך או לשוחח איתם ישירות:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+
+                            if (uiState.suggestions.isEmpty()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        ) {
+                                            Text(
+                                                text = "אין משתמשים חדשים להוספה כרגע (כולם כבר חברים שלך!)",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                items(uiState.suggestions, key = { "sug_${it.id}" }) { suggestion ->
+                                    FriendSuggestionCard(
+                                        suggestion = suggestion,
+                                        onAdd = { onSendRequest(suggestion.id) },
+                                        onOpenChat = { onOpenChat(suggestion.id, suggestion.displayName) },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
-                // 3. My Friends Section
-                item {
-                    Row(
+                2 -> {
+                    // Tab 2: "צ'אטים" - Chats list
+                    if (chatListViewModel != null) {
+                        ChatListRoute(
+                            viewModel = chatListViewModel,
+                            onOpenConversation = onOpenChat,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
+            }
+
+        // Confirm Remove Friend Dialog
+        friendPendingRemove?.let { victim ->
+            ShorashimConfirmDialog(
+                onDismissRequest = { friendPendingRemove = null },
+                onConfirm = {
+                    onRemoveFriend(victim.id)
+                    friendPendingRemove = null
+                },
+                title = "הסרת חבר",
+                message = "האם להסיר את ${victim.displayName} מרשימת החברים שלך? תוכלו לשלוח בקשת חברות מחדש בכל עת.",
+                confirmText = "הסר חבר",
+                dismissText = "ביטול",
+                isDestructive = true,
+            )
+        }
+
+        // Friend Trees Modal Dialog
+        if (uiState.selectedFriendForTrees != null) {
+            val friend = uiState.selectedFriendForTrees
+            ShorashimDialog(
+                onDismissRequest = onDismissFriendTrees,
+                avatar = {
+                    Box(
+                        modifier = Modifier
+                            .size(62.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                            .border(BorderStroke(2.dp, Color(0xFF22C55E).copy(alpha = 0.6f)), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        PersonAvatar(
+                            photoPath = friend.avatarUrl,
+                            firstName = friend.displayName,
+                            modifier = Modifier.size(54.dp),
+                        )
+                    }
+                },
+                title = "עצי המשפחה של ${friend.displayName}",
+                subtitle = if (!friend.username.isNullOrBlank()) {
+                    "\u200E@${friend.username.removePrefix("@")} • אילנות יוחסין גלויים"
+                } else {
+                    "אילנות יוחסין משפחתיים"
+                },
+                confirmButton = {
+                    Button(
+                        onClick = onDismissFriendTrees,
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     ) {
                         Text(
-                            text = "החברים שלי (${uiState.friends.size})",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
+                            text = "סגירה",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
                         )
                     }
-                }
-
-                if (uiState.friends.isEmpty()) {
-                    item {
-                        Card(
+                },
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (uiState.isLoadingFriendTrees) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(36.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    text = "טוען עצי משפחה...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    } else if (uiState.isFriendProfilePrivate) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                                Spacer(Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "חשבון פרטי ומוגן",
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "משתמש זה בחר להגדיר את חשבונו כפרטי. עצי המשפחה ורשימת החברים שלו מוסתרים.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 18.sp,
+                                    )
+                                }
+                            }
+                        }
+                    } else if (uiState.friendTrees.isEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(24.dp),
+                                    .padding(20.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(56.dp)
+                                        .size(52.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF22C55E).copy(alpha = 0.15f)),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Outlined.People,
+                                        imageVector = Icons.Outlined.Park,
                                         contentDescription = null,
-                                        tint = Color(0xFF22C55E),
-                                        modifier = Modifier.size(30.dp),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp),
                                     )
                                 }
-                                Spacer(Modifier.height(14.dp))
+                                Spacer(Modifier.height(12.dp))
                                 Text(
-                                    text = "אין עדיין חברים ברשימה",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    text = "אין עצי משפחה גלויים",
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                Spacer(Modifier.height(6.dp))
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "חפש משתמשים לפי שם משתמש מדויק (למשל: username@) בשורת החיפוש למעלה כדי לשלוח להם בקשת חברות.",
+                                    text = "החבר טרם פרסם עצי משפחה לצפייה ציבורית באפליקציה.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
-                                    lineHeight = 20.sp,
                                 )
                             }
                         }
-                    }
-                } else {
-                    items(uiState.friends, key = { it.id }) { friend ->
-                        FriendItemCard(
-                            friend = friend,
-                            onViewTrees = { onViewFriendTrees(friend) },
-                            onOpenChat = { onOpenChat(friend.id, friend.displayName) },
-                            onRemove = { onRemoveFriend(friend.id) },
-                        )
-                    }
-                }
-
-                // 4. Friend Suggestions Section
-                if (uiState.suggestions.isNotEmpty()) {
-                    item {
-                        Spacer(Modifier.height(8.dp))
+                    } else {
                         Text(
-                            text = "💡 הצעות לאנשים קרובים ומכרים",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
+                            text = "עצי משפחה לצפייה (${uiState.friendTrees.size}):",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            ),
                         )
-                        Text(
-                            text = "קרובים פוטנציאליים לפי עצי קהילה, שמות משפחה תואמים או חברים משותפים:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                        uiState.friendTrees.forEach { tree ->
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.AccountTree,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                        }
+                                        Spacer(Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = tree.name,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                            Text(
+                                                text = "${tree.personCount} נפשות בעץ",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
 
-                    items(uiState.suggestions, key = { it.id }) { suggestion ->
-                        FriendSuggestionCard(
-                            suggestion = suggestion,
-                            onAdd = { onSendRequest(suggestion.username ?: suggestion.id) },
-                        )
+                                    Spacer(Modifier.width(8.dp))
+
+                                    Button(
+                                        onClick = {
+                                            onDismissFriendTrees()
+                                            onOpenTree(tree.id)
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                    ) {
+                                        Text(
+                                            text = "צפה בעץ",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Friend Trees Dialog / Bottom Sheet
-        if (uiState.selectedFriendForTrees != null) {
-            val friend = uiState.selectedFriendForTrees
-            AlertDialog(
-                onDismissRequest = onDismissFriendTrees,
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PersonAvatar(
-                            photoPath = friend.avatarUrl,
-                            firstName = friend.displayName,
-                            modifier = Modifier.size(36.dp),
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "עצי המשפחה של ${friend.displayName}",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            )
-                            if (!friend.username.isNullOrBlank()) {
-                                Text(
-                                    text = "@${friend.username}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
-                },
-                text = {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        if (uiState.isLoadingFriendTrees) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .align(Alignment.CenterHorizontally),
-                            )
-                        } else if (uiState.isFriendProfilePrivate) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(14.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Lock,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Spacer(Modifier.width(10.dp))
-                                    Text(
-                                        text = "המשתמש הגדיר את חשבונו כפרטי. עצי המשפחה ורשימת החברים שלו מוסתרים.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        } else if (uiState.friendTrees.isEmpty()) {
-                            Text(
-                                text = "למשתמש זה אין עצי משפחה גלויים כרגע.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        } else {
-                            Text(
-                                text = "נמצאו ${uiState.friendTrees.size} עצי משפחה:",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            )
-                            uiState.friendTrees.forEach { tree ->
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                    ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = tree.name,
-                                                fontWeight = FontWeight.Bold,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                            )
-                                            Text(
-                                                text = "${tree.personCount} אנשים",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-
-                                        Button(
-                                            onClick = {
-                                                onDismissFriendTrees()
-                                                onOpenTree(tree.id)
-                                            },
-                                            shape = RoundedCornerShape(8.dp),
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.AccountTree,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(14.dp),
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("פתח עץ", style = MaterialTheme.typography.labelSmall)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = onDismissFriendTrees) {
-                        Text("סגור")
-                    }
-                },
-            )
-        }
-
-        SnackbarHost(
+        ShorashimSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp),
         )
     }
-}
 }
 }
 
@@ -696,7 +984,7 @@ private fun FriendItemCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "שיחה מוצפנת",
+                        text = "צ'אט",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.White,
                     )
@@ -710,6 +998,7 @@ private fun FriendItemCard(
 private fun FriendSuggestionCard(
     suggestion: FriendSuggestion,
     onAdd: () -> Unit,
+    onOpenChat: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -764,19 +1053,36 @@ private fun FriendSuggestionCard(
 
             Spacer(Modifier.width(8.dp))
 
-            Button(
-                onClick = onAdd,
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.PersonAdd,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text("הוסף", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color.White)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton(
+                    onClick = onOpenChat,
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Chat,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text("צ'אט", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                }
+
+                Button(
+                    onClick = onAdd,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.PersonAdd,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp),
+                        tint = Color.White,
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text("הוסף חבר", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                }
             }
         }
     }

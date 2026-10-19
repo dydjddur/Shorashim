@@ -29,12 +29,24 @@ class InvitationsViewModel(
     val uiState: StateFlow<InvitationsUiState> = _uiState.asStateFlow()
 
     init {
-        loadPendingInvitations()
+        loadPendingInvitations(isSilent = false)
+        startSilentPolling()
     }
 
-    fun loadPendingInvitations() {
+    private fun startSilentPolling() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            while (true) {
+                kotlinx.coroutines.delay(20_000)
+                loadPendingInvitations(isSilent = true)
+            }
+        }
+    }
+
+    fun loadPendingInvitations(isSilent: Boolean = false) {
+        viewModelScope.launch {
+            if (!isSilent && _uiState.value.pendingInvitations.isEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             invitationRepository.getMyPendingInvitations()
                 .onSuccess { list ->
                     // Enrich with family names
@@ -51,7 +63,7 @@ class InvitationsViewModel(
                 .onFailure { t ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = t.localizedMessage ?: "שגיאה בטעינת ההזמנות",
+                        error = if (isSilent && _uiState.value.pendingInvitations.isNotEmpty()) null else (t.localizedMessage ?: "שגיאה בטעינת ההזמנות"),
                     )
                 }
         }

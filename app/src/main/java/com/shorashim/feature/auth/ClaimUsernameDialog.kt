@@ -7,8 +7,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AlternateEmail
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,8 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.shorashim.R
 import com.shorashim.core.common.AuthValidator
+import com.shorashim.core.ui.component.ShorashimDialog
 
 @Composable
 fun ClaimUsernameDialog(
@@ -34,44 +37,11 @@ fun ClaimUsernameDialog(
     var username by remember { mutableStateOf("") }
     var errorRes by remember { mutableStateOf<Int?>(null) }
 
-    AlertDialog(
+    ShorashimDialog(
         onDismissRequest = { /* Force choosing username */ },
-        shape = RoundedCornerShape(20.dp),
-        title = {
-            Text(
-                text = stringResource(R.string.auth_claim_username_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.auth_claim_username_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = {
-                        username = it
-                        errorRes = null
-                    },
-                    label = { Text(stringResource(R.string.auth_username_label)) },
-                    placeholder = { Text(stringResource(R.string.auth_username_hint)) },
-                    leadingIcon = {
-                        androidx.compose.material3.Icon(
-                            imageVector = Icons.Outlined.AlternateEmail,
-                            contentDescription = null,
-                        )
-                    },
-                    isError = errorRes != null,
-                    supportingText = errorRes?.let { { Text(stringResource(it)) } },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
+        icon = Icons.Outlined.AlternateEmail,
+        title = stringResource(R.string.auth_claim_username_title),
+        subtitle = stringResource(R.string.auth_claim_username_desc),
         confirmButton = {
             Button(
                 onClick = {
@@ -83,9 +53,40 @@ fun ClaimUsernameDialog(
                     }
                 },
                 enabled = username.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
-                Text(stringResource(R.string.auth_claim_username_button))
+                Text(
+                    text = stringResource(R.string.auth_claim_username_button),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                )
             }
         },
-    )
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = username,
+                onValueChange = {
+                    username = it
+                    errorRes = null
+                },
+                label = { Text(stringResource(R.string.auth_username_label)) },
+                placeholder = { Text(stringResource(R.string.auth_username_hint)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.AlternateEmail,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                isError = errorRes != null,
+                supportingText = errorRes?.let { { Text(stringResource(it)) } },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }

@@ -25,13 +25,18 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.LocalFireDepartment
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
+import com.shorashim.core.ui.component.ShorashimDialog
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -72,7 +77,7 @@ fun EventsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        viewModel.loadEvents()
+        viewModel.loadEvents(isSilent = true)
         viewModel.loadFamiliesAndPeople()
     }
 
@@ -426,107 +431,155 @@ private fun MemorialDetailsDialog(
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     if (confirmDelete) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text(stringResource(R.string.events_delete_memorial_confirm_title)) },
-            text = { Text(stringResource(R.string.events_delete_memorial_confirm_msg)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    onDelete()
-                }) {
-                    Text(stringResource(R.string.events_delete_action), color = MaterialTheme.colorScheme.error)
-                }
+            onConfirm = {
+                confirmDelete = false
+                onDelete()
             },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) {
-                    Text(stringResource(R.string.close))
-                }
-            },
+            title = stringResource(R.string.events_delete_memorial_confirm_title),
+            message = stringResource(R.string.events_delete_memorial_confirm_msg),
+            confirmText = stringResource(R.string.events_delete_action),
+            dismissText = stringResource(R.string.cancel),
+            icon = Icons.Outlined.Delete,
+            isDestructive = true,
         )
     }
-    AlertDialog(
+
+    ShorashimDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "🕯️", fontSize = 20.sp)
-                Spacer(Modifier.width(Spacing.xs))
-                Text(
-                    text = "אזכרה לזכרו של ${memorial.personName}",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                )
-            }
-        },
-        text = {
-            Column(
+        title = "אזכרה לזכרו של ${memorial.personName}",
+        subtitle = "${memorial.relativeLabel} (${memorial.originalDateStr})",
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text(
-                    text = "מועד קרוב: ${memorial.relativeLabel} (${memorial.originalDateStr})",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    text = "סגירה",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
                 )
-                if (!memorial.hebrewDate.isNullOrBlank()) {
-                    Text(
-                        text = "תאריך עברי: ${memorial.hebrewDate}",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                Text(
-                    text = "עץ משפחה: ${memorial.familyName}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (!memorial.description.isNullOrBlank()) {
-                    Spacer(Modifier.height(Spacing.xs))
-                    Text(
-                        text = memorial.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-
-                Spacer(Modifier.height(Spacing.sm))
-
-                // Button to read Tehillim for this deceased person
-                Button(
-                    onClick = onReadTehillim,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF9A825), // Warm gold
-                        contentColor = Color.Black,
-                    ),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.MenuBook,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(Modifier.width(Spacing.xs))
-                    Text(
-                        text = stringResource(R.string.events_read_tehillim_button),
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.close))
             }
         },
         dismissButton = if (memorial.canEdit) {
             {
-                Row {
-                    TextButton(onClick = onEdit) { Text(stringResource(R.string.events_edit_action)) }
-                    TextButton(onClick = { confirmDelete = true }) {
-                        Text(stringResource(R.string.events_delete_action), color = MaterialTheme.colorScheme.error)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onEdit,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.events_edit_action))
+                    }
+                    OutlinedButton(
+                        onClick = { confirmDelete = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.events_delete_action))
                     }
                 }
             }
-        } else {
-            null
-        },
-    )
+        } else null,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (!memorial.hebrewDate.isNullOrBlank()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "תאריך עברי: ",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = memorial.hebrewDate,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "עץ משפחה: ",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = memorial.familyName,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (!memorial.description.isNullOrBlank()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        )
+                        Text(
+                            text = memorial.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 18.sp,
+                        )
+                    }
+                }
+            }
+
+            // Button to read Tehillim for this deceased person
+            Button(
+                onClick = onReadTehillim,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF9A825), // Warm gold
+                    contentColor = Color.Black,
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.MenuBook,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.events_read_tehillim_button),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                )
+            }
+        }
+    }
 }

@@ -15,8 +15,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.LocalFireDepartment
+import com.shorashim.core.ui.component.ShorashimDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -67,19 +71,16 @@ fun AddEditMemorialEventDialog(
     var nameError by remember { mutableStateOf(false) }
     var dateError by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    ShorashimDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (editingMemorial != null) {
-                    stringResource(R.string.events_edit_memorial_title)
-                } else {
-                    stringResource(R.string.events_create_memorial_title)
-                },
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            )
+        title = if (editingMemorial != null) {
+            stringResource(R.string.events_edit_memorial_title)
+        } else {
+            stringResource(R.string.events_create_memorial_title)
         },
-        text = {
+        subtitle = "הנצחת יקירי המשפחה ותאריכי אזכרה",
+        heroIcon = Icons.Outlined.LocalFireDepartment,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,7 +279,12 @@ fun AddEditMemorialEventDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isSaving) {
+            OutlinedButton(
+                onClick = onDismiss,
+                enabled = !isSaving,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+            ) {
                 Text(stringResource(R.string.cancel))
             }
         },

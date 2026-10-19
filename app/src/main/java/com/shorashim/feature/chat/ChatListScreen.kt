@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,7 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddComment
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shorashim.core.model.Conversation
 import com.shorashim.core.model.FriendUser
@@ -59,6 +62,10 @@ fun ChatListRoute(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.loadConversations(isSilent = true)
+    }
 
     ChatListScreen(
         uiState = uiState,
@@ -191,59 +198,160 @@ fun ChatListScreen(
 
             // New Chat Dialog (Pick from Friends)
             if (uiState.isNewChatDialogOpen) {
-                AlertDialog(
+                ShorashimDialog(
                     onDismissRequest = onDismissNewChat,
-                    title = {
-                        Text(
-                            text = "בחר חבר לשיחה",
-                            fontWeight = FontWeight.Bold,
-                        )
+                    icon = Icons.Outlined.Chat,
+                    title = "שיחה חדשה ומאובטחת",
+                    subtitle = "בחר חבר כדי להתחיל צ'אט פרטי מוצפן מקצה לקצה",
+                    dismissButton = {
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = onDismissNewChat,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        ) {
+                            Text(
+                                text = "סגירה",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     },
-                    text = {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            if (uiState.friends.isEmpty()) {
-                                Text(
-                                    text = "עדיין אין לך חברים באפליקציה.\nהוסף חברים בלשונית החברים כדי לשוחח איתם בהצפנה!",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (uiState.friends.isEmpty() && uiState.appUsers.isEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
-                                    items(uiState.friends, key = { it.id }) { friend ->
-                                        Surface(
-                                            onClick = { onSelectFriendToChat(friend) },
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            modifier = Modifier.fillMaxWidth(),
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(10.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                            ) {
-                                                PersonAvatar(
-                                                    photoPath = friend.avatarUrl,
-                                                    firstName = friend.displayName,
-                                                    modifier = Modifier.size(36.dp),
+                                    Text(
+                                        text = "אין עדיין חברים זמינים לשיחה",
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "הוסף חברים בלשונית 'הוספת חברים' כדי לשוחח איתם בהצפנה מלאה ופרטיות מוחלטת.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    )
+                                }
+                            }
+                        } else if (uiState.friends.isEmpty()) {
+                            Text(
+                                text = "משתמשים זמינים באפליקציה:",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 300.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(uiState.appUsers, key = { it.id }) { user ->
+                                    Surface(
+                                        onClick = {
+                                            onSelectFriendToChat(
+                                                FriendUser(
+                                                    id = user.id,
+                                                    username = user.username,
+                                                    displayName = user.displayName,
+                                                    avatarUrl = user.avatarUrl,
                                                 )
-                                                Spacer(Modifier.width(10.dp))
-                                                Column {
+                                            )
+                                        },
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            PersonAvatar(
+                                                photoPath = user.avatarUrl,
+                                                firstName = user.displayName,
+                                                modifier = Modifier.size(42.dp),
+                                            )
+                                            Spacer(Modifier.width(12.dp))
+                                            Column {
+                                                Text(
+                                                    text = user.displayName,
+                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                )
+                                                if (!user.username.isNullOrBlank()) {
                                                     Text(
-                                                        text = friend.displayName,
-                                                        fontWeight = FontWeight.Bold,
-                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        text = "\u200E@${user.username.removePrefix("@")}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.primary,
                                                     )
-                                                    if (!friend.username.isNullOrBlank()) {
-                                                        Text(
-                                                            text = "\u200E@${friend.username}",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.primary,
-                                                        )
-                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "החברים שלך (${uiState.friends.size}):",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 300.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(uiState.friends, key = { it.id }) { friend ->
+                                    Surface(
+                                        onClick = { onSelectFriendToChat(friend) },
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            PersonAvatar(
+                                                photoPath = friend.avatarUrl,
+                                                firstName = friend.displayName,
+                                                modifier = Modifier.size(42.dp),
+                                            )
+                                            Spacer(Modifier.width(12.dp))
+                                            Column {
+                                                Text(
+                                                    text = friend.displayName,
+                                                    fontWeight = FontWeight.Bold,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                )
+                                                if (!friend.username.isNullOrBlank()) {
+                                                    Text(
+                                                        text = "\u200E@${friend.username.removePrefix("@")}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                    )
                                                 }
                                             }
                                         }
@@ -251,13 +359,8 @@ fun ChatListScreen(
                                 }
                             }
                         }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = onDismissNewChat) {
-                            Text("ביטול")
-                        }
-                    },
-                )
+                    }
+                }
             }
         }
     }

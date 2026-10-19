@@ -26,6 +26,10 @@ class AuthErrorMapperTest {
             AuthErrorMapper.mapErrorMessage("User already registered"),
         )
         assertEquals(
+            R.string.auth_error_username_taken,
+            AuthErrorMapper.mapErrorMessage("username_taken"),
+        )
+        assertEquals(
             R.string.auth_error_weak_password,
             AuthErrorMapper.mapErrorMessage("Password should be at least 6 characters"),
         )

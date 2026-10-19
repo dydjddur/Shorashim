@@ -27,9 +27,14 @@ import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
+import com.shorashim.core.ui.component.ShorashimDialog
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -106,9 +111,9 @@ fun FamilyManagementRoute(
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         if (uiState.family != null) {
-            viewModel.refreshData(showToast = false)
+            viewModel.refreshData(showToast = false, isSilent = true)
         } else {
-            viewModel.loadData()
+            viewModel.loadData(isSilent = false)
         }
     }
 
@@ -184,7 +189,7 @@ fun FamilyManagementRoute(
         onUnlinkUser = viewModel::unlinkUserFromPerson,
         onGetFriends = viewModel::getFriends,
         onGetMutualConnections = viewModel::getMutualConnections,
-        onRefresh = { viewModel.refreshData(showToast = true) },
+        onRefresh = { viewModel.refreshData(showToast = true, isSilent = false) },
         modifier = modifier,
     )
 }
@@ -239,66 +244,67 @@ fun FamilyManagementScreen(
 
     // Deleting a person also removes their relationships, so always ask first.
     personPendingDelete?.let { victim ->
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = { personPendingDelete = null },
-            title = {
-                Text(
-                    text = stringResource(R.string.person_delete_dialog_title),
-                    fontWeight = FontWeight.Bold,
-                )
+            onConfirm = {
+                onDeletePerson(victim.id)
+                personPendingDelete = null
             },
-            text = { Text(stringResource(R.string.person_delete_dialog_message, victim.fullName)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onDeletePerson(victim.id)
-                        personPendingDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Text(stringResource(R.string.person_delete_button))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { personPendingDelete = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            title = stringResource(R.string.person_delete_dialog_title),
+            message = stringResource(R.string.person_delete_dialog_message, victim.fullName),
+            confirmText = stringResource(R.string.person_delete_button),
+            dismissText = stringResource(R.string.cancel),
+            icon = Icons.Outlined.Delete,
+            isDestructive = true,
         )
     }
 
     // Rename Dialog
     if (uiState.isRenaming) {
-        AlertDialog(
+        ShorashimDialog(
             onDismissRequest = onRenameDismiss,
-            title = {
-                Text(
-                    text = stringResource(R.string.family_rename_title),
-                    fontWeight = FontWeight.Bold,
-                )
+            icon = Icons.Outlined.Edit,
+            title = stringResource(R.string.family_rename_title),
+            subtitle = "הזינו שם ברור ומדויק לעץ המשפחה שלכם",
+            confirmButton = {
+                Button(
+                    onClick = { onRenameConfirm(renameText) },
+                    enabled = renameText.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                ) {
+                    Text(
+                        text = stringResource(R.string.family_rename_submit),
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             },
-            text = {
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onRenameDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = renameText,
                     onValueChange = { renameText = it },
                     label = { Text(stringResource(R.string.family_name_label)) },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
                 )
-            },
-            confirmButton = {
-                Button(
-                    onClick = { onRenameConfirm(renameText) },
-                    enabled = renameText.isNotBlank(),
-                ) {
-                    Text(stringResource(R.string.family_rename_submit))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onRenameDismiss) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
+            }
+        }
     }
 
     // Add Relationship Dialog
@@ -347,30 +353,15 @@ fun FamilyManagementScreen(
 
     // Delete Family Confirm Dialog
     if (uiState.isDeleteFamilyConfirmOpen) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = onDeleteFamilyDismiss,
-            title = {
-                Text(
-                    text = stringResource(R.string.family_delete_dialog_title),
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            text = {
-                Text(stringResource(R.string.family_delete_dialog_message, uiState.family?.name.orEmpty()))
-            },
-            confirmButton = {
-                Button(
-                    onClick = onDeleteFamilyConfirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Text(stringResource(R.string.delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDeleteFamilyDismiss) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            onConfirm = onDeleteFamilyConfirm,
+            title = stringResource(R.string.family_delete_dialog_title),
+            message = stringResource(R.string.family_delete_dialog_message, uiState.family?.name.orEmpty()),
+            confirmText = stringResource(R.string.delete),
+            dismissText = stringResource(R.string.cancel),
+            icon = Icons.Outlined.DeleteForever,
+            isDestructive = true,
         )
     }
 

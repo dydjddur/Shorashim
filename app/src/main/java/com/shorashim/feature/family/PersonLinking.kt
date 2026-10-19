@@ -29,7 +29,8 @@ import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
+import com.shorashim.core.ui.component.ShorashimDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -180,22 +181,18 @@ fun PersonLinkSection(
     }
 
     if (showUnlinkConfirmDialog) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = { showUnlinkConfirmDialog = false },
-            title = { Text("ביטול קישור לחשבון") },
-            text = {
-                Text("האם אתה בטוח שברצונך לבטל את הקישור בין ${person.fullName} לחשבון המשתמש? הרשומה בעץ תישמר, אך החיבור לחשבון יוסר.")
+            onConfirm = {
+                showUnlinkConfirmDialog = false
+                actions.onUnlinkUser()
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showUnlinkConfirmDialog = false
-                        actions.onUnlinkUser()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text("בטל קישור", fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = { TextButton(onClick = { showUnlinkConfirmDialog = false }) { Text("ביטול") } },
+            title = "ביטול קישור לחשבון",
+            message = "האם לבטל את הקישור בין ${person.fullName} לחשבון המשתמש? הרשומה בעץ תישמר, אך החיבור לחשבון יוסר.",
+            confirmText = "בטל קישור",
+            dismissText = "ביטול",
+            icon = Icons.Outlined.LinkOff,
+            isDestructive = true,
         )
     }
 
@@ -233,10 +230,12 @@ internal fun LinkUserDialog(
         }
     }
 
-    AlertDialog(
+    ShorashimDialog(
         onDismissRequest = onDismiss,
-        title = { Text("קישור ${person.fullName} למשתמש") },
-        text = {
+        title = "קישור ${person.fullName} למשתמש",
+        subtitle = "חיבור רשומת העץ לפרופיל משתמש פעיל",
+        heroIcon = Icons.Outlined.Link,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -341,42 +340,35 @@ internal fun LinkUserDialog(
                     }
                 },
                 enabled = selectedUser != null,
+                shape = RoundedCornerShape(12.dp),
             ) {
                 Text("המשך לקישור", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+            ) {
                 Text("ביטול")
             }
         },
     )
 
     if (showConfirmPrompt && selectedUser != null) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = { showConfirmPrompt = false },
-            title = { Text("אישור קישור זהות") },
-            text = {
-                Text(
-                    text = "האם אתה מאשר לקשר את רשומת '${person.fullName}' בעץ לחשבון המשתמש של '${selectedUser!!.displayName}'?\n\nפעולה זו תחבר בין הרשומה לחשבון האמיתי באפליקציה.",
-                )
+            onConfirm = {
+                showConfirmPrompt = false
+                onConfirmLink(selectedUser!!.id)
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showConfirmPrompt = false
-                        onConfirmLink(selectedUser!!.id)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
-                ) {
-                    Text("אשר וחבר", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmPrompt = false }) {
-                    Text("ביטול")
-                }
-            },
+            title = "אישור קישור זהות",
+            message = "האם לקשר את רשומת '${person.fullName}' בעץ לחשבון המשתמש של '${selectedUser!!.displayName}'?\nפעולה זו תחבר בין הרשומה לחשבון האמיתי באפליקציה.",
+            confirmText = "אשר וחבר",
+            dismissText = "ביטול",
+            icon = Icons.Outlined.Link,
+            isDestructive = false,
         )
     }
 }
@@ -397,12 +389,12 @@ internal fun MutualConnectionsDialog(
         isLoading = false
     }
 
-    AlertDialog(
+    ShorashimDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text("קשרים משפחתיים משותפים")
-        },
-        text = {
+        title = "קשרים משפחתיים משותפים",
+        subtitle = "עצי משפחה שבהם המשתמש משתתף או מקושר",
+        heroIcon = Icons.Outlined.Park,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -466,8 +458,11 @@ internal fun MutualConnectionsDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("סגור")
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("הבנתי, תודה")
             }
         },
     )

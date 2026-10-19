@@ -25,7 +25,7 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -104,23 +104,12 @@ fun FamilyMembersDialog(
         }
     }
 
-    AlertDialog(
+    ShorashimDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.Shield,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.members_title),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                )
-            }
-        },
-        text = {
+        title = stringResource(R.string.members_title),
+        subtitle = "ניהול הרשאות ושיתוף משתמשים בעץ המשפחה",
+        heroIcon = Icons.Outlined.Shield,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -343,7 +332,10 @@ fun FamilyMembersDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+            ) {
                 Text(stringResource(R.string.close))
             }
         },

@@ -94,6 +94,9 @@ object AuthErrorMapper {
             message.contains("already exists", ignoreCase = true) ||
             message.contains("user_already_exists", ignoreCase = true) -> R.string.auth_error_email_already_in_use
 
+            message.contains("username_taken", ignoreCase = true) ||
+            message.contains("שם המשתמש כבר תפוס", ignoreCase = true) -> R.string.auth_error_username_taken
+
             message.contains("at least 6 characters", ignoreCase = true) ||
             message.contains("weak_password", ignoreCase = true) ||
             message.contains("password is too short", ignoreCase = true) -> R.string.auth_error_weak_password

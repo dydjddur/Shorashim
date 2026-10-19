@@ -33,12 +33,24 @@ class ProfileViewModel(
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        loadData()
+        loadData(isSilent = false)
+        startSilentPolling()
     }
 
-    fun loadData() {
+    private fun startSilentPolling() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            while (true) {
+                kotlinx.coroutines.delay(30_000)
+                loadData(isSilent = true)
+            }
+        }
+    }
+
+    fun loadData(isSilent: Boolean = false) {
+        viewModelScope.launch {
+            if (!isSilent && _uiState.value.profile == null) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            }
 
             val profileRes = profileRepository.getProfile()
             val familiesRes = familyRepository.getMyFamilies()
@@ -48,9 +60,9 @@ class ProfileViewModel(
                 state.copy(
                     isLoading = false,
                     profile = profileRes.getOrNull() ?: state.profile,
-                    families = familiesRes.getOrDefault(emptyList()),
-                    friendsCount = friendsRes.getOrDefault(emptyList()).size,
-                    errorMessage = profileRes.exceptionOrNull()?.message,
+                    families = if (familiesRes.isSuccess) familiesRes.getOrDefault(emptyList()) else state.families,
+                    friendsCount = if (friendsRes.isSuccess) friendsRes.getOrDefault(emptyList()).size else state.friendsCount,
+                    errorMessage = if (isSilent && state.profile != null) null else profileRes.exceptionOrNull()?.message,
                 )
             }
         }

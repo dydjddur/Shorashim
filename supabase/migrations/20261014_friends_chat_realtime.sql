@@ -48,29 +48,18 @@ BEGIN
         RETURN jsonb_build_object('ok', false, 'error', 'already_friends');
     END IF;
 
-    -- The other person already asked me: accept it instead of creating a crossing request.
-    SELECT * INTO v_rev
-    FROM public.friend_requests
-    WHERE from_user_id = v_target AND to_user_id = v_me AND status = 'PENDING';
-    IF FOUND THEN
-        UPDATE public.friend_requests SET status = 'ACCEPTED', updated_at = now() WHERE id = v_rev.id;
-        INSERT INTO public.friends (user_id, friend_id) VALUES (v_me, v_target) ON CONFLICT DO NOTHING;
-        INSERT INTO public.friends (user_id, friend_id) VALUES (v_target, v_me) ON CONFLICT DO NOTHING;
-        RETURN jsonb_build_object('ok', true, 'auto_accepted', true, 'user_id', v_target);
-    END IF;
-
-    INSERT INTO public.friend_requests (from_user_id, to_user_id)
-    VALUES (v_me, v_target)
+    -- Establish bidirectional friendship immediately and record request as ACCEPTED
+    INSERT INTO public.friend_requests (from_user_id, to_user_id, status)
+    VALUES (v_me, v_target, 'ACCEPTED')
     ON CONFLICT (from_user_id, to_user_id)
-    DO UPDATE SET status = 'PENDING', updated_at = now()
-    WHERE public.friend_requests.status <> 'PENDING'
+    DO UPDATE SET status = 'ACCEPTED', updated_at = now()
     RETURNING id INTO v_req_id;
 
-    IF v_req_id IS NULL THEN
-        RETURN jsonb_build_object('ok', false, 'error', 'already_pending');
-    END IF;
+    -- Add reciprocal friendship rows so both are friends immediately
+    INSERT INTO public.friends (user_id, friend_id) VALUES (v_me, v_target) ON CONFLICT DO NOTHING;
+    INSERT INTO public.friends (user_id, friend_id) VALUES (v_target, v_me) ON CONFLICT DO NOTHING;
 
-    RETURN jsonb_build_object('ok', true, 'request_id', v_req_id, 'user_id', v_target);
+    RETURN jsonb_build_object('ok', true, 'connected', true, 'user_id', v_target);
 END;
 $$;
 

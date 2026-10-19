@@ -34,7 +34,8 @@ import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -70,6 +71,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shorashim.R
 import com.shorashim.core.ui.component.ImageUtils
@@ -90,6 +93,10 @@ fun ProfileRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.loadData(isSilent = true)
+    }
 
     LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
         val msg = uiState.successMessage ?: uiState.errorMessage
@@ -129,38 +136,18 @@ fun ProfileScreen(
     val user = uiState.profile
 
     if (showLogoutDialog) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = {
-                Text(
-                    text = stringResource(R.string.settings_logout_confirm_title),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                )
+            onConfirm = {
+                showLogoutDialog = false
+                onLogout()
             },
-            text = {
-                Text(
-                    text = stringResource(R.string.settings_logout_confirm_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        onLogout()
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) {
-                    Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            title = stringResource(R.string.settings_logout_confirm_title),
+            message = stringResource(R.string.settings_logout_confirm_message),
+            confirmText = stringResource(R.string.settings_logout_short),
+            dismissText = "הישאר מחובר",
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            isDestructive = true,
         )
     }
 

@@ -18,7 +18,9 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.MenuBook
+import com.shorashim.core.ui.component.ShorashimDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -98,19 +100,12 @@ fun RegisterScreen(
     val focusManager = LocalFocusManager.current
 
     if (uiState.isTermsDialogOpen) {
-        AlertDialog(
+        ShorashimDialog(
             onDismissRequest = onCloseTermsDialog,
-            shape = RoundedCornerShape(20.dp),
-            title = {
-                Text(
-                    text = stringResource(R.string.auth_terms_dialog_title),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            },
-            text = {
+            title = stringResource(R.string.auth_terms_dialog_title),
+            subtitle = "הסכם שימוש ומדיניות פרטיות באפליקציה",
+            heroIcon = Icons.Outlined.MenuBook,
+            content = {
                 Text(
                     text = stringResource(R.string.auth_terms_dialog_body),
                     style = MaterialTheme.typography.bodyMedium,
@@ -118,11 +113,13 @@ fun RegisterScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = onCloseTermsDialog) {
+                Button(
+                    onClick = onCloseTermsDialog,
+                    shape = RoundedCornerShape(12.dp),
+                ) {
                     Text(
                         text = stringResource(R.string.auth_close),
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             },

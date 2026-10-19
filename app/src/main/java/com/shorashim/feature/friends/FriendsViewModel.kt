@@ -25,6 +25,7 @@ data class FriendsUiState(
     val isFriendProfilePrivate: Boolean = false,
     val isLoadingFriendTrees: Boolean = false,
     val searchQuery: String = "",
+    val searchResults: List<UserProfile> = emptyList(),
     val searchResult: UserProfile? = null,
     val isSearching: Boolean = false,
     val actionMessage: String? = null,
@@ -38,14 +39,31 @@ class FriendsViewModel(
 
     private val _uiState = MutableStateFlow(FriendsUiState())
     val uiState: StateFlow<FriendsUiState> = _uiState.asStateFlow()
+    private var searchJob: kotlinx.coroutines.Job? = null
 
     init {
-        loadData()
+        loadData(isSilent = false)
+        startSilentPolling()
     }
 
-    fun loadData() {
+    private fun startSilentPolling() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            while (true) {
+                kotlinx.coroutines.delay(15_000)
+                loadData(isSilent = true)
+            }
+        }
+    }
+
+    fun loadData(isSilent: Boolean = false) {
+        viewModelScope.launch {
+            val hasData = _uiState.value.friends.isNotEmpty() ||
+                _uiState.value.suggestions.isNotEmpty() ||
+                _uiState.value.pendingRequests.isNotEmpty()
+
+            if (!isSilent && !hasData) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            }
 
             val friendsRes = friendRepository.getFriends()
             val suggestionsRes = friendRepository.getFriendSuggestions()
@@ -54,31 +72,33 @@ class FriendsViewModel(
             _uiState.update { state ->
                 state.copy(
                     isLoading = false,
-                    friends = friendsRes.getOrDefault(emptyList()),
-                    suggestions = suggestionsRes.getOrDefault(emptyList()),
-                    pendingRequests = requestsRes.getOrDefault(emptyList()),
+                    friends = if (friendsRes.isSuccess) friendsRes.getOrDefault(emptyList()) else state.friends,
+                    suggestions = if (suggestionsRes.isSuccess) suggestionsRes.getOrDefault(emptyList()) else state.suggestions,
+                    pendingRequests = if (requestsRes.isSuccess) requestsRes.getOrDefault(emptyList()) else state.pendingRequests,
                 )
             }
         }
     }
 
     fun onSearchQueryChanged(query: String) {
-        _uiState.update { it.copy(searchQuery = query, searchResult = null) }
-        if (query.trim().length >= 3) {
-            searchUser(query.trim())
-        }
-    }
-
-    private fun searchUser(username: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSearching = true) }
-            val res = profileRepository.searchUserByUsername(username)
-            _uiState.update {
-                it.copy(
-                    isSearching = false,
-                    searchResult = res.getOrNull(),
-                )
+        _uiState.update { it.copy(searchQuery = query) }
+        val q = query.trim()
+        searchJob?.cancel()
+        if (q.isNotEmpty()) {
+            searchJob = viewModelScope.launch {
+                _uiState.update { it.copy(isSearching = true) }
+                val res = profileRepository.searchUsers(q)
+                val list = res.getOrDefault(emptyList())
+                _uiState.update {
+                    it.copy(
+                        isSearching = false,
+                        searchResults = list,
+                        searchResult = list.firstOrNull(),
+                    )
+                }
             }
+        } else {
+            _uiState.update { it.copy(searchResults = emptyList(), searchResult = null, isSearching = false) }
         }
     }
 
@@ -88,14 +108,16 @@ class FriendsViewModel(
             if (res.isSuccess) {
                 _uiState.update {
                     it.copy(
-                        actionMessage = "בקשת חברות נשלחה בהצלחה!",
+                        actionMessage = "המשתמש נוסף בהצלחה לרשימת החברים שלך!",
+                        searchResults = emptyList(),
                         searchResult = null,
                         searchQuery = "",
                     )
                 }
+                loadData(isSilent = true)
             } else {
                 _uiState.update {
-                    it.copy(errorMessage = res.exceptionOrNull()?.message ?: "שגיאה בשליחת בקשת החברות")
+                    it.copy(errorMessage = res.exceptionOrNull()?.message ?: "שגיאה בהוספת חבר")
                 }
             }
         }
@@ -110,7 +132,7 @@ class FriendsViewModel(
                         actionMessage = if (accept) "בקשת החברות אושרה! החבר נוסף לרשימה" else "בקשת החברות נדחתה",
                     )
                 }
-                loadData()
+                loadData(isSilent = true)
             } else {
                 _uiState.update {
                     it.copy(errorMessage = res.exceptionOrNull()?.message ?: "שגיאה בטיפול בבקשה")
@@ -122,7 +144,7 @@ class FriendsViewModel(
     fun removeFriend(friendId: String) {
         viewModelScope.launch {
             friendRepository.removeFriend(friendId)
-            loadData()
+            loadData(isSilent = true)
         }
     }
 

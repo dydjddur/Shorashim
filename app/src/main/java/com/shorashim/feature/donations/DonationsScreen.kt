@@ -25,7 +25,7 @@ import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.VolunteerActivism
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -70,68 +70,57 @@ fun DonationsScreen(
     val finalAmount = if (selectedAmount > 0) selectedAmount else customAmountText.toIntOrNull() ?: 0
 
     if (showThankYouDialog) {
-        AlertDialog(
+        ShorashimDialog(
             onDismissRequest = { showThankYouDialog = false },
-            icon = {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(Color(0xFFE91E63).copy(alpha = 0.15f), CircleShape),
-                    contentAlignment = Alignment.Center,
+            icon = Icons.Outlined.Favorite,
+            iconTint = Color(0xFFE91E63),
+            iconBackground = Color(0xFFE91E63).copy(alpha = 0.14f),
+            title = "תודה מקרב לב על תרומתך! ❤️",
+            subtitle = "תרומתך בסך $finalAmount ₪ התקבלה בהצלחה",
+            confirmButton = {
+                Button(
+                    onClick = { showThankYouDialog = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Favorite,
-                        contentDescription = null,
-                        tint = Color(0xFFE91E63),
-                        modifier = Modifier.size(32.dp),
+                    Text(
+                        text = "תזכו למצוות, תודה!",
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             },
-            title = {
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
-                    text = "תודה מקרב לב על תרומתך! ❤️",
-                    fontWeight = FontWeight.Bold,
+                    text = "בזכותך נוכל להמשיך לתחזק את שרתי הענן, לשמור על עצי המשפחה ולפתח תכונות חדשות למען כל עם ישראל. תבורכו מפי עליון!",
+                    style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 22.sp,
                 )
-            },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "תרומתך בסך $finalAmount ₪ התקבלה בהצלחה.",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "בזכותך נוכל להמשיך לתחזק את שרתי הענן, לשמור על עצי המשפחה ולפתח תכונות חדשות למען כל עם ישראל. תבורכו מפי עליון!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (dedicationText.isNotBlank()) {
-                        Spacer(Modifier.height(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(
-                                text = "הקדשה: $dedicationText",
-                                modifier = Modifier.padding(8.dp),
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
+                if (dedicationText.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = "הקדשה: $dedicationText",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                Button(onClick = { showThankYouDialog = false }) {
-                    Text("אשריכם תודה!")
-                }
-            },
-        )
+            }
+        }
     }
 
     Column(

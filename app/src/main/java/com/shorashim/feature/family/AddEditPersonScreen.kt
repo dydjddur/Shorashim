@@ -36,7 +36,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimConfirmDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -182,32 +182,15 @@ fun AddEditPersonScreen(
     }
 
     if (uiState.isDeleteConfirmOpen) {
-        AlertDialog(
+        ShorashimConfirmDialog(
             onDismissRequest = onDeleteConfirmDismiss,
-            title = {
-                Text(
-                    text = stringResource(R.string.person_delete_dialog_title),
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            text = {
-                Text(stringResource(R.string.person_delete_dialog_message, uiState.firstName))
-            },
-            confirmButton = {
-                Button(
-                    onClick = onDeleteConfirmed,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) {
-                    Text(stringResource(R.string.person_delete_button))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDeleteConfirmDismiss) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            onConfirm = onDeleteConfirmed,
+            title = stringResource(R.string.person_delete_dialog_title),
+            message = stringResource(R.string.person_delete_dialog_message, uiState.firstName),
+            confirmText = stringResource(R.string.person_delete_button),
+            dismissText = stringResource(R.string.cancel),
+            icon = Icons.Outlined.Delete,
+            isDestructive = true,
         )
     }
 

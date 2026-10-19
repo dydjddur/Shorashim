@@ -78,26 +78,43 @@ class FamilyManagementViewModel(
     )
     val uiState: StateFlow<FamilyManagementUiState> = _uiState.asStateFlow()
 
+    private var silentPollJob: Job? = null
+
     init {
-        loadData()
+        loadData(isSilent = false)
         setupRealtime(familyId)
+        startSilentPolling()
+    }
+
+    private fun startSilentPolling() {
+        silentPollJob?.cancel()
+        silentPollJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(20_000)
+                refreshData(showToast = false, isSilent = true)
+            }
+        }
     }
 
     fun selectFamily(newFamilyId: String) {
         if (newFamilyId == _uiState.value.currentFamilyId) return
         _uiState.value = _uiState.value.copy(currentFamilyId = newFamilyId)
-        loadData()
+        loadData(isSilent = false)
         setupRealtime(newFamilyId)
+        startSilentPolling()
     }
 
     fun setTab(tab: FamilyViewTab) {
         _uiState.value = _uiState.value.copy(activeTab = tab)
     }
 
-    fun loadData() {
+    fun loadData(isSilent: Boolean = false) {
         val fId = _uiState.value.currentFamilyId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val hasData = _uiState.value.family != null && _uiState.value.people.isNotEmpty()
+            if (!isSilent && !hasData) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             val allFamResult = familyRepository.getMyFamilies()
             val famResult = familyRepository.getFamily(fId)
             val peopleResult = personRepository.getPeople(fId)
@@ -133,18 +150,20 @@ class FamilyManagementViewModel(
             } else {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = famResult.exceptionOrNull()?.localizedMessage
+                    error = if (isSilent && hasData) null else (famResult.exceptionOrNull()?.localizedMessage
                         ?: peopleResult.exceptionOrNull()?.localizedMessage
-                        ?: "Failed to load family data",
+                        ?: "Failed to load family data"),
                 )
             }
         }
     }
 
-    fun refreshData(showToast: Boolean = true) {
+    fun refreshData(showToast: Boolean = false, isSilent: Boolean = true) {
         val fId = _uiState.value.currentFamilyId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            if (!isSilent) {
+                _uiState.value = _uiState.value.copy(isRefreshing = true)
+            }
             val allFamResult = familyRepository.getMyFamilies()
             val famResult = familyRepository.getFamily(fId)
             val peopleResult = personRepository.getPeople(fId)
@@ -159,9 +178,9 @@ class FamilyManagementViewModel(
                 } else {
                     rawFams
                 }
-                val peopleList = peopleResult.getOrDefault(emptyList())
-                val relList = relResult.getOrDefault(emptyList())
-                val memberList = membersResult.getOrDefault(emptyList())
+                val peopleList = peopleResult.getOrDefault(_uiState.value.people)
+                val relList = relResult.getOrDefault(_uiState.value.relationships)
+                val memberList = membersResult.getOrDefault(_uiState.value.members)
                 val q = _uiState.value.searchQuery
 
                 val filtered = if (q.isBlank()) peopleList else {
@@ -175,14 +194,16 @@ class FamilyManagementViewModel(
                     filteredPeople = filtered,
                     relationships = relList,
                     members = memberList,
+                    isLoading = false,
                     isRefreshing = false,
                     toastMessage = if (showToast) "עץ המשפחה עודכן בהצלחה" else _uiState.value.toastMessage,
                 )
             } else {
                 _uiState.value = _uiState.value.copy(
+                    isLoading = false,
                     isRefreshing = false,
-                    error = famResult.exceptionOrNull()?.localizedMessage
-                        ?: peopleResult.exceptionOrNull()?.localizedMessage,
+                    error = if (isSilent) null else (famResult.exceptionOrNull()?.localizedMessage
+                        ?: peopleResult.exceptionOrNull()?.localizedMessage),
                 )
             }
         }

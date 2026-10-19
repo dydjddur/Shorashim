@@ -30,14 +30,24 @@ class CommunityTreesViewModel(
     val uiState: StateFlow<CommunityTreesUiState> = _uiState.asStateFlow()
 
     init {
-        loadData()
+        loadData(isSilent = false)
+        startSilentPolling()
+    }
+
+    private fun startSilentPolling() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(25_000)
+                loadData(isSilent = true)
+            }
+        }
     }
 
     fun loadData(isSilent: Boolean = false) {
         viewModelScope.launch {
-            if (!isSilent) {
+            if (!isSilent && _uiState.value.trees.isEmpty()) {
                 _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            } else {
+            } else if (!isSilent) {
                 _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
             }
 
@@ -81,7 +91,7 @@ class CommunityTreesViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isRefreshing = false,
-                    error = msg,
+                    error = if (isSilent && _uiState.value.trees.isNotEmpty()) null else msg,
                 )
             }
         }

@@ -24,12 +24,23 @@ class MyFamiliesViewModel(
     val uiState: StateFlow<MyFamiliesUiState> = _uiState.asStateFlow()
 
     init {
-        loadFamilies()
+        loadFamilies(isSilent = false)
+        startSilentPolling()
+    }
+
+    private fun startSilentPolling() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(20_000)
+                loadFamilies(isSilent = true)
+            }
+        }
     }
 
     fun loadFamilies(isSilent: Boolean = false) {
         viewModelScope.launch {
-            if (!isSilent || _uiState.value !is MyFamiliesUiState.Success) {
+            val isAlreadyLoaded = _uiState.value is MyFamiliesUiState.Success || _uiState.value is MyFamiliesUiState.Empty
+            if (!isSilent && !isAlreadyLoaded) {
                 _uiState.value = MyFamiliesUiState.Loading
             }
             familyRepository.getMyFamilies()
@@ -41,8 +52,8 @@ class MyFamiliesViewModel(
                     }
                 }
                 .onFailure { error ->
-                    // If we already have families and it's a silent refresh, don't destroy the screen
-                    if (isSilent && _uiState.value is MyFamiliesUiState.Success) {
+                    // If we already have loaded content and it's a silent refresh, don't destroy the screen
+                    if (isAlreadyLoaded) {
                         return@onFailure
                     }
                     val rawMsg = error.localizedMessage.orEmpty()

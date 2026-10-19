@@ -15,5 +15,6 @@ interface ProfileRepository {
     ): Result<UserProfile>
     suspend fun setPrivateAccountMode(isPrivate: Boolean): Result<Unit>
     suspend fun searchUserByUsername(username: String): Result<UserProfile?>
+    suspend fun searchUsers(query: String): Result<List<UserProfile>> = Result.success(emptyList())
     suspend fun setUsername(username: String): Result<Unit>
 }

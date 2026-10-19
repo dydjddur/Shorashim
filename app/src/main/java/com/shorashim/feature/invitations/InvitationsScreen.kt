@@ -30,7 +30,7 @@ fun InvitationsRoute(
     val snackbarHostState = remember { SnackbarHostState() }
 
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        viewModel.loadPendingInvitations()
+        viewModel.loadPendingInvitations(isSilent = true)
     }
 
     LaunchedEffect(uiState.toastMessage) {

@@ -8,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -123,6 +125,27 @@ class MainActivity : ComponentActivity() {
 
                         val userProfile by androidx.compose.runtime.produceState<com.shorashim.core.model.UserProfile?>(initialValue = null, currentRoute) {
                             value = appContainer.profileRepository.getProfile().getOrNull()
+                        }
+
+                        val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+                        val needsUsername = state.user.username.isNullOrBlank() && (userProfile?.username.isNullOrBlank())
+                        var showClaimUsernameDialog by androidx.compose.runtime.remember(needsUsername) {
+                            androidx.compose.runtime.mutableStateOf(needsUsername)
+                        }
+
+                        if (showClaimUsernameDialog) {
+                            com.shorashim.feature.auth.ClaimUsernameDialog(
+                                isOpen = true,
+                                onConfirm = { chosenUsername ->
+                                    coroutineScope.launch {
+                                        val res = appContainer.profileRepository.setUsername(chosenUsername)
+                                        if (res.isSuccess) {
+                                            showClaimUsernameDialog = false
+                                            appContainer.authRepository.updateCurrentUsername(chosenUsername)
+                                        }
+                                    }
+                                }
+                            )
                         }
 
                         Scaffold(

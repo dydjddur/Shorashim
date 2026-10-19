@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material3.AlertDialog
+import com.shorashim.core.ui.component.ShorashimDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -43,6 +46,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -282,21 +287,31 @@ private fun GregorianDatePickerDialog(
             override fun isSelectableYear(year: Int): Boolean = year <= today.year
         },
     )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                enabled = state.selectedDateMillis != null,
-                onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onConfirm(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-                    }
-                },
-            ) { Text("אישור", fontWeight = FontWeight.Bold) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("ביטול") } },
-    ) {
-        DatePicker(state = state)
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        DatePickerDialog(
+            onDismissRequest = onDismiss,
+            shape = RoundedCornerShape(24.dp),
+            confirmButton = {
+                Button(
+                    enabled = state.selectedDateMillis != null,
+                    shape = RoundedCornerShape(12.dp),
+                    onClick = {
+                        state.selectedDateMillis?.let { millis ->
+                            onConfirm(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                        }
+                    },
+                ) { Text("בחר תאריך", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                ) { Text("ביטול") }
+            },
+        ) {
+            DatePicker(state = state)
+        }
     }
 }
 
@@ -356,24 +371,12 @@ private fun WheelDateDialog(
         }
     }
 
-    AlertDialog(
+    ShorashimDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Column {
-                Text(
-                    text = if (hebrew) "בחירת תאריך עברי" else "בחירת תאריך",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                )
-                if (summary.isNotBlank()) {
-                    Text(
-                        text = summary,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-        },
-        text = {
+        title = if (hebrew) "בחירת תאריך עברי" else "בחירת תאריך",
+        subtitle = summary.ifBlank { null },
+        heroIcon = Icons.Outlined.CalendarMonth,
+        content = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -408,11 +411,22 @@ private fun WheelDateDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = { buildDate(hebrew, year, month, day, precision)?.let(onConfirm) },
-            ) { Text("אישור", fontWeight = FontWeight.Bold) }
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("בחירה ואישור", fontWeight = FontWeight.Bold)
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("ביטול") } },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+            ) {
+                Text("ביטול")
+            }
+        },
     )
 }
 

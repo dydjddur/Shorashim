@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 data class ChatListUiState(
     val conversations: List<Conversation> = emptyList(),
     val friends: List<FriendUser> = emptyList(),
+    val appUsers: List<com.shorashim.core.model.FriendSuggestion> = emptyList(),
     val isLoading: Boolean = false,
     val isNewChatDialogOpen: Boolean = false,
     val error: String? = null,
@@ -42,9 +43,11 @@ class ChatListViewModel(
         }
     }
 
-    fun loadConversations() {
+    fun loadConversations(isSilent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            if (!isSilent && _uiState.value.conversations.isEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             chatRepository.ensurePublicKeyPublished()
             val result = chatRepository.getConversations()
             if (result.isSuccess) {
@@ -55,7 +58,7 @@ class ChatListViewModel(
             } else {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = result.exceptionOrNull()?.message,
+                    error = if (isSilent && _uiState.value.conversations.isNotEmpty()) null else result.exceptionOrNull()?.message,
                 )
             }
         }
@@ -64,8 +67,10 @@ class ChatListViewModel(
     fun openNewChatDialog() {
         viewModelScope.launch {
             val friends = friendRepository.getFriends().getOrDefault(emptyList())
+            val appUsers = friendRepository.getFriendSuggestions().getOrDefault(emptyList())
             _uiState.value = _uiState.value.copy(
                 friends = friends,
+                appUsers = appUsers,
                 isNewChatDialogOpen = true,
             )
         }
