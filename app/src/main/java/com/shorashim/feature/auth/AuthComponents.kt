@@ -38,6 +38,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,31 +53,58 @@ import com.shorashim.R
 import com.shorashim.core.ui.component.Spacing
 
 /**
- * Common background wrapper for Authentication screens with subtle ambient gradient.
+ * Common background for the authentication screens: parchment base, a soft forest glow and a faint
+ * "tree rings" motif in the top corner. Content is vertically centred when it fits and scrolls when it doesn't
+ * (the old version put Arrangement.Center inside verticalScroll, where it has no effect, so forms hugged the top).
  */
 @Composable
 fun AuthScreenBackground(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val gradientBrush = Brush.verticalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.background,
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-        ),
-    )
+    val scheme = MaterialTheme.colorScheme
+    val ringColor = scheme.primary.copy(alpha = 0.07f)
+    val glow = scheme.primaryContainer.copy(alpha = 0.55f)
+    val goldGlow = com.shorashim.core.ui.theme.ShorashimTheme.colors.goldContainer.copy(alpha = 0.45f)
 
-    Box(
+    androidx.compose.foundation.layout.BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(brush = gradientBrush),
+            .background(scheme.background)
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(listOf(glow, androidx.compose.ui.graphics.Color.Transparent),
+                        center = Offset(size.width * 0.85f, size.height * 0.08f), radius = size.width * 0.9f),
+                    radius = size.width * 0.9f,
+                    center = Offset(size.width * 0.85f, size.height * 0.08f),
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(listOf(goldGlow, androidx.compose.ui.graphics.Color.Transparent),
+                        center = Offset(size.width * 0.1f, size.height * 0.95f), radius = size.width * 0.8f),
+                    radius = size.width * 0.8f,
+                    center = Offset(size.width * 0.1f, size.height * 0.95f),
+                )
+                // Tree rings
+                val c = Offset(size.width * 0.92f, size.height * 0.04f)
+                for (i in 1..7) {
+                    drawCircle(
+                        color = ringColor,
+                        radius = i * 34.dp.toPx() + (i % 2) * 6.dp.toPx(),
+                        center = c,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx()),
+                    )
+                }
+            },
     ) {
+        val minHeight = maxHeight
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .heightIn(min = minHeight)
                 .imePadding()
-                .padding(horizontal = Spacing.lg, vertical = Spacing.xl),
+                .systemBarsPadding()
+                .padding(horizontal = Spacing.lg, vertical = Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             content = content,
@@ -95,21 +126,23 @@ fun AuthHeader(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Elevated squircle emblem
         Box(
             modifier = Modifier
-                .size(72.dp)
-                .shadow(elevation = 6.dp, shape = RoundedCornerShape(22.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
-                .clip(RoundedCornerShape(22.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(1.dp),
+                .size(76.dp)
+                .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary),
+                    ),
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(42.dp),
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(40.dp),
             )
         }
 
@@ -117,11 +150,8 @@ fun AuthHeader(
 
         Text(
             text = title,
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 30.sp,
-            ),
-            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.displaySmall,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
 
@@ -129,9 +159,7 @@ fun AuthHeader(
 
         Text(
             text = subtitle,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Medium,
-            ),
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -153,11 +181,11 @@ fun AuthCard(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 3.dp,
+            defaultElevation = 0.dp,
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f),
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
     ) {
         Column(
@@ -258,8 +286,8 @@ fun AuthPrimaryButton(
             disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
         ),
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 4.dp,
+            defaultElevation = 0.dp,
+            pressedElevation = 1.dp,
         ),
         modifier = modifier
             .fillMaxWidth()

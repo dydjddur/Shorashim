@@ -1,23 +1,45 @@
 package com.shorashim.feature.invitations
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Park
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shorashim.core.model.InvitationResolution
+import com.shorashim.core.ui.component.IconTile
+import com.shorashim.core.ui.component.ShorashimCard
 import com.shorashim.core.ui.component.ShorashimLoadingState
+import com.shorashim.core.ui.component.StatusPill
 import com.shorashim.core.ui.component.Spacing
+import com.shorashim.core.ui.theme.ShorashimTheme
 
 @Composable
 fun InvitationDeepLinkRoute(
@@ -47,21 +69,26 @@ fun InvitationDeepLinkRoute(
         }
 
         DeepLinkUiState.Accepted -> {
-            // Navigate to the family that was just joined
-            // We trigger onAccepted with the family ID from a remembered state —
-            // but since we transition instantly, we use a LaunchedEffect-like approach:
             FeedbackScreen(
-                icon = { Icon(Icons.Outlined.CheckCircle, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary) },
-                message = "הצטרפת לעץ המשפחה בהצלחה! 🎉",
+                icon = Icons.Outlined.CheckCircle,
+                tint = ShorashimTheme.colors.success,
+                container = ShorashimTheme.colors.successContainer,
+                message = "הצטרפת לעץ המשפחה בהצלחה!",
                 buttonText = "מעבר לעץ המשפחה",
-                onButton = { onNavigateHome() },
+                onButton = {
+                    // Previously this always went home, so the button never opened the tree that was just joined.
+                    val familyId = viewModel.acceptedFamilyId
+                    if (familyId != null) onAccepted(familyId) else onNavigateHome()
+                },
                 modifier = modifier,
             )
         }
 
         DeepLinkUiState.Declined -> {
             FeedbackScreen(
-                icon = { Icon(Icons.Outlined.Park, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                icon = Icons.Outlined.Park,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                container = MaterialTheme.colorScheme.surfaceVariant,
                 message = "דחית את ההזמנה. תמיד תוכל/י לבקש להצטרף מחדש.",
                 buttonText = "חזרה לדף הבית",
                 onButton = { onNavigateHome() },
@@ -71,7 +98,9 @@ fun InvitationDeepLinkRoute(
 
         is DeepLinkUiState.Error -> {
             FeedbackScreen(
-                icon = { Icon(Icons.Outlined.ErrorOutline, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.error) },
+                icon = Icons.Outlined.ErrorOutline,
+                tint = MaterialTheme.colorScheme.error,
+                container = MaterialTheme.colorScheme.errorContainer,
                 message = state.message,
                 buttonText = "חזרה לדף הבית",
                 onButton = { onNavigateHome() },
@@ -88,73 +117,63 @@ private fun InvitationDeepLinkScreen(
     onDecline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(Spacing.lg),
-        contentAlignment = Alignment.Center,
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    // Centered when it fits, scrollable when it doesn't (small phones / landscape).
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val minHeight = maxHeight
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = minHeight)
+                .padding(horizontal = 20.dp, vertical = Spacing.lg),
+            contentAlignment = Alignment.Center,
+        ) {
+        ShorashimCard(
+            modifier = Modifier.widthIn(max = 480.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 28.dp),
+            shape = RoundedCornerShape(28.dp),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(Spacing.lg),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Park,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(64.dp),
+                IconTile(
+                    icon = Icons.Outlined.Park,
+                    size = 72.dp,
+                    iconSize = 36.dp,
+                    cornerRadius = 24.dp,
                 )
-
                 Spacer(Modifier.height(Spacing.md))
-
                 Text(
-                    text = "הוזמנת לעץ משפחה:",
+                    text = "הוזמנת להצטרף לעץ משפחה",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
-
-                Spacer(Modifier.height(Spacing.xs))
-
+                Spacer(Modifier.height(6.dp))
                 Text(
                     text = resolution.familyName ?: "עץ משפחה",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                 )
 
                 resolution.invitedBy?.let { inviter ->
                     Spacer(Modifier.height(Spacing.sm))
-                    Text(
-                        text = "הוזמנת על ידי: $inviter",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
+                    StatusPill(
+                        text = "הוזמנת על ידי $inviter",
+                        icon = Icons.Outlined.PersonOutline,
+                        container = MaterialTheme.colorScheme.surfaceVariant,
+                        content = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 resolution.role?.let { role ->
-                    val hebrewRole = when (role) {
-                        "CONTRIBUTOR", "EDITOR" -> "משתתף (עריכת תוכן)"
-                        "VIEWER" -> "צופה (קריאה בלבד)"
-                        "ADMIN" -> "מנהל"
-                        else -> role
-                    }
-                    Text(
-                        text = "תפקיד: $hebrewRole",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
+                    Spacer(Modifier.height(Spacing.sm))
+                    StatusPill(
+                        text = roleLabel(role),
+                        container = MaterialTheme.colorScheme.primaryContainer,
+                        content = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
 
@@ -166,14 +185,8 @@ private fun InvitationDeepLinkScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                    ),
                 ) {
-                    Text(
-                        text = "אישור הצטרפות",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    )
+                    Text(text = "אישור הצטרפות")
                 }
 
                 Spacer(Modifier.height(Spacing.sm))
@@ -185,45 +198,58 @@ private fun InvitationDeepLinkScreen(
                         .height(48.dp),
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text(text = "דחיית ההזמנה")
+                    Text(text = "דחיית ההזמנה", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+        }
         }
     }
 }
 
+internal fun roleLabel(role: String): String = when (role) {
+    "CONTRIBUTOR", "EDITOR" -> "משתתף · עריכת תוכן"
+    "VIEWER" -> "צופה · קריאה בלבד"
+    "ADMIN" -> "מנהל"
+    "OWNER" -> "מנהל-על"
+    else -> role
+}
+
 @Composable
 private fun FeedbackScreen(
-    icon: @Composable () -> Unit,
+    icon: ImageVector,
+    tint: Color,
+    container: Color,
     message: String,
     buttonText: String,
     onButton: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(Spacing.lg),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            icon()
-            Spacer(Modifier.height(Spacing.md))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(Spacing.xl))
-            Button(
-                onClick = onButton,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-            ) {
-                Text(buttonText, fontWeight = FontWeight.Bold)
-            }
+        IconTile(icon = icon, tint = tint, container = container, size = 80.dp, iconSize = 40.dp, cornerRadius = 26.dp)
+        Spacer(Modifier.height(Spacing.lg))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(max = 360.dp),
+        )
+        Spacer(Modifier.height(Spacing.xl))
+        Button(
+            onClick = onButton,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .widthIn(max = 360.dp)
+                .fillMaxWidth()
+                .height(52.dp),
+        ) {
+            Text(buttonText)
         }
     }
 }

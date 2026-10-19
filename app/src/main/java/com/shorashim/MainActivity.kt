@@ -37,6 +37,16 @@ class MainActivity : ComponentActivity() {
     private val pendingInviteToken = androidx.compose.runtime.mutableStateOf<String?>(null)
     private val appUpdateManager = AppUpdateManager()
 
+    override fun onStart() {
+        super.onStart()
+        com.shorashim.core.common.AppVisibility.setForeground(true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        com.shorashim.core.common.AppVisibility.setForeground(false)
+    }
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -119,9 +129,28 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        val shouldShowBars = currentRoute == null ||
-                            currentRoute in com.shorashim.core.navigation.ShorashimRoutes.bottomBarRoutes ||
-                            currentRoute in com.shorashim.core.navigation.ShorashimRoutes.topBarRoutes
+                        // Compare without the query part so e.g. "tehillim?deceasedName=..." keeps the app bars
+                        // (it used to hide them, leaving the memorial Tehillim screen without any navigation).
+                        val baseRoute = currentRoute?.substringBefore('?')
+                        val shouldShowBars = baseRoute == null ||
+                            baseRoute in com.shorashim.core.navigation.ShorashimRoutes.bottomBarRoutes ||
+                            baseRoute in com.shorashim.core.navigation.ShorashimRoutes.topBarRoutes
+
+                        // Android 13+: notifications (birthday / memorial reminders) are silently dropped unless the
+                        // runtime permission is granted, and it was never requested.
+                        val notificationPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                            androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                        ) { }
+                        androidx.compose.runtime.LaunchedEffect(Unit) {
+                            if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                                androidx.core.content.ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    android.Manifest.permission.POST_NOTIFICATIONS,
+                                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
 
                         val userProfile by androidx.compose.runtime.produceState<com.shorashim.core.model.UserProfile?>(initialValue = null, currentRoute) {
                             value = appContainer.profileRepository.getProfile().getOrNull()
@@ -150,11 +179,14 @@ class MainActivity : ComponentActivity() {
 
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
+                            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
                             topBar = {
                                 if (shouldShowBars) {
                                     com.shorashim.core.navigation.ShorashimTopBar(
                                         currentRoute = currentRoute,
                                         userAvatarUrl = userProfile?.avatarUrl,
+                                        userDisplayName = userProfile?.displayName?.ifBlank { null }
+                                            ?: userProfile?.fullName.orEmpty(),
                                         onNavigate = { route ->
                                             navController.navigate(route) {
                                                 popUpTo(ShorashimDestination.FamilyTree.route) {

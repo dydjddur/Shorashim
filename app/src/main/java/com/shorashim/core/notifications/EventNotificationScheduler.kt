@@ -78,6 +78,8 @@ class EventNotificationScheduler(
             "תזכורת לאזכרה: בעוד שבוע נציין אזכרה משפחתית. זה הזמן להתכונן, לומר קדיש ולקרוא תהילים לעילוי הנשמה."
         }
 
+        if (triggerTimeEpochMs <= System.currentTimeMillis()) return
+
         val requestCode = (eventId.hashCode() and 0x7FFFFFFF)
         scheduleAlarm(requestCode, triggerTimeEpochMs, title, message, eventId, TYPE_MEMORIAL)
     }
@@ -98,6 +100,10 @@ class EventNotificationScheduler(
             LocalTime.of(9, 0),
             EventDateCalculator.ISRAEL_ZONE,
         ).toInstant().toEpochMilli()
+
+        // An exact alarm set in the past fires immediately. Because events are re-scheduled on every refresh,
+        // that used to re-post the birthday notification every 30 seconds after 09:00 on the birthday itself.
+        if (triggerTimeEpochMs <= System.currentTimeMillis()) return
 
         val title = "יום הולדת שמח! 🎉"
         val message = EventDateCalculator.getBirthdayMessage(personName, isToday = true)

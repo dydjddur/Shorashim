@@ -191,7 +191,7 @@ fun HexagonalRelationshipControls(
     HexagonRelationshipButton(
         emoji = "💍",
         label = "בן/בת זוג",
-        borderColor = Color(0xFFC48B47),
+        borderColor = com.shorashim.core.ui.theme.ShorashimTheme.colors.gold,
         onClick = { onAddSpouseClick(person) },
         modifier = Modifier.absoluteOffset { IntOffset(spouse.first.roundToInt(), spouse.second.roundToInt()) },
         widthPx = bigW,

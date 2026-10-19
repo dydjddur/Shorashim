@@ -48,108 +48,60 @@ fun ChatInvitationCard(
     val token = payload.token ?: InvitationUrlValidator.extractToken(payload.url)
     val isValid = !token.isNullOrBlank() && InvitationUrlValidator.isValidInvitationUrl(payload.url)
 
-    val cardBg = if (isFromMe) {
-        Color(0xFF1B382B) // Forest dark green
-    } else {
-        Color(0xFF1E2836) // Deep navy slate
-    }
+    val scheme = MaterialTheme.colorScheme
+    val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
 
-    val borderColor = if (isFromMe) {
-        Color(0xFF22C55E).copy(alpha = 0.5f)
-    } else {
-        Color(0xFF38BDF8).copy(alpha = 0.5f)
-    }
-
-    Card(
+    Surface(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        border = BorderStroke(1.5.dp, borderColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = scheme.surface,
+        border = BorderStroke(1.dp, if (isFromMe) scheme.primary.copy(alpha = 0.35f) else scheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
         ) {
-            // Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (isFromMe) Color(0xFF22C55E).copy(alpha = 0.2f) else Color(0xFF38BDF8).copy(alpha = 0.2f),
-                        modifier = Modifier.size(36.dp),
-                    ) {
-                        BoxContent(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AccountTree,
-                                contentDescription = null,
-                                tint = if (isFromMe) Color(0xFF4ADE80) else Color(0xFF38BDF8),
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.width(10.dp))
-
-                    Column {
-                        Text(
-                            text = "הזמנה לעץ משפחה",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isFromMe) Color(0xFF86EFAC) else Color(0xFF7DD3FC),
-                            ),
-                        )
-                        Text(
-                            text = payload.familyName?.ifBlank { "עץ משפחה" } ?: "עץ משפחה",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                com.shorashim.core.ui.component.IconTile(
+                    icon = Icons.Outlined.AccountTree,
+                    size = 40.dp,
+                    cornerRadius = 12.dp,
+                )
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "הזמנה לעץ משפחה",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = scheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = payload.familyName?.ifBlank { "עץ משפחה" } ?: "עץ משפחה",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = scheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-
-                // Active status badge
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF22C55E).copy(alpha = 0.2f),
-                    border = BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.4f)),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF4ADE80),
-                            modifier = Modifier.size(12.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = "הזמנה פעילה",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4ADE80),
-                            ),
-                        )
-                    }
+                // Only claim the invitation is active when the link is actually usable.
+                if (isValid) {
+                    com.shorashim.core.ui.component.StatusPill(
+                        text = "פעילה",
+                        icon = Icons.Outlined.CheckCircle,
+                        container = extra.successContainer,
+                        content = extra.success,
+                    )
+                } else {
+                    com.shorashim.core.ui.component.StatusPill(
+                        text = "קישור לא תקין",
+                        container = scheme.errorContainer,
+                        content = scheme.onErrorContainer,
+                    )
                 }
             }
 
@@ -159,31 +111,15 @@ fun ChatInvitationCard(
                 text = if (isFromMe) {
                     "שלחת הזמנה להצטרפות לעריכת עץ זה. ההזמנה מוצפנת מקצה לקצה."
                 } else {
-                    "הוזמנת להצטרף לעץ המשפחה! לחץ למטה כדי לצפות בפרטי ההזמנה ולהצטרף לעץ."
+                    "הוזמנת להצטרף לעץ המשפחה! פתחו את ההזמנה כדי לראות את הפרטים ולהצטרף."
                 },
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = Color(0xFFCBD5E1),
-                    lineHeight = 18.sp,
-                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant,
             )
 
             Spacer(Modifier.height(12.dp))
 
-            // Action Button
-            Button(
-                onClick = {
-                    if (isValid && token != null) {
-                        onOpenInvitation(token)
-                    }
-                },
-                enabled = isValid && token != null,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFromMe) Color(0xFF16A34A) else Color(0xFF0284C7),
-                    contentColor = Color.White,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            val buttonContent: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
                 Icon(
                     imageVector = Icons.Outlined.OpenInNew,
                     contentDescription = null,
@@ -191,8 +127,25 @@ fun ChatInvitationCard(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (isFromMe) "צפה בהזמנה שנשלחה" else "פתיחת ההזמנה והצטרפות",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    text = if (isFromMe) "צפייה בהזמנה" else "פתיחת ההזמנה והצטרפות",
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            if (isFromMe) {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { if (token != null) onOpenInvitation(token) },
+                    enabled = isValid && token != null,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    content = buttonContent,
+                )
+            } else {
+                Button(
+                    onClick = { if (token != null) onOpenInvitation(token) },
+                    enabled = isValid && token != null,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    content = buttonContent,
                 )
             }
         }

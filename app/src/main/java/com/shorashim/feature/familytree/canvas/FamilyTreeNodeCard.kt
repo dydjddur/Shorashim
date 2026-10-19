@@ -65,32 +65,25 @@ fun FamilyTreeNodeCard(
         }
     }
 
+    val scheme = MaterialTheme.colorScheme
+    val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
     val borderColor = when {
-        isSelected -> Color(0xFF22C55E) // Vivid green highlight when selected
-        isDeceased -> Color(0xFFD4AF37) // Gold/candle accent for memory
-        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+        isSelected -> scheme.primary
+        isDeceased -> extra.gold.copy(alpha = 0.7f)
+        else -> scheme.outlineVariant
     }
 
-    val borderWidth = if (isSelected) 2.5.dp else 1.5.dp
+    val borderWidth = if (isSelected) 2.dp else 1.dp
 
-    Card(
+    Surface(
+        onClick = { onCardClick(person) },
         modifier = modifier
             .width(node.width.dp)
-            .height(node.height.dp)
-            .clickable { onCardClick(person) },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isDeceased) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 10.dp else 6.dp),
-        border = BorderStroke(
-            width = borderWidth,
-            color = borderColor,
-        ),
+            .height(node.height.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = if (isDeceased) extra.goldContainer.copy(alpha = 0.55f) else scheme.surface,
+        shadowElevation = if (isSelected) 10.dp else 2.dp,
+        border = BorderStroke(width = borderWidth, color = borderColor),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -112,15 +105,15 @@ fun FamilyTreeNodeCard(
                     if (person.isLinkedToUser) {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFF22C55E),
-                            modifier = Modifier.size(16.dp),
-                            border = BorderStroke(1.dp, Color.White),
+                            color = scheme.primary,
+                            modifier = Modifier.size(18.dp),
+                            border = BorderStroke(1.5.dp, scheme.surface),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Outlined.Link,
                                     contentDescription = "מקושר לחשבון",
-                                    tint = Color.White,
+                                    tint = scheme.onPrimary,
                                     modifier = Modifier.size(11.dp),
                                 )
                             }

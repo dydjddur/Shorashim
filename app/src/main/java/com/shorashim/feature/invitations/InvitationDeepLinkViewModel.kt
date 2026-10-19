@@ -25,6 +25,10 @@ class InvitationDeepLinkViewModel(
     private val _uiState = MutableStateFlow<DeepLinkUiState>(DeepLinkUiState.Loading)
     val uiState: StateFlow<DeepLinkUiState> = _uiState.asStateFlow()
 
+    /** Family joined by [accept]; lets the success screen open that tree instead of just going home. */
+    var acceptedFamilyId: String? = null
+        private set
+
     init {
         resolveToken()
     }
@@ -61,6 +65,7 @@ class InvitationDeepLinkViewModel(
             invitationRepository.acceptInvitationByToken(token)
                 .onSuccess { resolution ->
                     if (resolution.ok) {
+                        acceptedFamilyId = resolution.familyId
                         _uiState.value = DeepLinkUiState.Accepted
                     } else {
                         _uiState.value = DeepLinkUiState.Error(mapError(resolution.error))

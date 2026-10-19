@@ -39,8 +39,7 @@ class ProfileViewModel(
 
     private fun startSilentPolling() {
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(30_000)
+            com.shorashim.core.common.pollWhileForeground(30_000) {
                 loadData(isSilent = true)
             }
         }
@@ -62,7 +61,8 @@ class ProfileViewModel(
                     profile = profileRes.getOrNull() ?: state.profile,
                     families = if (familiesRes.isSuccess) familiesRes.getOrDefault(emptyList()) else state.families,
                     friendsCount = if (friendsRes.isSuccess) friendsRes.getOrDefault(emptyList()).size else state.friendsCount,
-                    errorMessage = if (isSilent && state.profile != null) null else profileRes.exceptionOrNull()?.message,
+                    // A silent refresh must not wipe an action error the UI hasn't shown yet.
+                    errorMessage = if (isSilent && state.profile != null) state.errorMessage else profileRes.exceptionOrNull()?.message,
                 )
             }
         }

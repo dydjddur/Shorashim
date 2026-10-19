@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -122,7 +124,7 @@ fun ChatConversationScreen(
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().imePadding()) {
                 // Top Bar
                 ChatTopBar(
                     userName = uiState.otherUserName.ifBlank { "שיחה פרטית" },
@@ -144,6 +146,35 @@ fun ChatConversationScreen(
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        if (uiState.messages.isEmpty()) {
+                            item(key = "empty") {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    com.shorashim.core.ui.component.IconTile(
+                                        icon = Icons.Outlined.Lock,
+                                        size = 56.dp,
+                                        iconSize = 26.dp,
+                                        cornerRadius = 18.dp,
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    Text(
+                                        text = "תחילת השיחה",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = "ההודעות מוצפנות מקצה לקצה. רק אתם והצד השני יכולים לקרוא אותן.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    )
+                                }
+                            }
+                        }
                         items(uiState.messages, key = { it.id }) { msg ->
                             ChatMessageItem(
                                 message = msg,
@@ -193,7 +224,6 @@ private fun ChatTopBar(
             .fillMaxWidth()
             .statusBarsPadding(),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
     ) {
         Row(
             modifier = Modifier
@@ -227,16 +257,14 @@ private fun ChatTopBar(
                     Icon(
                         imageVector = Icons.Outlined.Lock,
                         contentDescription = null,
-                        modifier = Modifier.size(11.dp),
-                        tint = Color(0xFF22C55E),
+                        modifier = Modifier.size(12.dp),
+                        tint = com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "מוצפן מקצה לקצה (E2EE)",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            color = Color(0xFF22C55E),
-                        ),
+                        text = "מוצפן מקצה לקצה",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                     )
                 }
             }
@@ -265,61 +293,52 @@ private fun ChatMessageItem(
             }
         } else {
             // Text message bubble
-            val bubbleBg = if (isFromMe) {
-                Color(0xFF1B382B) // Elegant dark emerald
-            } else {
-                Color(0xFF1E2623) // Sleek slate charcoal
-            }
-
-            val bubbleBorder = if (isFromMe) {
-                BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.4f))
-            } else {
-                BorderStroke(1.dp, Color(0xFF334155))
-            }
+            val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
+            val bubbleBg = if (isFromMe) extra.bubbleMine else extra.bubbleTheirs
+            val onBubble = if (isFromMe) extra.onBubbleMine else extra.onBubbleTheirs
 
             Surface(
                 shape = RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = if (isFromMe) 16.dp else 4.dp,
-                    bottomEnd = if (isFromMe) 4.dp else 16.dp,
+                    topStart = 20.dp,
+                    topEnd = 20.dp,
+                    bottomStart = if (isFromMe) 20.dp else 6.dp,
+                    bottomEnd = if (isFromMe) 6.dp else 20.dp,
                 ),
                 color = bubbleBg,
-                border = bubbleBorder,
-                modifier = Modifier.padding(vertical = 2.dp),
+                border = if (isFromMe) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shadowElevation = if (isFromMe) 0.dp else 0.5.dp,
+                modifier = Modifier
+                    .padding(vertical = 1.dp)
+                    .widthIn(max = 300.dp),
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
                 ) {
                     Text(
                         text = message.plaintext,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.White,
-                            lineHeight = 20.sp,
-                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = onBubble,
                     )
 
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(3.dp))
 
                     Row(
-                        modifier = Modifier.align(if (isFromMe) Alignment.End else Alignment.Start),
+                        modifier = Modifier.align(Alignment.End),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = formatTime(message.createdAt),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8),
-                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onBubble.copy(alpha = 0.65f),
                         )
                         if (isFromMe) {
                             Spacer(Modifier.width(4.dp))
                             Icon(
                                 imageVector = if (message.isRead) Icons.Outlined.DoneAll else Icons.Outlined.Check,
-                                contentDescription = null,
-                                tint = if (message.isRead) Color(0xFF38BDF8) else Color(0xFF94A3B8),
-                                modifier = Modifier.size(13.dp),
+                                contentDescription = if (message.isRead) "נקרא" else "נשלח",
+                                tint = if (message.isRead) MaterialTheme.colorScheme.inversePrimary else onBubble.copy(alpha = 0.65f),
+                                modifier = Modifier.size(14.dp),
                             )
                         }
                     }
@@ -337,77 +356,76 @@ private fun ChatInputBar(
     onSendMessage: () -> Unit,
     onOpenTreePicker: () -> Unit,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val canSend = inputText.isNotBlank() && !isSending
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 4.dp,
+        color = scheme.surface,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Invite Tree button
-            IconButton(
-                onClick = onOpenTreePicker,
-                modifier = Modifier.size(40.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Park,
-                    contentDescription = "הזמן לעץ משפחה",
-                    tint = Color(0xFF22C55E),
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            Spacer(Modifier.width(6.dp))
-
-            // Input field
-            OutlinedTextField(
-                value = inputText,
-                onValueChange = onInputTextChanged,
-                placeholder = {
-                    Text(
-                        text = "כתוב הודעה מוצפנת...",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                    )
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF22C55E),
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                ),
-                maxLines = 4,
-            )
-
-            Spacer(Modifier.width(6.dp))
-
-            // Send button
-            IconButton(
-                onClick = onSendMessage,
-                enabled = inputText.isNotBlank() && !isSending,
+        Column {
+            HorizontalDivider(color = scheme.outlineVariant.copy(alpha = 0.6f))
+            Row(
                 modifier = Modifier
-                    .size(42.dp)
-                    .background(
-                        color = if (inputText.isNotBlank() && !isSending) Color(0xFF22C55E) else Color(0xFF2E3832),
-                        shape = CircleShape,
-                    ),
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.Bottom,
             ) {
-                if (isSending) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
+                IconButton(onClick = onOpenTreePicker) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.Send,
-                        contentDescription = "שלח",
-                        tint = if (inputText.isNotBlank()) Color(0xFF0F172A) else Color(0xFF94A3B8),
-                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Outlined.Park,
+                        contentDescription = "הזמן לעץ משפחה",
+                        tint = scheme.primary,
                     )
+                }
+
+                OutlinedTextField(
+                    value = inputText,
+                    onValueChange = onInputTextChanged,
+                    placeholder = {
+                        Text(
+                            text = "כתבו הודעה...",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = scheme.primary.copy(alpha = 0.6f),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedContainerColor = scheme.surfaceVariant,
+                        unfocusedContainerColor = scheme.surfaceVariant,
+                    ),
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    maxLines = 4,
+                )
+
+                Spacer(Modifier.width(6.dp))
+
+                IconButton(
+                    onClick = onSendMessage,
+                    enabled = canSend,
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                        .size(48.dp)
+                        .background(
+                            color = if (canSend) scheme.primary else scheme.surfaceVariant,
+                            shape = CircleShape,
+                        ),
+                ) {
+                    if (isSending) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = scheme.primary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Send,
+                            contentDescription = "שלח",
+                            tint = if (canSend) scheme.onPrimary else scheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
         }
@@ -439,7 +457,7 @@ private fun TreePickerBottomSheet(
                 Icon(
                     imageVector = Icons.Outlined.AccountTree,
                     contentDescription = null,
-                    tint = Color(0xFF22C55E),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp),
                 )
                 Spacer(Modifier.width(10.dp))
@@ -495,11 +513,9 @@ private fun TreePickerBottomSheet(
                                 )
                             }
                             Text(
-                                text = "שלח הזמנה ✉️",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    color = Color(0xFF22C55E),
-                                    fontWeight = FontWeight.Bold,
-                                ),
+                                text = "שליחת הזמנה",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -514,7 +530,7 @@ private fun TreePickerBottomSheet(
 private fun formatTime(isoString: String?): String {
     if (isoString.isNullOrBlank()) return ""
     return try {
-        val instant = java.time.Instant.parse(isoString)
+        val instant = com.shorashim.core.common.TimeFormat.parseInstant(isoString) ?: return ""
         val zdt = instant.atZone(java.time.ZoneId.systemDefault())
         java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(zdt)
     } catch (e: Throwable) {

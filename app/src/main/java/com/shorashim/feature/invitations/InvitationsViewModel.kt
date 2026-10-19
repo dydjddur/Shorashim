@@ -35,8 +35,7 @@ class InvitationsViewModel(
 
     private fun startSilentPolling() {
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(20_000)
+            com.shorashim.core.common.pollWhileForeground(20_000) {
                 loadPendingInvitations(isSilent = true)
             }
         }

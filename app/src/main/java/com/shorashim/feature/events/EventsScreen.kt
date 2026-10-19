@@ -117,7 +117,18 @@ fun EventsScreen(
 
     Scaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            androidx.compose.material3.ExtendedFloatingActionButton(
+                onClick = onAddMemorial,
+                shape = RoundedCornerShape(18.dp),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                text = { Text("הוספת אזכרה", fontWeight = FontWeight.Bold) },
+            )
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -127,35 +138,25 @@ fun EventsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                    .padding(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = stringResource(R.string.events_title),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     modifier = Modifier.weight(1f),
                 )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.width(184.dp)) {
-                    SegmentedButton(
-                        selected = viewMode == EventsViewMode.CALENDAR,
-                        onClick = { viewMode = EventsViewMode.CALENDAR },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                        icon = {},
-                    ) {
-                        Text(stringResource(R.string.events_view_calendar), fontSize = 13.sp, maxLines = 1)
-                    }
-                    SegmentedButton(
-                        selected = viewMode == EventsViewMode.LIST,
-                        onClick = { viewMode = EventsViewMode.LIST },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                        icon = {},
-                    ) {
-                        Text(stringResource(R.string.events_view_list), fontSize = 13.sp, maxLines = 1)
-                    }
-                }
+                com.shorashim.core.ui.component.PillToggle(
+                    options = listOf(
+                        com.shorashim.core.ui.component.PillOption(stringResource(R.string.events_view_calendar)),
+                        com.shorashim.core.ui.component.PillOption(stringResource(R.string.events_view_list)),
+                    ),
+                    selectedIndex = if (viewMode == EventsViewMode.CALENDAR) 0 else 1,
+                    onSelect = { viewMode = if (it == 0) EventsViewMode.CALENDAR else EventsViewMode.LIST },
+                    modifier = Modifier.width(200.dp),
+                )
             }
 
             Box(
@@ -183,6 +184,7 @@ fun EventsScreen(
                         ShorashimEmptyState(
                             title = stringResource(R.string.events_empty_title),
                             message = stringResource(R.string.events_empty_message),
+                            icon = Icons.Outlined.CalendarMonth,
                         )
                     }
                     else -> {
@@ -192,9 +194,9 @@ fun EventsScreen(
                                 start = Spacing.md,
                                 end = Spacing.md,
                                 top = Spacing.xs,
-                                bottom = Spacing.md,
+                                bottom = 104.dp,
                             ),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             items(uiState.events, key = { it.id }) { event ->
                                 when (event) {
@@ -246,82 +248,51 @@ internal fun BirthdayCard(
     event: CalendarEvent.Birthday,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-        ),
+    val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
+    val isToday = event.daysUntil == 0L
+    com.shorashim.core.ui.component.ShorashimCard(
+        modifier = modifier,
+        borderColor = if (isToday) extra.clay.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant,
+        contentPadding = PaddingValues(14.dp),
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Cake,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(26.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(Spacing.sm))
-                    Column {
-                        Text(
-                            text = event.personName,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        if (event.familyNames.isNotEmpty()) {
-                            Text(
-                                text = "עץ: " + event.familyNames.joinToString(", "),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (event.daysUntil == 0L) Color(0xFFE91E63) else MaterialTheme.colorScheme.primary,
-                ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            com.shorashim.core.ui.component.IconTile(
+                icon = Icons.Outlined.Cake,
+                tint = extra.clay,
+                container = extra.clayContainer,
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = event.personName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                if (event.familyNames.isNotEmpty()) {
                     Text(
-                        text = event.relativeLabel,
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        text = event.familyNames.joinToString(", "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
             }
-
-            Spacer(Modifier.height(Spacing.sm))
-
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = event.message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(Spacing.sm),
-                )
-            }
+            com.shorashim.core.ui.component.StatusPill(
+                text = event.relativeLabel,
+                container = if (isToday) extra.clay else extra.clayContainer,
+                content = if (isToday) MaterialTheme.colorScheme.surface else extra.onClayContainer,
+            )
+        }
+        if (event.message.isNotBlank()) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = event.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -332,91 +303,53 @@ internal fun MemorialCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = Color(0xFFFFA000).copy(alpha = 0.5f), // Warm amber for memorial
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
+    com.shorashim.core.ui.component.ShorashimCard(
+        onClick = onClick,
+        modifier = modifier,
+        borderColor = extra.gold.copy(alpha = 0.35f),
+        contentPadding = PaddingValues(14.dp),
     ) {
-        Column(modifier = Modifier.padding(Spacing.md)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.LocalFireDepartment,
-                            contentDescription = null,
-                            tint = Color(0xFFFFA000),
-                            modifier = Modifier.size(26.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(Spacing.sm))
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = event.personName,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Spacer(Modifier.width(Spacing.xs))
-                            Text(text = "🕯️", fontSize = 14.sp)
-                        }
-                        Text(
-                            text = "עץ: ${event.familyName}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFFFA000),
-                ) {
-                    Text(
-                        text = event.relativeLabel,
-                        color = Color.Black,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
-                }
-            }
-
-            if (!event.hebrewDate.isNullOrBlank()) {
-                Spacer(Modifier.height(Spacing.xs))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            com.shorashim.core.ui.component.IconTile(
+                icon = Icons.Outlined.LocalFireDepartment,
+                tint = extra.gold,
+                container = extra.goldContainer,
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = "תאריך עברי: ${event.hebrewDate}",
+                    text = event.personName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = listOfNotNull(event.hebrewDate?.ifBlank { null }, event.familyName.ifBlank { null })
+                        .joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
+            com.shorashim.core.ui.component.StatusPill(
+                text = event.relativeLabel,
+                container = extra.goldContainer,
+                content = extra.onGoldContainer,
+            )
+        }
 
-            if (!event.description.isNullOrBlank()) {
-                Spacer(Modifier.height(Spacing.xs))
-                Text(
-                    text = event.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                )
-            }
+        if (!event.description.isNullOrBlank()) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = event.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -450,18 +383,14 @@ private fun MemorialDetailsDialog(
         onDismissRequest = onDismiss,
         title = "אזכרה לזכרו של ${memorial.personName}",
         subtitle = "${memorial.relativeLabel} (${memorial.originalDateStr})",
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Text(
-                    text = "סגירה",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                )
+        icon = Icons.Outlined.LocalFireDepartment,
+        iconTint = com.shorashim.core.ui.theme.ShorashimTheme.colors.gold,
+        iconBackground = com.shorashim.core.ui.theme.ShorashimTheme.colors.goldContainer,
+        confirmButton = if (memorial.canEdit) null else {
+            {
+                androidx.compose.material3.TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("סגירה", fontWeight = FontWeight.Bold)
+                }
             }
         },
         dismissButton = if (memorial.canEdit) {
@@ -564,8 +493,8 @@ private fun MemorialDetailsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF9A825), // Warm gold
-                    contentColor = Color.Black,
+                    containerColor = com.shorashim.core.ui.theme.ShorashimTheme.colors.gold,
+                    contentColor = MaterialTheme.colorScheme.surface,
                 ),
             ) {
                 Icon(

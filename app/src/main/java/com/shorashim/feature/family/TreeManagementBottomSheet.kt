@@ -92,7 +92,7 @@ fun TreeManagementBottomSheet(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = when (family.currentUserRole) {
-                        MembershipRole.OWNER -> Color(0xFFD4AF37).copy(alpha = 0.2f)
+                        MembershipRole.OWNER -> com.shorashim.core.ui.theme.ShorashimTheme.colors.gold.copy(alpha = 0.2f)
                         MembershipRole.ADMIN -> MaterialTheme.colorScheme.primaryContainer
                         else -> MaterialTheme.colorScheme.secondaryContainer
                     },
@@ -107,7 +107,7 @@ fun TreeManagementBottomSheet(
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = when (family.currentUserRole) {
-                                MembershipRole.OWNER -> Color(0xFFD4AF37)
+                                MembershipRole.OWNER -> com.shorashim.core.ui.theme.ShorashimTheme.colors.gold
                                 MembershipRole.ADMIN -> MaterialTheme.colorScheme.primary
                                 else -> MaterialTheme.colorScheme.onSecondaryContainer
                             },
@@ -136,14 +136,14 @@ fun TreeManagementBottomSheet(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (family.isPrivate) {
-                        Color(0xFFE65100).copy(alpha = 0.12f)
+                        com.shorashim.core.ui.theme.ShorashimTheme.colors.warning.copy(alpha = 0.12f)
                     } else {
-                        Color(0xFF43A047).copy(alpha = 0.12f)
+                        com.shorashim.core.ui.theme.ShorashimTheme.colors.success.copy(alpha = 0.12f)
                     },
                 ),
                 border = BorderStroke(
                     1.dp,
-                    if (family.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
+                    if (family.isPrivate) com.shorashim.core.ui.theme.ShorashimTheme.colors.warning else com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                 ),
             ) {
                 Row(
@@ -176,7 +176,7 @@ fun TreeManagementBottomSheet(
                         if (family.isPrivate) {
                             Button(
                                 onClick = onPublish,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF43A047)),
+                                colors = ButtonDefaults.buttonColors(containerColor = com.shorashim.core.ui.theme.ShorashimTheme.colors.success),
                                 shape = RoundedCornerShape(10.dp),
                             ) {
                                 Icon(Icons.Outlined.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))

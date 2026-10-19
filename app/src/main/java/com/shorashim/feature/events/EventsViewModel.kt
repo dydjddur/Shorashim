@@ -39,6 +39,7 @@ class EventsViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EventsUiState())
+    private var notificationsScheduled = false
     val uiState: StateFlow<EventsUiState> = _uiState.asStateFlow()
 
     init {
@@ -49,8 +50,7 @@ class EventsViewModel(
 
     private fun startSilentPolling() {
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(30_000)
+            com.shorashim.core.common.pollWhileForeground(30_000) {
                 loadEvents(isSilent = true)
                 loadFamiliesAndPeople()
             }
@@ -64,9 +64,14 @@ class EventsViewModel(
             }
             val result = eventsRepository.loadUpcomingEvents()
             result.onSuccess { events ->
-                _uiState.update { it.copy(isLoading = false, events = events) }
-                // Schedule local notifications for birthdays and memorials
-                scheduleAllNotifications(events)
+                val changed = events != _uiState.value.events
+                _uiState.update { it.copy(isLoading = false, events = events, errorMessage = null) }
+                // Schedule local notifications for birthdays and memorials (only when something changed,
+                // not on every silent poll).
+                if (changed || !notificationsScheduled) {
+                    notificationsScheduled = true
+                    scheduleAllNotifications(events)
+                }
             }.onFailure { err ->
                 _uiState.update { it.copy(isLoading = false, errorMessage = if (isSilent && _uiState.value.events.isNotEmpty()) null else err.message) }
             }
@@ -127,6 +132,7 @@ class EventsViewModel(
     fun onOpenEditDialog(memorial: CalendarEvent.Memorial) {
         _uiState.update {
             it.copy(
+                actionError = null,
                 isAddEditOpen = true,
                 editingMemorial = memorial,
                 selectedEvent = null,

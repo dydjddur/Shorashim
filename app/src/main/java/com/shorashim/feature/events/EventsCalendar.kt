@@ -73,8 +73,6 @@ private val WEEKDAY_NAMES = listOf("ראשון", "שני", "שלישי", "רבי
 private const val MAX_CHIPS_PER_DAY = 2
 private const val SWIPE_THRESHOLD_PX = 90f
 
-private val BirthdayColor = Color(0xFFD81B60)
-private val MemorialColor = Color(0xFFE08A00)
 
 /** Palette of the month grid; derived from the reference design (teal header, tinted Saturday column). */
 private data class CalendarPalette(
@@ -94,40 +92,23 @@ private data class CalendarPalette(
 
 @Composable
 private fun rememberCalendarPalette(): CalendarPalette {
-    val dark = isSystemInDarkTheme()
     val scheme = MaterialTheme.colorScheme
-    return remember(dark, scheme) {
-        if (dark) {
-            CalendarPalette(
-                header = Color(0xFF1B5242),
-                onHeader = Color.White,
-                gridLine = Color(0xFF2F5B4B).copy(alpha = 0.7f),
-                saturdayTint = Color(0xFF14281F),
-                outsideMonthNumber = Color(0xFF5E7C6C),
-                dayNumber = scheme.onSurface,
-                hebrewDay = Color(0xFF9DBBAA),
-                today = Color(0xFF48A887),
-                yomTovTint = Color(0xFF2B2713),
-                yomTovText = Color(0xFFFFC857),
-                fastText = Color(0xFFFFB4AB),
-                jewishText = Color(0xFF8FD9BB),
-            )
-        } else {
-            CalendarPalette(
-                header = Color(0xFF1F7A5C),
-                onHeader = Color.White,
-                gridLine = Color(0xFF1F7A5C).copy(alpha = 0.45f),
-                saturdayTint = Color(0xFFD7EBDD),
-                outsideMonthNumber = Color(0xFF8AA396),
-                dayNumber = Color(0xFF1B1B1B),
-                hebrewDay = Color(0xFF506256),
-                today = Color(0xFF1B5242),
-                yomTovTint = Color(0xFFFFF1CC),
-                yomTovText = Color(0xFF9A5B00),
-                fastText = Color(0xFFB3261E),
-                jewishText = Color(0xFF1B5242),
-            )
-        }
+    val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
+    return remember(scheme, extra) {
+        CalendarPalette(
+            header = scheme.primary,
+            onHeader = scheme.onPrimary,
+            gridLine = scheme.outlineVariant,
+            saturdayTint = scheme.primaryContainer.copy(alpha = 0.45f),
+            outsideMonthNumber = scheme.onSurfaceVariant.copy(alpha = 0.45f),
+            dayNumber = scheme.onSurface,
+            hebrewDay = scheme.onSurfaceVariant,
+            today = scheme.primary,
+            yomTovTint = extra.goldContainer.copy(alpha = 0.7f),
+            yomTovText = extra.onGoldContainer,
+            fastText = scheme.error,
+            jewishText = scheme.secondary,
+        )
     }
 }
 
@@ -445,7 +426,7 @@ private fun DayCell(
 
 @Composable
 private fun EventChip(event: CalendarEvent, alpha: Float) {
-    val color = if (event is CalendarEvent.Birthday) BirthdayColor else MemorialColor
+    val color = if (event is CalendarEvent.Birthday) com.shorashim.core.ui.theme.ShorashimTheme.colors.clay else com.shorashim.core.ui.theme.ShorashimTheme.colors.gold
     Text(
         text = event.personName.substringBefore(' '),
         fontSize = 9.sp,
@@ -471,9 +452,9 @@ private fun CalendarLegend() {
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LegendItem(BirthdayColor, stringResource(R.string.events_birthday_tag))
-        LegendItem(MemorialColor, stringResource(R.string.events_memorial_tag))
-        LegendItem(Color(0xFFD9A400), stringResource(R.string.events_holiday_tag))
+        LegendItem(com.shorashim.core.ui.theme.ShorashimTheme.colors.clay, stringResource(R.string.events_birthday_tag))
+        LegendItem(com.shorashim.core.ui.theme.ShorashimTheme.colors.gold, stringResource(R.string.events_memorial_tag))
+        LegendItem(com.shorashim.core.ui.theme.ShorashimTheme.colors.gold, stringResource(R.string.events_holiday_tag))
     }
 }
 

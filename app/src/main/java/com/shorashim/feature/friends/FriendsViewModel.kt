@@ -48,8 +48,7 @@ class FriendsViewModel(
 
     private fun startSilentPolling() {
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(15_000)
+            com.shorashim.core.common.pollWhileForeground(15_000) {
                 loadData(isSilent = true)
             }
         }
@@ -87,7 +86,9 @@ class FriendsViewModel(
         if (q.isNotEmpty()) {
             searchJob = viewModelScope.launch {
                 _uiState.update { it.copy(isSearching = true) }
-                val res = profileRepository.searchUsers(q)
+                // Debounce: don't hit the server on every keystroke.
+                kotlinx.coroutines.delay(300)
+                val res = profileRepository.searchUsers(q.removePrefix("@"))
                 val list = res.getOrDefault(emptyList())
                 _uiState.update {
                     it.copy(
@@ -144,6 +145,8 @@ class FriendsViewModel(
     fun removeFriend(friendId: String) {
         viewModelScope.launch {
             friendRepository.removeFriend(friendId)
+                .onSuccess { _uiState.update { it.copy(actionMessage = "החבר הוסר מהרשימה") } }
+                .onFailure { t -> _uiState.update { it.copy(errorMessage = t.message ?: "שגיאה בהסרת החבר") } }
             loadData(isSilent = true)
         }
     }

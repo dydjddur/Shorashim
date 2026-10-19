@@ -125,6 +125,16 @@ fun FamilyManagementRoute(
         }
     }
 
+    // Action failures (rename, publish, link, delete...) used to be stored in state but never shown once the tree
+    // was loaded. Surface them as a snackbar; the add-relationship dialog shows its own error inline.
+    LaunchedEffect(uiState.error, uiState.family != null, uiState.isAddRelationshipOpen) {
+        val err = uiState.error
+        if (err != null && uiState.family != null && !uiState.isAddRelationshipOpen) {
+            viewModel.clearError()
+            snackbarHostState.showSnackbar(err)
+        }
+    }
+
     FamilyManagementScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
@@ -167,7 +177,7 @@ fun FamilyManagementRoute(
                 personBId = pB,
                 type = type,
                 onSuccess = { viewModel.setAddRelationshipOpen(false) },
-                onError = { /* handled in state */ },
+                onError = { resId -> viewModel.showError(context.getString(resId)) },
             )
         },
         onAddChildClick = { parent ->
@@ -451,6 +461,7 @@ fun FamilyManagementScreen(
                     onClick = onAddPersonClick,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = RoundedCornerShape(18.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.PersonAdd,
@@ -465,35 +476,18 @@ fun FamilyManagementScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            // View Mode Tabs: Workflow Map (Canvas) vs List View
-            TabRow(
-                selectedTabIndex = if (uiState.activeTab == FamilyViewTab.CANVAS) 0 else 1,
-                containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.primary,
-            ) {
-                Tab(
-                    selected = uiState.activeTab == FamilyViewTab.CANVAS,
-                    onClick = { onSetTab(FamilyViewTab.CANVAS) },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.AccountTree, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("מפת שושלת", fontWeight = FontWeight.Bold)
-                        }
-                    },
-                )
-                Tab(
-                    selected = uiState.activeTab == FamilyViewTab.LIST,
-                    onClick = { onSetTab(FamilyViewTab.LIST) },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.FormatListBulleted, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("רשימה וחיפוש", fontWeight = FontWeight.Bold)
-                        }
-                    },
-                )
-            }
+            // View mode switch: lineage map vs searchable list
+            com.shorashim.core.ui.component.PillToggle(
+                options = listOf(
+                    com.shorashim.core.ui.component.PillOption("מפת שושלת", Icons.Outlined.AccountTree),
+                    com.shorashim.core.ui.component.PillOption("רשימה וחיפוש", Icons.Outlined.FormatListBulleted),
+                ),
+                selectedIndex = if (uiState.activeTab == FamilyViewTab.CANVAS) 0 else 1,
+                onSelect = { onSetTab(if (it == 0) FamilyViewTab.CANVAS else FamilyViewTab.LIST) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
 
             when {
                 uiState.isLoading && uiState.family == null -> {
@@ -612,18 +606,18 @@ private fun PersonListItemCard(
     val bDate = PartialDate.fromIso(person.birthDate, person.birthDatePrecision)
     val dDate = PartialDate.fromIso(person.deathDate, person.deathDatePrecision)
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    Surface(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
             1.dp,
-            if (isDeceased) Color(0xFFD4AF37).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant,
+            if (isDeceased) {
+                com.shorashim.core.ui.theme.ShorashimTheme.colors.gold.copy(alpha = 0.45f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            },
         ),
     ) {
         Row(
@@ -655,14 +649,16 @@ private fun PersonListItemCard(
                         "${bDate.toDisplayString()} – ${dDate.toDisplayString()}"
                     bDate.precision != DatePrecision.UNKNOWN -> "לידה: ${bDate.toDisplayString()}"
                     dDate.precision != DatePrecision.UNKNOWN -> "פטירה: ${dDate.toDisplayString()}"
-                    isDeceased -> "ז״ל 🕯️"
-                    else -> "חי/ה"
+                    isDeceased -> "ז״ל"
+                    else -> ""
                 }
-                Text(
-                    text = dateInfo,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (dateInfo.isNotEmpty()) {
+                    Text(
+                        text = dateInfo,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

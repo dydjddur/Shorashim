@@ -46,9 +46,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 /**
- * Premium custom dialog component for Shorashim.
- * Enforces Hebrew RTL layout direction, dark emerald theme styling,
- * rounded corners (26.dp), soft borders, hero icons/avatars, and styled buttons.
+ * Shared dialog for Shorashim: RTL, flat paper surface with a hairline border, an optional icon tile or avatar
+ * anchor, serif title and full-width actions. The body is weighted inside [maxHeight] so the actions stay visible.
  */
 @Composable
 fun ShorashimDialog(
@@ -78,19 +77,16 @@ fun ShorashimDialog(
                     .widthIn(max = 440.dp)
                     .heightIn(max = maxHeight)
                     .padding(vertical = 16.dp),
-                shape = RoundedCornerShape(26.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-                ),
-                tonalElevation = 8.dp,
-                shadowElevation = 16.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                tonalElevation = 0.dp,
+                shadowElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 22.dp, vertical = 22.dp),
+                        .padding(horizontal = 24.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     // Header: Hero Icon or Avatar
@@ -104,34 +100,22 @@ fun ShorashimDialog(
                         }
                     } else if (heroIcon != null || icon != null) {
                         val displayIcon = heroIcon ?: icon!!
-                        val effectiveBg = iconBackground ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                        val effectiveTint = iconTint ?: MaterialTheme.colorScheme.primary
-                        Box(
-                            modifier = Modifier
-                                .size(54.dp)
-                                .clip(CircleShape)
-                                .background(effectiveBg)
-                                .padding(bottom = 0.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = displayIcon,
-                                contentDescription = null,
-                                tint = effectiveTint,
-                                modifier = Modifier.size(28.dp),
-                            )
-                        }
-                        Spacer(Modifier.height(12.dp))
+                        IconTile(
+                            icon = displayIcon,
+                            tint = iconTint ?: MaterialTheme.colorScheme.primary,
+                            container = iconBackground ?: MaterialTheme.colorScheme.primaryContainer,
+                            size = 56.dp,
+                            iconSize = 28.dp,
+                            cornerRadius = 18.dp,
+                        )
+                        Spacer(Modifier.height(14.dp))
                     }
 
                     // Title
                     if (!title.isNullOrBlank()) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                            ),
+                            style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),
@@ -140,19 +124,17 @@ fun ShorashimDialog(
 
                     // Subtitle
                     if (!subtitle.isNullOrBlank()) {
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = subtitle,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 13.sp,
-                            ),
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(18.dp))
 
                     // Content Body
                     Box(
@@ -212,7 +194,7 @@ fun ShorashimConfirmDialog(
         onDismissRequest = onDismissRequest,
         icon = icon,
         iconTint = if (isDestructive) errorColor else primaryColor,
-        iconBackground = if (isDestructive) errorColor.copy(alpha = 0.12f) else primaryColor.copy(alpha = 0.12f),
+        iconBackground = if (isDestructive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
         title = title,
         confirmButton = {
             Button(
@@ -221,6 +203,7 @@ fun ShorashimConfirmDialog(
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isDestructive) errorColor else primaryColor,
+                    contentColor = if (isDestructive) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary,
                 ),
             ) {
                 Text(
@@ -235,10 +218,7 @@ fun ShorashimConfirmDialog(
                 onClick = onDismissRequest,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Text(
                     text = dismissText,
@@ -280,10 +260,10 @@ fun ShorashimSnackbarHost(
             Snackbar(
                 snackbarData = data,
                 shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                actionColor = MaterialTheme.colorScheme.primary,
-                dismissActionContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                containerColor = MaterialTheme.colorScheme.inverseSurface,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                actionColor = MaterialTheme.colorScheme.inversePrimary,
+                dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface,
             )
         }
     }

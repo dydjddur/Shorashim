@@ -1,6 +1,7 @@
 package com.shorashim.core.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -51,7 +52,15 @@ fun ShorashimNavHost(
     NavHost(
         navController = navController,
         startDestination = ShorashimDestination.FamilyTree.route,
-        modifier = modifier.padding(innerPadding),
+        // consumeWindowInsets: the padding already covers the status/navigation bars, so nested
+        // statusBarsPadding()/imePadding() must not add them a second time.
+        modifier = modifier
+            .padding(innerPadding)
+            .consumeWindowInsets(innerPadding),
+        enterTransition = { androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180)) },
+        exitTransition = { androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) },
+        popEnterTransition = { androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180)) },
+        popExitTransition = { androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) },
     ) {
         // Main Family Tab: Shows "המשפחות שלי"
         composable(ShorashimDestination.FamilyTree.route) {

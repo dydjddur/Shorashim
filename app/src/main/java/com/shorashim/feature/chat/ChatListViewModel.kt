@@ -32,8 +32,7 @@ class ChatListViewModel(
         loadConversations()
         // New conversations / unread counters from other people appear without the user having to pull to refresh.
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(8_000)
+            com.shorashim.core.common.pollWhileForeground(8_000) {
                 chatRepository.getConversations().getOrNull()?.let { list ->
                     if (list != _uiState.value.conversations) {
                         _uiState.value = _uiState.value.copy(conversations = list)

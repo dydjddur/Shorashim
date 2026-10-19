@@ -76,12 +76,12 @@ fun TreeSwitcherDropdown(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (!currentFamily.canEditTreeContent) Color(0xFF1976D2) else if (currentFamily.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
+                                color = if (!currentFamily.canEditTreeContent) com.shorashim.core.ui.theme.ShorashimTheme.colors.info else if (currentFamily.isPrivate) com.shorashim.core.ui.theme.ShorashimTheme.colors.warning else com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                                 modifier = Modifier.padding(end = 4.dp),
                             ) {
                                 Text(
                                     text = if (!currentFamily.canEditTreeContent) "עץ קהילתי (צפייה)" else if (currentFamily.isPrivate) "🔒 פרטי" else "🌐 קהילתי",
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.surface,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
@@ -123,11 +123,11 @@ fun TreeSwitcherDropdown(
                             Spacer(Modifier.width(12.dp))
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (fam.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
+                                color = if (fam.isPrivate) com.shorashim.core.ui.theme.ShorashimTheme.colors.warning else com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                             ) {
                                 Text(
                                     text = if (fam.isPrivate) "🔒 פרטי" else "🌐 קהילתי",
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.surface,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),

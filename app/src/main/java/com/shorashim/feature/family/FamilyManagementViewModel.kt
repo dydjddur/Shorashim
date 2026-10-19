@@ -24,7 +24,12 @@ import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,8 +94,7 @@ class FamilyManagementViewModel(
     private fun startSilentPolling() {
         silentPollJob?.cancel()
         silentPollJob = viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(20_000)
+            com.shorashim.core.common.pollWhileForeground(20_000) {
                 refreshData(showToast = false, isSilent = true)
             }
         }
@@ -115,11 +119,14 @@ class FamilyManagementViewModel(
             if (!isSilent && !hasData) {
                 _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             }
-            val allFamResult = familyRepository.getMyFamilies()
-            val famResult = familyRepository.getFamily(fId)
-            val peopleResult = personRepository.getPeople(fId)
-            val relResult = relationshipRepository.getRelationships(fId)
-            val membersResult = familyRepository.getFamilyMembers(fId)
+            val snapshot = fetchSnapshot(fId, includeAllFamilies = true)
+            // The user switched to another tree while this request was in flight - drop the stale result.
+            if (fId != _uiState.value.currentFamilyId) return@launch
+            val allFamResult = snapshot.allFamilies
+            val famResult = snapshot.family
+            val peopleResult = snapshot.people
+            val relResult = snapshot.relationships
+            val membersResult = snapshot.members
 
             if (famResult.isSuccess && peopleResult.isSuccess) {
                 val fam = famResult.getOrNull()
@@ -164,11 +171,14 @@ class FamilyManagementViewModel(
             if (!isSilent) {
                 _uiState.value = _uiState.value.copy(isRefreshing = true)
             }
-            val allFamResult = familyRepository.getMyFamilies()
-            val famResult = familyRepository.getFamily(fId)
-            val peopleResult = personRepository.getPeople(fId)
-            val relResult = relationshipRepository.getRelationships(fId)
-            val membersResult = familyRepository.getFamilyMembers(fId)
+            val snapshot = fetchSnapshot(fId, includeAllFamilies = true)
+            // The user switched to another tree while this request was in flight - drop the stale result.
+            if (fId != _uiState.value.currentFamilyId) return@launch
+            val allFamResult = snapshot.allFamilies
+            val famResult = snapshot.family
+            val peopleResult = snapshot.people
+            val relResult = snapshot.relationships
+            val membersResult = snapshot.members
 
             if (famResult.isSuccess && peopleResult.isSuccess) {
                 val fam = famResult.getOrNull()
@@ -207,6 +217,26 @@ class FamilyManagementViewModel(
                 )
             }
         }
+    }
+
+    private class TreeSnapshot(
+        val allFamilies: Result<List<Family>>,
+        val family: Result<Family>,
+        val people: Result<List<Person>>,
+        val relationships: Result<List<Relationship>>,
+        val members: Result<List<FamilyMember>>,
+    )
+
+    /** Fetches everything the tree screen needs in parallel instead of five sequential round-trips. */
+    private suspend fun fetchSnapshot(fId: String, includeAllFamilies: Boolean): TreeSnapshot = coroutineScope {
+        val allFams = async {
+            if (includeAllFamilies) familyRepository.getMyFamilies() else Result.success(emptyList())
+        }
+        val fam = async { familyRepository.getFamily(fId) }
+        val people = async { personRepository.getPeople(fId) }
+        val rels = async { relationshipRepository.getRelationships(fId) }
+        val members = async { familyRepository.getFamilyMembers(fId) }
+        TreeSnapshot(allFams.await(), fam.await(), people.await(), rels.await(), members.await())
     }
 
     fun onSearchQueryChanged(newQuery: String) {
@@ -425,6 +455,14 @@ class FamilyManagementViewModel(
         _uiState.value = _uiState.value.copy(toastMessage = null)
     }
 
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun showError(message: String) {
+        _uiState.value = _uiState.value.copy(error = message)
+    }
+
     fun createRelationship(
         personAId: String,
         personBId: String,
@@ -459,6 +497,7 @@ class FamilyManagementViewModel(
         viewModelScope.launch {
             relationshipRepository.deleteRelationship(relationshipId)
                 .onSuccess { loadData() }
+                .onFailure { t -> _uiState.value = _uiState.value.copy(error = t.localizedMessage) }
         }
     }
 
@@ -514,10 +553,12 @@ class FamilyManagementViewModel(
     internal fun refreshDataSilently() {
         val fId = _uiState.value.currentFamilyId
         viewModelScope.launch {
-            val famResult = familyRepository.getFamily(fId)
-            val peopleResult = personRepository.getPeople(fId)
-            val relResult = relationshipRepository.getRelationships(fId)
-            val membersResult = familyRepository.getFamilyMembers(fId)
+            val snapshot = fetchSnapshot(fId, includeAllFamilies = false)
+            if (fId != _uiState.value.currentFamilyId) return@launch
+            val famResult = snapshot.family
+            val peopleResult = snapshot.people
+            val relResult = snapshot.relationships
+            val membersResult = snapshot.members
 
             if (famResult.isFailure) {
                 _uiState.value = _uiState.value.copy(
@@ -527,9 +568,9 @@ class FamilyManagementViewModel(
             }
 
             val fam = famResult.getOrNull()
-            val peopleList = peopleResult.getOrDefault(emptyList())
-            val relList = relResult.getOrDefault(emptyList())
-            val memberList = membersResult.getOrDefault(emptyList())
+            val peopleList = peopleResult.getOrDefault(_uiState.value.people)
+            val relList = relResult.getOrDefault(_uiState.value.relationships)
+            val memberList = membersResult.getOrDefault(_uiState.value.members)
             val q = _uiState.value.searchQuery
 
             val filtered = if (q.isBlank()) peopleList else {
@@ -537,7 +578,8 @@ class FamilyManagementViewModel(
             }
 
             _uiState.value = _uiState.value.copy(
-                family = fam,
+                family = fam ?: _uiState.value.family,
+                error = null,
                 people = peopleList,
                 filteredPeople = filtered,
                 relationships = relList,
@@ -552,7 +594,9 @@ class FamilyManagementViewModel(
         val client = supabaseClient
         val channel = realtimeChannel
         if (client != null && channel != null) {
-            viewModelScope.launch {
+            // viewModelScope is already cancelled when this runs from onCleared(), so removing the channel there
+            // never happened and every opened tree leaked a live realtime subscription.
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
                 try {
                     client.realtime.removeChannel(channel)
                 } catch (_: Throwable) {}

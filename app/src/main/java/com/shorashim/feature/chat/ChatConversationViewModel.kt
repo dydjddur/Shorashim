@@ -105,10 +105,9 @@ class ChatConversationViewModel(
     private fun startPolling(convId: String) {
         pollJob?.cancel()
         pollJob = viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(4_000)
+            com.shorashim.core.common.pollWhileForeground(4_000) {
                 val result = chatRepository.getMessages(convId)
-                val msgs = result.getOrNull() ?: continue
+                val msgs = result.getOrNull() ?: return@pollWhileForeground
                 if (msgs.map { it.id } != _uiState.value.messages.map { it.id }) {
                     _uiState.value = _uiState.value.copy(messages = msgs)
                     chatRepository.markMessagesAsRead(convId)
@@ -156,7 +155,7 @@ class ChatConversationViewModel(
             if (result.isSuccess) {
                 val sentMsg = result.getOrThrow()
                 _uiState.value = _uiState.value.copy(
-                    messages = _uiState.value.messages + sentMsg,
+                    messages = _uiState.value.messages.filterNot { it.id == sentMsg.id } + sentMsg,
                     inputText = "",
                     isSending = false,
                 )
@@ -214,7 +213,7 @@ class ChatConversationViewModel(
             if (sendResult.isSuccess) {
                 val sentMsg = sendResult.getOrThrow()
                 _uiState.value = _uiState.value.copy(
-                    messages = _uiState.value.messages + sentMsg,
+                    messages = _uiState.value.messages.filterNot { it.id == sentMsg.id } + sentMsg,
                     isSending = false,
                     toastMessage = "ההזמנה לעץ נשלחה בהצלחה בשיחה המוצפנת!",
                 )
@@ -272,7 +271,8 @@ class ChatConversationViewModel(
         val client = supabaseClient
         val channel = realtimeChannel
         if (client != null && channel != null) {
-            viewModelScope.launch {
+            // Not viewModelScope: it is already cancelled when called from onCleared(), which leaked the channel.
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
                 try {
                     client.realtime.removeChannel(channel)
                 } catch (_: Throwable) {}

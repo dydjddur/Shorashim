@@ -1,36 +1,27 @@
 package com.shorashim.feature.family
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.MailOutline
 import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,20 +31,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shorashim.R
 import com.shorashim.core.model.Family
+import com.shorashim.core.model.MembershipRole
+import com.shorashim.core.ui.component.IconTile
+import com.shorashim.core.ui.component.ShorashimCard
 import com.shorashim.core.ui.component.ShorashimEmptyState
 import com.shorashim.core.ui.component.ShorashimErrorState
 import com.shorashim.core.ui.component.ShorashimLoadingState
 import com.shorashim.core.ui.component.Spacing
+import com.shorashim.core.ui.component.StatusPill
+import com.shorashim.core.ui.theme.ShorashimTheme
 
 @Composable
 fun MyFamiliesRoute(
@@ -79,7 +72,6 @@ fun MyFamiliesRoute(
     )
 }
 
-
 @Composable
 fun MyFamiliesScreen(
     uiState: MyFamiliesUiState,
@@ -91,20 +83,18 @@ fun MyFamiliesScreen(
 ) {
     Scaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+        containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
             if (uiState is MyFamiliesUiState.Success) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     onClick = onCreateFamilyClick,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Add,
-                        contentDescription = stringResource(R.string.families_create_button),
-                    )
-                }
+                    shape = RoundedCornerShape(18.dp),
+                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.families_create_button), fontWeight = FontWeight.Bold) },
+                )
             }
         },
     ) { innerPadding ->
@@ -120,112 +110,63 @@ fun MyFamiliesScreen(
                 )
             }
             MyFamiliesUiState.Empty -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(Spacing.lg),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(RoundedCornerShape(24.dp)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Park,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(54.dp),
-                            )
+                ShorashimEmptyState(
+                    title = stringResource(R.string.families_empty_title),
+                    message = stringResource(R.string.families_empty_message),
+                    icon = Icons.Outlined.Park,
+                    modifier = Modifier.padding(innerPadding),
+                    action = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Button(
+                                onClick = onCreateFamilyClick,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.height(52.dp),
+                                contentPadding = PaddingValues(horizontal = 28.dp),
+                            ) {
+                                Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.families_create_first_button),
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                )
+                            }
+                            Spacer(Modifier.height(Spacing.sm))
+                            TextButton(onClick = onNavigateToInvitations) {
+                                Icon(Icons.Outlined.MailOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(text = "קיבלתם הזמנה לעץ? ${stringResource(R.string.invitations_see_all)}")
+                            }
                         }
-
-                        Spacer(Modifier.height(Spacing.md))
-
-                        Text(
-                            text = stringResource(R.string.families_empty_title),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-
-                        Spacer(Modifier.height(Spacing.xs))
-
-                        Text(
-                            text = stringResource(R.string.families_empty_message),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = Spacing.md),
-                        )
-
-                        Spacer(Modifier.height(Spacing.xl))
-
-                        Button(
-                            onClick = onCreateFamilyClick,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth(0.85f)
-                                .height(52.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.size(Spacing.xs))
-                            Text(
-                                text = stringResource(R.string.families_create_first_button),
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            )
-                        }
-
-                        // Show "pending invitations" link even with no own trees
-                        Spacer(Modifier.height(Spacing.sm))
-                        TextButton(onClick = onNavigateToInvitations) {
-                            Text(
-                                text = "הזמנות לעצי משפחה (${stringResource(R.string.invitations_see_all)})",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
+                    },
+                )
             }
             is MyFamiliesUiState.Success -> {
+                val totalPeople = uiState.families.sumOf { it.personCount }
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    contentPadding = PaddingValues(Spacing.md),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                    // Bottom padding keeps the last card clear of the extended FAB.
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 104.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    // Pending Invitations section (shown above "המשפחות שלי")
                     item {
-                        InvitationsBannerButton(onClick = onNavigateToInvitations)
+                        Column(Modifier.padding(horizontal = 4.dp, vertical = 8.dp)) {
+                            Text(
+                                text = stringResource(R.string.families_title),
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Text(
+                                text = "${uiState.families.size} עצים · $totalPeople אנשים",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     item {
-                        Text(
-                            text = stringResource(R.string.families_title),
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(vertical = Spacing.sm),
-                        )
+                        InvitationsBannerButton(onClick = onNavigateToInvitations)
                     }
 
                     items(uiState.families, key = { it.id }) { family ->
@@ -241,122 +182,45 @@ fun MyFamiliesScreen(
 }
 
 @Composable
-private fun CommunityTreesBannerButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    androidx.compose.material3.OutlinedCard(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-        ),
-        colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-        ),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                modifier = Modifier.weight(1f),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Public,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-                Column {
-                    Text(
-                        text = "עצי משפחה קהילתיים בענן",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = "איתור קרובים לפי שמות משפחה משותפים",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-    }
-}
-
-@Composable
 private fun InvitationsBannerButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    androidx.compose.material3.OutlinedCard(
+    ShorashimCard(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(
-            1.dp,
-            androidx.compose.ui.graphics.Color(0xFF4CAF50).copy(alpha = 0.6f),
-        ),
-        colors = androidx.compose.material3.CardDefaults.outlinedCardColors(
-            containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50).copy(alpha = 0.06f),
-        ),
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Groups,
-                    contentDescription = null,
-                    tint = androidx.compose.ui.graphics.Color(0xFF43A047),
-                    modifier = Modifier.size(22.dp),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconTile(
+                icon = Icons.Outlined.MailOutline,
+                container = MaterialTheme.colorScheme.surface,
+                size = 40.dp,
+                cornerRadius = 12.dp,
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "הזמנות לעצי משפחה",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 Text(
-                    text = "הזמנות לעץ משפחתי",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = androidx.compose.ui.graphics.Color(0xFF2E7D32),
+                    text = "הצטרפות לעצים שקרובים שיתפו איתכם",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp),
             )
         }
     }
 }
-
-
 
 @Composable
 fun FamilyCard(
@@ -364,101 +228,66 @@ fun FamilyCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
-        ),
+    val extra = ShorashimTheme.colors
+    val roleLabel = when (family.currentUserRole) {
+        MembershipRole.OWNER -> "מנהל-על"
+        MembershipRole.ADMIN -> "מנהל"
+        MembershipRole.CONTRIBUTOR -> "משתתף"
+        MembershipRole.VIEWER -> "צופה"
+        else -> ""
+    }
+    val membersLine = stringResource(R.string.family_members_count, family.personCount) +
+        if (roleLabel.isNotEmpty()) " · $roleLabel" else ""
+
+    ShorashimCard(
+        onClick = onClick,
+        modifier = modifier,
+        contentPadding = PaddingValues(14.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .clip(RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Park,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(34.dp),
-                )
-            }
-
-            Spacer(Modifier.size(Spacing.md))
-
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconTile(
+                icon = Icons.Outlined.Park,
+                size = 56.dp,
+                iconSize = 30.dp,
+                cornerRadius = 18.dp,
+            )
+            Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = family.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 19.sp,
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                Text(
+                    text = family.name,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = membersLine,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                if (family.isPrivate) {
+                    StatusPill(
+                        text = "פרטי",
+                        icon = Icons.Outlined.Lock,
+                        container = extra.warningContainer,
+                        content = extra.warning,
                     )
-
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (family.isPrivate) Color(0xFFE65100) else Color(0xFF43A047),
-                    ) {
-                        Text(
-                            text = if (family.isPrivate) "🔒 פרטי" else "🌐 קהילתי",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(Spacing.xs))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.Groups,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.size(4.dp))
-                    Text(
-                        text = stringResource(R.string.family_members_count, family.personCount),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = "• ${when (family.currentUserRole) {
-                            com.shorashim.core.model.MembershipRole.OWNER -> "מנהל-על"
-                            com.shorashim.core.model.MembershipRole.ADMIN -> "מנהל"
-                            com.shorashim.core.model.MembershipRole.CONTRIBUTOR -> "משתתף"
-                            com.shorashim.core.model.MembershipRole.VIEWER -> "צופה"
-                            else -> ""
-                        }}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
+                } else {
+                    StatusPill(
+                        text = "קהילתי",
+                        icon = Icons.Outlined.Public,
+                        container = extra.successContainer,
+                        content = extra.success,
                     )
                 }
             }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

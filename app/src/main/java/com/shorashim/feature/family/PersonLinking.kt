@@ -99,7 +99,7 @@ fun PersonLinkSection(
     var showUnlinkConfirmDialog by remember { mutableStateOf(false) }
     var showConnectionsDialog by remember { mutableStateOf(false) }
 
-    val green = Color(0xFF22C55E)
+    val green = MaterialTheme.colorScheme.primary
 
     if (person.isLinkedToUser) {
         Card(
@@ -318,14 +318,14 @@ internal fun LinkUserDialog(
                     Spacer(Modifier.height(14.dp))
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFF22C55E).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFF22C55E)),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
                             text = "נבחר לקשר: ${selectedUser!!.displayName.ifBlank { selectedUser!!.fullName }} (@${selectedUser!!.username ?: ""})",
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF2E7D32),
+                            color = com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                             modifier = Modifier.padding(10.dp),
                         )
                     }
@@ -478,10 +478,10 @@ internal fun UserSelectionRow(
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) Color(0xFF22C55E).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
         border = BorderStroke(
             1.dp,
-            if (isSelected) Color(0xFF22C55E) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         ),
         modifier = Modifier
             .fillMaxWidth()

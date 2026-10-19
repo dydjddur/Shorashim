@@ -149,7 +149,7 @@ fun FamilyMembersDialog(
                                         Icon(
                                             Icons.Outlined.CheckCircle,
                                             contentDescription = null,
-                                            tint = Color(0xFF2E7D32),
+                                            tint = com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                                         )
                                     }
                                 },
@@ -367,7 +367,7 @@ private fun MemberItemRow(
             Surface(
                 shape = CircleShape,
                 color = when (member.role) {
-                    MembershipRole.OWNER -> Color(0xFFD4AF37).copy(alpha = 0.2f)
+                    MembershipRole.OWNER -> com.shorashim.core.ui.theme.ShorashimTheme.colors.gold.copy(alpha = 0.2f)
                     MembershipRole.ADMIN -> MaterialTheme.colorScheme.primaryContainer
                     else -> MaterialTheme.colorScheme.secondaryContainer
                 },
@@ -379,7 +379,7 @@ private fun MemberItemRow(
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
                         tint = when (member.role) {
-                            MembershipRole.OWNER -> Color(0xFFD4AF37)
+                            MembershipRole.OWNER -> com.shorashim.core.ui.theme.ShorashimTheme.colors.gold
                             MembershipRole.ADMIN -> MaterialTheme.colorScheme.primary
                             else -> MaterialTheme.colorScheme.onSecondaryContainer
                         },

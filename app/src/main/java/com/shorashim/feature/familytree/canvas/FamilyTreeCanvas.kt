@@ -27,6 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Button
@@ -58,6 +61,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -104,10 +108,12 @@ fun FamilyTreeCanvas(
     isRefreshing: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    var hasInitialView by remember { mutableStateOf(false) }
-    var selectedPersonId by remember { mutableStateOf<String?>(null) }
+    // Keyed on the tree: switching to another tree from the dropdown must re-fit the new map instead of
+    // keeping the previous tree's zoom/pan (which often left the new tree completely off-screen).
+    var scale by remember(family.id) { mutableFloatStateOf(1f) }
+    var offset by remember(family.id) { mutableStateOf(Offset.Zero) }
+    var hasInitialView by remember(family.id) { mutableStateOf(false) }
+    var selectedPersonId by remember(family.id) { mutableStateOf<String?>(null) }
     // Hexagon controls appear once the map has finished centring the selected card.
     var controlsReady by remember { mutableStateOf(false) }
 
@@ -124,10 +130,28 @@ fun FamilyTreeCanvas(
     val contentWidth = bounds.width + CONTENT_PADDING * 2
     val contentHeight = bounds.height + CONTENT_PADDING * 2
 
+    val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
+    val dotColor = extra.canvasDot
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(extra.canvas)
+            .drawBehind {
+                // Dot grid that follows pan & zoom, so the map reads as a canvas you can move around on.
+                val step = (28f * density * scale).coerceAtLeast(10f)
+                val radius = (1.6f * density * scale.coerceIn(0.5f, 1.5f))
+                val startX = ((offset.x % step) + step) % step
+                val startY = ((offset.y % step) + step) % step
+                var x = startX
+                while (x < size.width) {
+                    var y = startY
+                    while (y < size.height) {
+                        drawCircle(dotColor, radius = radius, center = Offset(x, y))
+                        y += step
+                    }
+                    x += step
+                }
+            },
     ) {
         val viewportW = constraints.maxWidth.toFloat()
         val viewportH = constraints.maxHeight.toFloat()
@@ -151,12 +175,15 @@ fun FamilyTreeCanvas(
 
         fun fitToScreen() {
             if (nodes.isEmpty() || viewportW <= 0f || viewportH <= 0f) return
-            val fit = minOf(viewportW / contentWidthPx, viewportH / contentHeightPx)
+            // Leave room for the private-tree banner so it doesn't cover the top generation.
+            val topInset = if (family.isPrivate) 84f * d else 0f
+            val availH = (viewportH - topInset).coerceAtLeast(viewportH * 0.5f)
+            val fit = minOf(viewportW / contentWidthPx, availH / contentHeightPx)
             val s = fit.coerceIn(MIN_SCALE, 1.2f)
             scale = s
             offset = Offset(
                 (viewportW - contentWidthPx * s) / 2f,
-                ((viewportH - contentHeightPx * s) / 2f).coerceAtLeast(0f),
+                topInset + ((availH - contentHeightPx * s) / 2f).coerceAtLeast(0f),
             )
         }
 
@@ -168,7 +195,7 @@ fun FamilyTreeCanvas(
         }
 
         // Initial fit to screen on first view only. Preserves zoom level and scroll/pan position on realtime updates!
-        LaunchedEffect(nodes.isNotEmpty(), viewportW, viewportH) {
+        LaunchedEffect(family.id, nodes.isNotEmpty(), viewportW, viewportH) {
             if (!hasInitialView && nodes.isNotEmpty() && viewportW > 0f) {
                 fitToScreen()
                 hasInitialView = true
@@ -203,22 +230,23 @@ fun FamilyTreeCanvas(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                Card(
+                Surface(
                     modifier = Modifier.padding(24.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(
-                            text = "🌱",
-                            fontSize = 44.sp,
+                        com.shorashim.core.ui.component.IconTile(
+                            icon = Icons.Outlined.Spa,
+                            size = 68.dp,
+                            iconSize = 34.dp,
+                            cornerRadius = 22.dp,
                         )
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = if (family.canEditTreeContent) {
                                 stringResource(R.string.tree_empty_add_first)
@@ -235,7 +263,8 @@ fun FamilyTreeCanvas(
                             Spacer(Modifier.height(16.dp))
                             Button(
                                 onClick = onEmptyAddPersonClick,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.height(48.dp),
                             ) {
                                 Icon(Icons.Outlined.Add, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
@@ -247,7 +276,7 @@ fun FamilyTreeCanvas(
             }
         } else {
             val connectorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-            val spouseColor = Color(0xFFC48B47)
+            val spouseColor = extra.gold
 
             // Pan & zoom surface. Cards cannot be dragged: only the whole map moves.
             Box(
@@ -418,44 +447,52 @@ fun FamilyTreeCanvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF9A825).copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, Color(0xFFF9A825)),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, extra.warning.copy(alpha = 0.35f)),
+                shadowElevation = 3.dp,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "🌐", fontSize = 18.sp)
-                    Spacer(Modifier.width(8.dp))
+                    com.shorashim.core.ui.component.IconTile(
+                        icon = Icons.Outlined.Lock,
+                        tint = extra.warning,
+                        container = extra.warningContainer,
+                        size = 34.dp,
+                        cornerRadius = 10.dp,
+                    )
+                    Spacer(Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "🔒 העץ פרטי ומוסתר מהקהילה",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
+                            text = "העץ פרטי",
+                            style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "לחצו על \"פרסום\" כדי שקרובי משפחה יוכלו למצוא אותו בקהילה",
+                            text = if (family.canManageMembers) {
+                                "פרסמו כדי שקרובים יוכלו למצוא אותו בקהילה"
+                            } else {
+                                "העץ מוסתר מהקהילה"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
                         )
                     }
                     if (family.canManageMembers) {
+                        Spacer(Modifier.width(8.dp))
                         Button(
                             onClick = onPublishClick,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF43A047),
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                         ) {
                             Icon(
-                                Icons.Outlined.CloudUpload,
+                                Icons.Outlined.Public,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
                             )
@@ -477,9 +514,9 @@ fun FamilyTreeCanvas(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                shadowElevation = 8.dp,
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 4.dp,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
                 Row(
@@ -581,7 +618,7 @@ private fun elbowPath(start: Offset, end: Offset): Path {
 private fun ConnectorBadge(kind: TreeLayoutEngine.MarkerKind, modifier: Modifier = Modifier) {
     val (emoji, tint) = when (kind) {
         TreeLayoutEngine.MarkerKind.PARENT_CHILD -> "👪" to MaterialTheme.colorScheme.primary
-        TreeLayoutEngine.MarkerKind.SPOUSE -> "💍" to Color(0xFFC48B47)
+        TreeLayoutEngine.MarkerKind.SPOUSE -> "💍" to com.shorashim.core.ui.theme.ShorashimTheme.colors.gold
         TreeLayoutEngine.MarkerKind.SIBLING -> "🤝" to MaterialTheme.colorScheme.tertiary
     }
     Surface(
@@ -589,7 +626,7 @@ private fun ConnectorBadge(kind: TreeLayoutEngine.MarkerKind, modifier: Modifier
         shape = androidx.compose.foundation.shape.CircleShape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.5.dp, tint),
-        shadowElevation = 2.dp,
+        shadowElevation = 1.dp,
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(text = emoji, fontSize = 14.sp)

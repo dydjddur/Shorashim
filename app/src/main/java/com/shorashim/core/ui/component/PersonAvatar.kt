@@ -80,7 +80,7 @@ fun PersonAvatar(
                     .clip(shape)
                     .border(
                         width = if (isDeceased) 2.dp else 1.dp,
-                        color = if (isDeceased) Color(0xFFD4AF37) else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                        color = if (isDeceased) com.shorashim.core.ui.theme.ShorashimTheme.colors.gold else MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
                         shape = shape,
                     ),
             )
@@ -92,7 +92,7 @@ fun PersonAvatar(
                         .align(Alignment.BottomEnd)
                         .size(badgeSize)
                         .background(Color.Black.copy(alpha = 0.75f), CircleShape)
-                        .border(1.dp, Color(0xFFD4AF37), CircleShape),
+                        .border(1.dp, com.shorashim.core.ui.theme.ShorashimTheme.colors.gold, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -106,11 +106,11 @@ fun PersonAvatar(
         Surface(
             shape = shape,
             color = if (isDeceased) {
-                Color(0xFFD4AF37).copy(alpha = 0.15f)
+                com.shorashim.core.ui.theme.ShorashimTheme.colors.gold.copy(alpha = 0.15f)
             } else {
                 MaterialTheme.colorScheme.primaryContainer
             },
-            border = if (isDeceased) BorderStroke(1.5.dp, Color(0xFFD4AF37)) else null,
+            border = if (isDeceased) BorderStroke(1.5.dp, com.shorashim.core.ui.theme.ShorashimTheme.colors.gold) else null,
             modifier = modifier.size(size),
         ) {
             Box(contentAlignment = Alignment.Center) {

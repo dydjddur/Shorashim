@@ -142,77 +142,26 @@ fun FriendsScreen(
     onOpenChat: (otherUserId: String, otherUserName: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(0) }
     var friendPendingRemove by remember { mutableStateOf<FriendUser?>(null) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Tab Row for Friends vs Add Friends vs Chats
-        TabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = Color(0xFF22C55E),
-            indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    color = Color(0xFF22C55E),
-                )
-            },
-        ) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.People,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "חברים (${uiState.friends.size})",
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    }
-                },
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.PersonAdd,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "הוספת חברים",
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    }
-                },
-            )
-            Tab(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2 },
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Chat,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "צ'אטים",
-                            fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    }
-                },
-            )
-        }
+        // Friends / Add friends / Chats switch
+        com.shorashim.core.ui.component.PillToggle(
+            options = listOf(
+                com.shorashim.core.ui.component.PillOption(
+                    if (uiState.friends.isEmpty()) "חברים" else "חברים · ${uiState.friends.size}",
+                    Icons.Outlined.People,
+                ),
+                com.shorashim.core.ui.component.PillOption("הוספה", Icons.Outlined.PersonAdd),
+                com.shorashim.core.ui.component.PillOption("צ'אטים", Icons.AutoMirrored.Outlined.Chat),
+            ),
+            selectedIndex = selectedTab,
+            onSelect = { selectedTab = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        )
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when (selectedTab) {
@@ -263,12 +212,12 @@ fun FriendsScreen(
                                                 imageVector = Icons.Outlined.PersonAdd,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(16.dp),
-                                                tint = Color(0xFF22C55E),
+                                                tint = MaterialTheme.colorScheme.primary,
                                             )
                                             Spacer(Modifier.width(4.dp))
                                             Text(
                                                 "הוסף חברים",
-                                                color = Color(0xFF22C55E),
+                                                color = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.Bold,
                                                 style = MaterialTheme.typography.labelMedium,
                                             )
@@ -296,13 +245,13 @@ fun FriendsScreen(
                                                 modifier = Modifier
                                                     .size(64.dp)
                                                     .clip(CircleShape)
-                                                    .background(Color(0xFF22C55E).copy(alpha = 0.15f)),
+                                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                                 contentAlignment = Alignment.Center,
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Outlined.People,
                                                     contentDescription = null,
-                                                    tint = Color(0xFF22C55E),
+                                                    tint = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.size(34.dp),
                                                 )
                                             }
@@ -323,7 +272,7 @@ fun FriendsScreen(
                                             Button(
                                                 onClick = { selectedTab = 1 },
                                                 shape = RoundedCornerShape(12.dp),
-                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Outlined.PersonAdd,
@@ -446,7 +395,7 @@ fun FriendsScreen(
                                                             Text(
                                                                 text = "@${user.username.removePrefix("@")}",
                                                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                                                color = Color(0xFF22C55E),
+                                                                color = MaterialTheme.colorScheme.primary,
                                                                 maxLines = 1,
                                                                 overflow = TextOverflow.Ellipsis,
                                                             )
@@ -475,7 +424,7 @@ fun FriendsScreen(
                                                 Button(
                                                     onClick = { onSendRequest(user.id) },
                                                     shape = RoundedCornerShape(10.dp),
-                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                                 ) {
                                                     Icon(
@@ -598,7 +547,7 @@ fun FriendsScreen(
                             .size(62.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-                            .border(BorderStroke(2.dp, Color(0xFF22C55E).copy(alpha = 0.6f)), CircleShape),
+                            .border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)), CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         PersonAvatar(
@@ -864,7 +813,7 @@ private fun FriendItemCard(
                         modifier = Modifier
                             .size(14.dp)
                             .background(
-                                color = if (friend.isOnline) Color(0xFF22C55E) else Color(0xFF9E9E9E),
+                                color = if (friend.isOnline) com.shorashim.core.ui.theme.ShorashimTheme.colors.success else MaterialTheme.colorScheme.onSurfaceVariant,
                                 shape = CircleShape
                             )
                             .clip(CircleShape)
@@ -899,7 +848,7 @@ private fun FriendItemCard(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 13.sp,
                                 ),
-                                color = Color(0xFF22C55E),
+                                color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -912,13 +861,13 @@ private fun FriendItemCard(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(if (friend.isOnline) Color(0xFF22C55E) else Color(0xFF9E9E9E))
+                                .background(if (friend.isOnline) com.shorashim.core.ui.theme.ShorashimTheme.colors.success else MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                         Spacer(Modifier.width(5.dp))
                         Text(
                             text = if (friend.isOnline) "מחובר עכשיו" else friend.lastSeenText,
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (friend.isOnline) Color(0xFF22C55E) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (friend.isOnline) com.shorashim.core.ui.theme.ShorashimTheme.colors.success else MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -952,41 +901,41 @@ private fun FriendItemCard(
                     onClick = onViewTrees,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                     contentPadding = PaddingValues(vertical = 8.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Park,
                         contentDescription = null,
-                        tint = Color(0xFF22C55E),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "עצי משפחה",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF22C55E),
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
 
                 Button(
                     onClick = onOpenChat,
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF166534)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(vertical = 8.dp),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.Chat,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "צ'אט",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
@@ -1035,7 +984,7 @@ private fun FriendSuggestionCard(
                             Text(
                                 text = "@${suggestion.username.removePrefix("@")}",
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = Color(0xFF22C55E),
+                                color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -1071,17 +1020,17 @@ private fun FriendSuggestionCard(
                 Button(
                     onClick = onAdd,
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.PersonAdd,
                         contentDescription = null,
                         modifier = Modifier.size(15.dp),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                     )
                     Spacer(Modifier.width(3.dp))
-                    Text("הוסף חבר", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                    Text("הוסף חבר", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
@@ -1098,7 +1047,7 @@ private fun FriendRequestCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
     ) {
         Column(
             modifier = Modifier
@@ -1129,7 +1078,7 @@ private fun FriendRequestCard(
                             Text(
                                 text = "@${request.fromUsername.removePrefix("@")}",
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = Color(0xFF22C55E),
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -1167,12 +1116,12 @@ private fun FriendRequestCard(
                     onClick = onAccept,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(vertical = 8.dp),
                 ) {
                     Icon(imageVector = Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("אשר חברות", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                    Text("אשר חברות", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }

@@ -36,8 +36,7 @@ class CommunityTreesViewModel(
 
     private fun startSilentPolling() {
         viewModelScope.launch {
-            while (true) {
-                kotlinx.coroutines.delay(25_000)
+            com.shorashim.core.common.pollWhileForeground(25_000) {
                 loadData(isSilent = true)
             }
         }

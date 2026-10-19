@@ -113,6 +113,12 @@ fun TehillimScreen(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scheme = MaterialTheme.colorScheme
+    val scrollState = rememberScrollState()
+
+    // Moving to another chapter used to keep the old scroll position (often the very end of the new chapter).
+    androidx.compose.runtime.LaunchedEffect(uiState.currentChapter?.chapter, uiState.isMemorialMode) {
+        scrollState.scrollTo(0)
+    }
 
     Scaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
@@ -137,7 +143,7 @@ fun TehillimScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         ) {
             if (uiState.isMemorialMode) {

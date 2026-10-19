@@ -142,8 +142,8 @@ fun ChatListScreen(
                     item {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF1B382B),
-                            border = BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.4f)),
+                            color = com.shorashim.core.ui.theme.ShorashimTheme.colors.successContainer,
+                            border = null,
                             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                         ) {
                             Row(
@@ -153,16 +153,14 @@ fun ChatListScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.Lock,
                                     contentDescription = null,
-                                    tint = Color(0xFF4ADE80),
+                                    tint = com.shorashim.core.ui.theme.ShorashimTheme.colors.success,
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     text = "השיחות מוצפנות מקצה לקצה. רק אתה והנמען יכולים לקרוא אותן.",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        color = Color(0xFFCBD5E1),
-                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -183,8 +181,9 @@ fun ChatListScreen(
             if (uiState.conversations.isNotEmpty()) {
                 FloatingActionButton(
                     onClick = onOpenNewChat,
-                    containerColor = Color(0xFF22C55E),
-                    contentColor = Color(0xFF0F172A),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = RoundedCornerShape(18.dp),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(20.dp),
@@ -394,7 +393,9 @@ private fun ConversationItemCard(
                     Box(
                         modifier = Modifier
                             .size(13.dp)
-                            .background(Color(0xFF22C55E), CircleShape)
+                            .background(MaterialTheme.colorScheme.surface, CircleShape)
+                            .padding(2.dp)
+                            .background(com.shorashim.core.ui.theme.ShorashimTheme.colors.success, CircleShape)
                             .clip(CircleShape),
                     )
                 }
@@ -440,7 +441,7 @@ private fun ConversationItemCard(
 private fun formatChatDate(isoString: String?): String {
     if (isoString.isNullOrBlank()) return ""
     return try {
-        val instant = java.time.Instant.parse(isoString)
+        val instant = com.shorashim.core.common.TimeFormat.parseInstant(isoString) ?: return ""
         val zdt = instant.atZone(java.time.ZoneId.systemDefault())
         java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm").format(zdt)
     } catch (e: Throwable) {
