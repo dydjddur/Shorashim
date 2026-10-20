@@ -165,3 +165,19 @@ Adaptive icon: רקע `#0F3D30` + עץ אורן קווי `#4FD8A5`, שכבת mon
 - **חברים אמיתיים:** `SupabaseFriendRepository` נכתב מחדש מעל `friends`/`friend_requests` ופונקציות `send_friend_request` / `respond_friend_request` / `get_my_friend_requests` / `remove_friend` (`20261014_friends_chat_realtime.sql`). קודם, בקשת חברות נשמרה רק במכשיר השולח.
 - **מגבלה ידועה:** אם המשתמש מתקין מחדש / מחליף מכשיר, מפתח ה-RSA ב-Keystore אובד ומפתח חדש מחליף את הישן — הודעות ישנות יוצגו כ"לא ניתן לפענוח". גיבוי/סנכרון מפתחות בין מכשירים טרם נבנה.
 - **Vercel:** `/api/resolve_invitation` מחזיר `missing_configuration` כשחסרים משתני סביבה; דף הנחיתה נופל חזרה ל-`/api/config`, ולכן עובד. עדיף להגדיר `SUPABASE_URL` ו-`SUPABASE_ANON_KEY` בפרויקט ה-Vercel.
+
+## Checking alerts on a real phone (USB debugging)
+
+`tools/check-alerts.ps1` checks, read-only, that chat notifications and birthday / memorial reminders are set up on a
+connected phone: app version, notification and exact-alarm permissions, battery restrictions, notification channels,
+the background job, every scheduled reminder (date and time), and a 60-second live watch for a new chat notification.
+Nothing is installed or changed on the phone.
+
+1. On the phone: enable Developer options (tap "Build number" 7 times) and turn on **USB debugging**.
+2. Connect it with USB and accept the "Allow USB debugging?" prompt.
+3. Make sure Shorashim 1.5.2+ is installed, you are logged in, and the app was opened once.
+4. From the repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\check-alerts.ps1
+```
