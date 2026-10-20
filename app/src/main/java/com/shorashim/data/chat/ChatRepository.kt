@@ -38,4 +38,10 @@ interface ChatRepository {
 
     /** Marks unread messages in conversation as read. */
     suspend fun markMessagesAsRead(conversationId: String): Result<Unit>
+
+    /** True when the server holds a password-protected backup of this device's active chat key. */
+    suspend fun hasKeyBackup(): Result<Boolean> = Result.success(true)
+
+    /** Verifies [password] against the account and uploads password-protected backups of the chat keys. */
+    suspend fun protectKeysWithPassword(password: String): Result<Unit> = Result.success(Unit)
 }

@@ -67,7 +67,10 @@ class AuthViewModel(
         _loginUiState.update { it.copy(isLoading = true, generalError = null) }
 
         viewModelScope.launch {
+            // Offered before login: once the session flips to Authenticated the chat key sync consumes it.
+            com.shorashim.core.crypto.ChatKeyUnlock.offer(state.password)
             val result = authRepository.login(state.usernameOrEmail, state.password)
+            if (result.isFailure) com.shorashim.core.crypto.ChatKeyUnlock.take()
             result.fold(
                 onSuccess = {
                     _loginUiState.update { it.copy(isLoading = false) }
@@ -158,6 +161,7 @@ class AuthViewModel(
         _registerUiState.update { it.copy(isLoading = true, generalError = null) }
 
         viewModelScope.launch {
+            com.shorashim.core.crypto.ChatKeyUnlock.offer(state.password)
             val result = authRepository.register(
                 name = state.name,
                 username = state.username,

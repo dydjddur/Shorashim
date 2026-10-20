@@ -52,14 +52,16 @@ import com.shorashim.R
 @Composable
 fun AppUpdateDialog(
     updateInfo: AppUpdateInfo,
+    downloadState: UpdateDownloadState = UpdateDownloadState.Idle,
+    onUpdate: () -> Unit = {},
     onDismiss: (dontAskAgainForSession: Boolean) -> Unit,
 ) {
-    val context = LocalContext.current
+    val isDownloading = downloadState is UpdateDownloadState.Downloading
     var dontAskAgain by remember { mutableStateOf(false) }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ShorashimDialog(
-            onDismissRequest = { onDismiss(dontAskAgain) },
+            onDismissRequest = { if (!isDownloading) onDismiss(dontAskAgain) },
             heroIcon = Icons.Default.SystemUpdate,
             title = stringResource(R.string.update_dialog_title),
             subtitle = "גרסה חדשה של שורשים זמינה להורדה",
@@ -101,9 +103,49 @@ fun AppUpdateDialog(
                         }
                     }
 
+                    when (downloadState) {
+                        is UpdateDownloadState.Downloading -> {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            val p = downloadState.progress
+                            if (p != null) {
+                                androidx.compose.material3.LinearProgressIndicator(
+                                    progress = { p },
+                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                )
+                            } else {
+                                androidx.compose.material3.LinearProgressIndicator(
+                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = if (p != null) "מוריד עדכון… ${(p * 100).toInt()}%" else "מוריד עדכון…",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        is UpdateDownloadState.ReadyToInstall -> {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "ההורדה הושלמה. אשרו את ההתקנה במסך של אנדרואיד.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        is UpdateDownloadState.Failed -> {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = downloadState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        UpdateDownloadState.Idle -> Unit
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
+                    if (!isDownloading) Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -127,22 +169,17 @@ fun AppUpdateDialog(
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        val downloadUri = Uri.parse(updateInfo.downloadUrl)
-                        val intent = Intent(Intent.ACTION_VIEW, downloadUri).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            android.util.Log.e("AppUpdateDialog", "Failed to launch download intent", e)
-                        }
-                        onDismiss(dontAskAgain)
-                    },
+                    onClick = onUpdate,
+                    enabled = !isDownloading,
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.update_dialog_action_update),
+                        text = when (downloadState) {
+                            is UpdateDownloadState.Downloading -> "מוריד…"
+                            is UpdateDownloadState.ReadyToInstall -> "התקנה"
+                            is UpdateDownloadState.Failed -> "נסו שוב"
+                            UpdateDownloadState.Idle -> stringResource(R.string.update_dialog_action_update)
+                        },
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -150,6 +187,7 @@ fun AppUpdateDialog(
             dismissButton = {
                 OutlinedButton(
                     onClick = { onDismiss(dontAskAgain) },
+                    enabled = !isDownloading,
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 ) {

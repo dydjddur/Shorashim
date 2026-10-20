@@ -11,6 +11,19 @@ enum class MessageType {
     INVITATION,
 }
 
+/** Row of `user_key_backups`: a chat private key encrypted with a key derived from the user's password. */
+@Serializable
+data class ChatKeyBackupDto(
+    @SerialName("user_id") val userId: String = "",
+    @SerialName("key_fingerprint") val keyFingerprint: String = "",
+    @SerialName("public_key") val publicKey: String = "",
+    @SerialName("wrapped_private_key") val wrappedPrivateKey: String = "",
+    val salt: String = "",
+    val iv: String = "",
+    val kdf: String = "PBKDF2WithHmacSHA256",
+    val iterations: Int = 150000,
+)
+
 @Serializable
 data class UserPublicKeyDto(
     @SerialName("user_id") val userId: String = "",
@@ -68,6 +81,8 @@ data class DecryptedChatMessage(
     val createdAt: String?,
     val isFromMe: Boolean,
     val invitationPayload: InvitationMessagePayload? = null,
+    /** False when no key on this device can open the message (it was encrypted for a key that is gone). */
+    val isDecryptable: Boolean = true,
 )
 
 @Serializable

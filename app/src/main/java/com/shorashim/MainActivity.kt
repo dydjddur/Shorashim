@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         com.shorashim.core.common.AppVisibility.setForeground(true)
+        appUpdateManager.onAppForeground(this)
     }
 
     override fun onStop() {
@@ -84,9 +85,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShorashimTheme {
                 val updateInfo by appUpdateManager.updateInfo.collectAsStateWithLifecycle()
+                val updateDownloadState by appUpdateManager.downloadState.collectAsStateWithLifecycle()
                 updateInfo?.let { info ->
                     AppUpdateDialog(
                         updateInfo = info,
+                        downloadState = updateDownloadState,
+                        onUpdate = { appUpdateManager.downloadAndInstall(this@MainActivity, info) },
                         onDismiss = { dontAskAgain ->
                             appUpdateManager.dismiss(dontAskAgain)
                         }

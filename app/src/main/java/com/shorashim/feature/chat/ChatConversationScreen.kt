@@ -50,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,6 +96,9 @@ fun ChatConversationRoute(
         onDismissTreePicker = viewModel::dismissTreePicker,
         onSelectFamilyToInvite = viewModel::sendFamilyInvitation,
         onOpenInvitation = onOpenInvitation,
+        onOpenKeyBackup = viewModel::openKeyBackupDialog,
+        onDismissKeyBackup = viewModel::dismissKeyBackupDialog,
+        onProtectKeys = viewModel::protectKeys,
         modifier = modifier,
     )
 }
@@ -111,9 +115,21 @@ fun ChatConversationScreen(
     onDismissTreePicker: () -> Unit,
     onSelectFamilyToInvite: (Family) -> Unit,
     onOpenInvitation: (String) -> Unit,
+    onOpenKeyBackup: () -> Unit = {},
+    onDismissKeyBackup: () -> Unit = {},
+    onProtectKeys: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+
+    if (uiState.isKeyBackupDialogOpen) {
+        KeyBackupDialog(
+            isWorking = uiState.isBackingUpKeys,
+            error = uiState.keyBackupError,
+            onDismiss = onDismissKeyBackup,
+            onConfirm = onProtectKeys,
+        )
+    }
 
     // Scroll to bottom when messages update
     LaunchedEffect(uiState.messages.size) {
@@ -133,6 +149,18 @@ fun ChatConversationScreen(
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                if (uiState.needsKeyBackup) {
+                    ChatNotice(
+                        text = "גבו את היסטוריית הצ'אט כדי שתישמר גם אחרי התקנה מחדש או מעבר מכשיר.",
+                        actionLabel = "גיבוי",
+                        onAction = onOpenKeyBackup,
+                    )
+                } else if (uiState.messages.any { !it.isDecryptable }) {
+                    ChatNotice(
+                        text = "חלק מההודעות הישנות הוצפנו למפתח שנמחק מהמכשיר (למשל בהתקנה מחדש) ולא ניתן לשחזר אותן כאן. מעכשיו ההיסטוריה מגובה.",
+                    )
+                }
 
                 // Messages List
                 if (uiState.isLoading && uiState.messages.isEmpty()) {
@@ -294,8 +322,17 @@ private fun ChatMessageItem(
         } else {
             // Text message bubble
             val extra = com.shorashim.core.ui.theme.ShorashimTheme.colors
-            val bubbleBg = if (isFromMe) extra.bubbleMine else extra.bubbleTheirs
-            val onBubble = if (isFromMe) extra.onBubbleMine else extra.onBubbleTheirs
+            val locked = !message.isDecryptable
+            val bubbleBg = when {
+                locked -> MaterialTheme.colorScheme.surfaceVariant
+                isFromMe -> extra.bubbleMine
+                else -> extra.bubbleTheirs
+            }
+            val onBubble = when {
+                locked -> MaterialTheme.colorScheme.onSurfaceVariant
+                isFromMe -> extra.onBubbleMine
+                else -> extra.onBubbleTheirs
+            }
 
             Surface(
                 shape = RoundedCornerShape(
@@ -315,11 +352,30 @@ private fun ChatMessageItem(
                     modifier = Modifier
                         .padding(horizontal = 14.dp, vertical = 9.dp),
                 ) {
-                    Text(
-                        text = message.plaintext,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = onBubble,
-                    )
+                    if (locked) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Outlined.Lock,
+                                contentDescription = null,
+                                tint = onBubble,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "הודעה מוצפנת שלא ניתן לפתוח במכשיר זה",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                ),
+                                color = onBubble,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = message.plaintext,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = onBubble,
+                        )
+                    }
 
                     Spacer(Modifier.height(3.dp))
 
@@ -535,5 +591,101 @@ private fun formatTime(isoString: String?): String {
         java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(zdt)
     } catch (e: Throwable) {
         ""
+    }
+}
+
+@Composable
+private fun ChatNotice(
+    text: String,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {},
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.weight(1f),
+            )
+            if (actionLabel != null) {
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.material3.Button(
+                    onClick = onAction,
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                ) {
+                    Text(actionLabel, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeyBackupDialog(
+    isWorking: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var password by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    com.shorashim.core.ui.component.ShorashimDialog(
+        onDismissRequest = { if (!isWorking) onDismiss() },
+        icon = Icons.Outlined.Lock,
+        title = "גיבוי היסטוריית הצ'אט",
+        subtitle = "מפתח ההצפנה יגובה מוצפן בסיסמה שלכם. השרת לא יכול לקרוא אותו או את ההודעות.",
+        confirmButton = {
+            androidx.compose.material3.Button(
+                onClick = { onConfirm(password) },
+                enabled = password.isNotBlank() && !isWorking,
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (isWorking) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("גיבוי", fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isWorking, modifier = Modifier.fillMaxWidth()) {
+                Text("לא עכשיו")
+            }
+        },
+    ) {
+        Column {
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("סיסמת החשבון") },
+                singleLine = true,
+                isError = error != null,
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
+                ),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (error != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }

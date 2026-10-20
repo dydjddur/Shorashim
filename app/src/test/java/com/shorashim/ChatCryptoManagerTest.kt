@@ -142,4 +142,34 @@ class ChatCryptoManagerTest {
 
         assertTrue(eveDecryptResult.isFailure)
     }
+
+    @Test
+    fun testPasswordBackupRestoresHistoryAfterReinstall() {
+        val aliceId = "alice-backup"
+        val bobId = "bob-backup"
+        val bobPubKey = cryptoManager.getPublicKeyBase64(bobId)
+        val alicePubKey = cryptoManager.getPublicKeyBase64(aliceId)
+        val encrypted = cryptoManager.encryptMessage(aliceId, bobPubKey, "מה דיברנו אתמול")
+        val backups = cryptoManager.createBackups(bobId, "correct-horse")
+
+        // "Reinstall": a fresh manager has no keys for Bob and cannot read the old message.
+        val fresh = ChatCryptoManager(context = null)
+        assertFalse(fresh.hasLocalKeys(bobId))
+
+        // Wrong password restores nothing.
+        assertEquals(0, fresh.restoreFromBackups(bobId, "wrong", backups, bobPubKey))
+
+        assertEquals(1, fresh.restoreFromBackups(bobId, "correct-horse", backups, bobPubKey))
+        assertEquals(bobPubKey, fresh.getPublicKeyBase64(bobId))
+        val decrypted = fresh.decryptMessage(
+            currentUserId = bobId,
+            isSender = false,
+            encryptedKeySenderBase64 = encrypted.encryptedKeySenderBase64,
+            encryptedKeyRecipientBase64 = encrypted.encryptedKeyRecipientBase64,
+            ivBase64 = encrypted.ivBase64,
+            ciphertextBase64 = encrypted.ciphertextBase64,
+        )
+        assertEquals("מה דיברנו אתמול", decrypted.getOrNull())
+        assertNotNull(alicePubKey)
+    }
 }

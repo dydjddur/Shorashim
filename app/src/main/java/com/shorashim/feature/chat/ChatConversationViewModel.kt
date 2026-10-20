@@ -37,6 +37,11 @@ data class ChatConversationUiState(
     val myFamilies: List<Family> = emptyList(),
     val error: String? = null,
     val toastMessage: String? = null,
+    /** The server has no password-protected backup of the chat key yet, so history would be lost on reinstall. */
+    val needsKeyBackup: Boolean = false,
+    val isKeyBackupDialogOpen: Boolean = false,
+    val isBackingUpKeys: Boolean = false,
+    val keyBackupError: String? = null,
 )
 
 class ChatConversationViewModel(
@@ -95,6 +100,39 @@ class ChatConversationViewModel(
             loadMessages(convId)
             setupRealtime(convId)
             startPolling(convId)
+
+            val hasBackup = chatRepository.hasKeyBackup().getOrDefault(true)
+            _uiState.value = _uiState.value.copy(needsKeyBackup = !hasBackup)
+        }
+    }
+
+    fun openKeyBackupDialog() {
+        _uiState.value = _uiState.value.copy(isKeyBackupDialogOpen = true, keyBackupError = null)
+    }
+
+    fun dismissKeyBackupDialog() {
+        _uiState.value = _uiState.value.copy(isKeyBackupDialogOpen = false, keyBackupError = null)
+    }
+
+    fun protectKeys(password: String) {
+        if (password.isBlank() || _uiState.value.isBackingUpKeys) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isBackingUpKeys = true, keyBackupError = null)
+            chatRepository.protectKeysWithPassword(password)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(
+                        isBackingUpKeys = false,
+                        isKeyBackupDialogOpen = false,
+                        needsKeyBackup = false,
+                        toastMessage = "היסטוריית הצ'אט מגובה ותשוחזר גם אחרי התקנה מחדש",
+                    )
+                }
+                .onFailure { t ->
+                    _uiState.value = _uiState.value.copy(
+                        isBackingUpKeys = false,
+                        keyBackupError = t.message ?: "הגיבוי נכשל",
+                    )
+                }
         }
     }
 

@@ -4,6 +4,11 @@ import android.content.Context
 import android.util.Log
 import com.shorashim.core.common.InvitationUrlValidator
 import com.shorashim.core.crypto.ChatCryptoManager
+import com.shorashim.core.crypto.ChatKeyUnlock
+import com.shorashim.core.model.ChatKeyBackupDto
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import com.shorashim.core.model.ChatMessageDto
 import com.shorashim.core.model.Conversation
 import com.shorashim.core.model.ConversationDto
@@ -42,6 +47,7 @@ class SupabaseChatRepository(
             Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
         const val ERR_PEER_NO_KEY = "המשתמש עדיין לא הפעיל הצפנה. הוא יוכל לקבל הודעות מוצפנות אחרי שייכנס לאפליקציה."
+        const val UNDECRYPTABLE_TEXT = "הודעה זו הוצפנה עבור מפתח שאינו קיים יותר במכשיר זה"
         const val ERR_NOT_CONFIGURED = "מערכת הצ'אט עדיין לא הוגדרה בשרת (חסרות טבלאות Supabase). יש להריץ את קובץ ההגדרה supabase/APPLY_PENDING.sql."
     }
 
@@ -64,18 +70,108 @@ class SupabaseChatRepository(
         }
     }
 
+    /** Serialises key restore/creation so a parallel publish can never generate a second, competing key. */
+    private val keyMutex = kotlinx.coroutines.sync.Mutex()
+
     override suspend fun ensurePublicKeyPublished(): Result<Unit> = runCatching {
         val client = requireClient()
         val me = currentUserId(client)
-        val pubKey = cryptoManager.getPublicKeyBase64(me)
-        client.from("user_public_keys").upsert(
-            buildJsonObject {
-                put("user_id", me)
-                put("public_key", pubKey)
-            },
-        )
+        keyMutex.withLock {
+            // Right after a login/registration the password is available once: use it to restore this user's keys
+            // from the encrypted server backup (so history survives a reinstall) and to refresh that backup.
+            ChatKeyUnlock.take()?.let { password -> syncKeyBackups(client, me, password) }
+
+            val pubKey = cryptoManager.getPublicKeyBase64(me)
+            client.from("user_public_keys").upsert(
+                buildJsonObject {
+                    put("user_id", me)
+                    put("public_key", pubKey)
+                },
+            )
+        }
         Unit
     }.mapFailure(::friendly).onFailure { Log.w(TAG, "Could not publish E2EE public key: ${it.message}") }
+
+    override suspend fun hasKeyBackup(): Result<Boolean> = runCatching {
+        val client = requireClient()
+        val me = currentUserId(client)
+        val fp = ChatCryptoManager.fingerprint(cryptoManager.getPublicKeyBase64(me))
+        client.from("user_key_backups").select {
+            filter {
+                eq("user_id", me)
+                eq("key_fingerprint", fp)
+            }
+        }.decodeList<ChatKeyBackupDto>().isNotEmpty()
+    }.mapFailure(::friendly)
+
+    override suspend fun protectKeysWithPassword(password: String): Result<Unit> = runCatching {
+        val client = requireClient()
+        val me = currentUserId(client)
+        // Verify the password first: a backup wrapped with a mistyped password could never be restored.
+        val email = client.auth.currentUserOrNull()?.email
+        if (!email.isNullOrBlank()) {
+            try {
+                client.auth.signInWith(io.github.jan.supabase.auth.providers.builtin.Email) {
+                    this.email = email
+                    this.password = password
+                }
+            } catch (t: Throwable) {
+                throw IllegalArgumentException("הסיסמה שגויה", t)
+            }
+        }
+        keyMutex.withLock { syncKeyBackups(client, me, password).getOrThrow() }
+    }.mapFailure(::friendly)
+
+    private suspend fun syncKeyBackups(client: SupabaseClient, me: String, password: String): Result<Unit> {
+        return runCatching {
+            val remote = client.from("user_key_backups")
+                .select { filter { eq("user_id", me) } }
+                .decodeList<ChatKeyBackupDto>()
+
+            if (!cryptoManager.hasLocalKeys(me) && remote.isNotEmpty()) {
+                val published = runCatching {
+                    client.from("user_public_keys")
+                        .select { filter { eq("user_id", me) } }
+                        .decodeSingleOrNull<UserPublicKeyDto>()?.publicKey
+                }.getOrNull()
+                val restored = withContext(Dispatchers.Default) {
+                    cryptoManager.restoreFromBackups(me, password, remote.map { it.toModel() }, published)
+                }
+                Log.i(TAG, "Restored $restored chat key(s) from backup")
+            }
+
+            // (Re)wrap every local key with the current password - this also re-protects keys after a password change.
+            cryptoManager.getOrCreateKeyPair(me)
+            val backups = withContext(Dispatchers.Default) { cryptoManager.createBackups(me, password) }
+            if (backups.isNotEmpty()) {
+                client.from("user_key_backups").upsert(
+                    backups.map { b ->
+                        ChatKeyBackupDto(
+                            userId = me,
+                            keyFingerprint = b.fingerprint,
+                            publicKey = b.publicKey,
+                            wrappedPrivateKey = b.wrappedPrivateKey,
+                            salt = b.salt,
+                            iv = b.iv,
+                            kdf = b.kdf,
+                            iterations = b.iterations,
+                        )
+                    },
+                ) { onConflict = "user_id,key_fingerprint" }
+            }
+            Unit
+        }.onFailure { Log.w(TAG, "Chat key backup sync failed: ${friendly(it).message}") }
+    }
+
+    private fun ChatKeyBackupDto.toModel() = ChatCryptoManager.KeyBackup(
+        fingerprint = keyFingerprint,
+        publicKey = publicKey,
+        wrappedPrivateKey = wrappedPrivateKey,
+        salt = salt,
+        iv = iv,
+        kdf = kdf,
+        iterations = iterations,
+    )
 
     override suspend fun getPeerPublicKey(userId: String): Result<String?> = runCatching {
         val client = requireClient()
@@ -193,10 +289,17 @@ class SupabaseChatRepository(
             order("created_at", Order.ASCENDING)
         }.decodeList<ChatMessageDto>()
 
-        dtos.map { dto ->
-            val isSender = dto.senderId == me
-            val plaintext = decrypt(me, dto).getOrElse { "🔒 תוכן מוצפן (לא ניתן לפענוח במכשיר זה)" }
-            toDecrypted(dto, plaintext, isSender)
+        withContext(Dispatchers.Default) {
+            dtos.map { dto ->
+                val isSender = dto.senderId == me
+                val decrypted = decrypt(me, dto)
+                toDecrypted(
+                    dto,
+                    decrypted.getOrElse { UNDECRYPTABLE_TEXT },
+                    isSender,
+                    isDecryptable = decrypted.isSuccess,
+                )
+            }
         }
     }.mapFailure(::friendly).onFailure { Log.w(TAG, "getMessages failed: ${it.message}") }
 
@@ -319,9 +422,10 @@ class SupabaseChatRepository(
         plaintext: String,
         isFromMe: Boolean,
         invitationOverride: InvitationMessagePayload? = null,
+        isDecryptable: Boolean = true,
     ): DecryptedChatMessage {
         var invitation = invitationOverride
-        if (invitation == null && (dto.messageType == MessageType.INVITATION || InvitationUrlValidator.isValidInvitationUrl(plaintext))) {
+        if (isDecryptable && invitation == null && (dto.messageType == MessageType.INVITATION || InvitationUrlValidator.isValidInvitationUrl(plaintext))) {
             invitation = runCatching { json.decodeFromString<InvitationMessagePayload>(plaintext) }.getOrNull()
                 ?: if (InvitationUrlValidator.isValidInvitationUrl(plaintext)) {
                     InvitationMessagePayload(
@@ -341,6 +445,7 @@ class SupabaseChatRepository(
             createdAt = dto.createdAt,
             isFromMe = isFromMe,
             invitationPayload = invitation,
+            isDecryptable = isDecryptable,
         )
     }
 }

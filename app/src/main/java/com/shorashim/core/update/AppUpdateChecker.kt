@@ -18,36 +18,22 @@ object AppUpdateChecker {
      * Returns AppUpdateInfo if an update is available, or null if up to date or on network failure.
      */
     suspend fun checkForUpdate(currentVersion: String = BuildConfig.VERSION_NAME): AppUpdateInfo? = withContext(Dispatchers.IO) {
-        try {
-            // 1. Try Vercel endpoint first (cached, avoids GitHub rate limits)
-            fetchFromVercel()?.let { info ->
-                if (isNewerVersion(currentVersion, info.latestVersion)) {
-                    Log.d(TAG, "Update available via Vercel: current=$currentVersion, latest=${info.latestVersion}")
-                    return@withContext info
-                } else {
-                    Log.d(TAG, "App is up to date via Vercel: current=$currentVersion, latest=${info.latestVersion}")
-                    return@withContext null
-                }
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Vercel version check failed, attempting GitHub direct fallback", e)
-        }
+        // 1. GitHub releases directly: this is the source of truth for releases. (The Vercel proxy used to be asked
+        //    first, but when GitHub rate-limited it, it answered with a hard-coded "1.0.0", which the app took as
+        //    "up to date" and never looked further - so new releases were silently missed.)
+        val fromGitHub = runCatching { fetchFromGitHub() }
+            .onFailure { Log.w(TAG, "GitHub update check failed, trying Vercel", it) }
+            .getOrNull()
+        // 2. Vercel proxy only as a fallback (e.g. GitHub API rate limit on this network).
+        val info = fromGitHub ?: runCatching { fetchFromVercel() }
+            .onFailure { Log.w(TAG, "Vercel update check failed", it) }
+            .getOrNull()
 
-        try {
-            // 2. Direct GitHub API fallback
-            fetchFromGitHub()?.let { info ->
-                if (isNewerVersion(currentVersion, info.latestVersion)) {
-                    Log.d(TAG, "Update available via GitHub: current=$currentVersion, latest=${info.latestVersion}")
-                    return@withContext info
-                } else {
-                    Log.d(TAG, "App is up to date via GitHub: current=$currentVersion, latest=${info.latestVersion}")
-                    return@withContext null
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Direct GitHub update check failed", e)
+        if (info != null && isNewerVersion(currentVersion, info.latestVersion)) {
+            Log.d(TAG, "Update available: current=$currentVersion, latest=${info.latestVersion}")
+            return@withContext info
         }
-
+        Log.d(TAG, "No update: current=$currentVersion, latest=${info?.latestVersion}")
         null
     }
 
@@ -55,8 +41,8 @@ object AppUpdateChecker {
         val url = URL(VERCEL_VERSION_URL)
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            connectTimeout = 4000
-            readTimeout = 4000
+            connectTimeout = 8000
+            readTimeout = 8000
             setRequestProperty("Accept", "application/json")
         }
         try {
@@ -88,8 +74,8 @@ object AppUpdateChecker {
         val url = URL(GITHUB_LATEST_RELEASE_URL)
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            connectTimeout = 4000
-            readTimeout = 4000
+            connectTimeout = 8000
+            readTimeout = 8000
             setRequestProperty("User-Agent", "Shorashim-App")
             setRequestProperty("Accept", "application/vnd.github.v3+json")
         }
