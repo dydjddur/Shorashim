@@ -35,6 +35,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private val pendingInviteToken = androidx.compose.runtime.mutableStateOf<String?>(null)
+    /** (otherUserId, otherUserName) from a tapped new-message notification. */
+    private val pendingChat = androidx.compose.runtime.mutableStateOf<Pair<String, String>?>(null)
+
+    private fun extractChatTarget(intent: android.content.Intent?) {
+        val userId = intent?.getStringExtra(com.shorashim.core.notifications.ChatMessageNotifier.EXTRA_OPEN_CHAT_USER_ID)
+        if (!userId.isNullOrBlank()) {
+            val name = intent.getStringExtra(com.shorashim.core.notifications.ChatMessageNotifier.EXTRA_OPEN_CHAT_USER_NAME).orEmpty()
+            pendingChat.value = userId to name
+            intent.removeExtra(com.shorashim.core.notifications.ChatMessageNotifier.EXTRA_OPEN_CHAT_USER_ID)
+        }
+    }
     private val appUpdateManager = AppUpdateManager()
 
     override fun onStart() {
@@ -52,6 +63,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         extractInviteToken(intent)
+        extractChatTarget(intent)
     }
 
     private fun extractInviteToken(intent: android.content.Intent?) {
@@ -79,6 +91,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         extractInviteToken(intent)
+        extractChatTarget(intent)
         enableEdgeToEdge()
         val appContainer = (application as ShorashimApplication).container
         appUpdateManager.start(lifecycleScope)
@@ -117,6 +130,17 @@ class MainActivity : ComponentActivity() {
                         val navController = rememberNavController()
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentRoute = navBackStackEntry?.destination?.route
+
+                        val chatTarget by pendingChat
+                        androidx.compose.runtime.LaunchedEffect(chatTarget) {
+                            val target = chatTarget ?: return@LaunchedEffect
+                            pendingChat.value = null
+                            runCatching {
+                                navController.navigate(
+                                    com.shorashim.core.navigation.ShorashimRoutes.chatConversation(target.first, target.second),
+                                ) { launchSingleTop = true }
+                            }.onFailure { android.util.Log.e("MainActivity", "Navigation to chat failed", it) }
+                        }
 
                         val inviteToken by pendingInviteToken
                         androidx.compose.runtime.LaunchedEffect(inviteToken) {

@@ -92,6 +92,50 @@ class SupabaseChatRepository(
         Unit
     }.mapFailure(::friendly).onFailure { Log.w(TAG, "Could not publish E2EE public key: ${it.message}") }
 
+    override suspend fun getIncomingUnreadSince(sinceIso: String?): Result<List<IncomingChatMessage>> = runCatching {
+        val client = requireClient()
+        val me = currentUserId(client)
+        val dtos = client.from("chat_messages").select {
+            filter {
+                eq("recipient_id", me)
+                eq("is_read", false)
+                if (!sinceIso.isNullOrBlank()) gt("created_at", sinceIso)
+            }
+            order("created_at", Order.ASCENDING)
+            limit(50)
+        }.decodeList<ChatMessageDto>()
+        if (dtos.isEmpty()) return@runCatching emptyList()
+
+        val senderIds = dtos.map { it.senderId }.distinct()
+        val profiles = client.from("profiles")
+            .select { filter { isIn("id", senderIds) } }
+            .decodeList<UserProfileDto>()
+            .associateBy { it.id }
+
+        withContext(Dispatchers.Default) {
+            dtos.map { dto ->
+                val profile = profiles[dto.senderId]
+                val name = profile?.displayName?.ifBlank { null }
+                    ?: profile?.fullName?.ifBlank { null }
+                    ?: profile?.username
+                    ?: "הודעה חדשה"
+                val decrypted = decrypt(me, dto)
+                val message = toDecrypted(
+                    dto,
+                    decrypted.getOrElse { UNDECRYPTABLE_TEXT },
+                    isFromMe = false,
+                    isDecryptable = decrypted.isSuccess,
+                )
+                val preview = when {
+                    dto.messageType == MessageType.INVITATION || message.invitationPayload != null -> "🌲 הזמנה לעץ משפחה"
+                    !message.isDecryptable -> "🔒 הודעה מוצפנת חדשה"
+                    else -> message.plaintext
+                }
+                IncomingChatMessage(message, name, preview)
+            }
+        }
+    }.mapFailure(::friendly)
+
     override suspend fun hasKeyBackup(): Result<Boolean> = runCatching {
         val client = requireClient()
         val me = currentUserId(client)

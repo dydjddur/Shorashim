@@ -4,6 +4,14 @@ import com.shorashim.core.model.Conversation
 import com.shorashim.core.model.DecryptedChatMessage
 import kotlinx.coroutines.flow.Flow
 
+/** A received message plus the sender's display name, for notifications. */
+data class IncomingChatMessage(
+    val message: DecryptedChatMessage,
+    val senderName: String,
+    /** Text safe to show in a notification (decrypted body, or a placeholder for invitations / locked messages). */
+    val previewText: String,
+)
+
 interface ChatRepository {
     /** Ensures this device has published its E2EE public key to the server. */
     suspend fun ensurePublicKeyPublished(): Result<Unit>
@@ -38,6 +46,12 @@ interface ChatRepository {
 
     /** Marks unread messages in conversation as read. */
     suspend fun markMessagesAsRead(conversationId: String): Result<Unit>
+
+    /**
+     * Unread messages addressed to the current user created after [sinceIso] (all unread when null), oldest first,
+     * already decrypted on this device. Used for new-message notifications.
+     */
+    suspend fun getIncomingUnreadSince(sinceIso: String?): Result<List<IncomingChatMessage>> = Result.success(emptyList())
 
     /** True when the server holds a password-protected backup of this device's active chat key. */
     suspend fun hasKeyBackup(): Result<Boolean> = Result.success(true)

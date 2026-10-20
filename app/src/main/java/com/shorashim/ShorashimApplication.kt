@@ -17,6 +17,10 @@ class ShorashimApplication : Application() {
         super.onCreate()
         instance = this
         container = AppContainer(this)
+        // New chat message notifications: fast checks while the process is alive, plus a periodic background job
+        // that keeps working after Android closes the app.
+        com.shorashim.core.notifications.ChatMessageNotifier.startInAppChecks(this, container)
+        com.shorashim.core.notifications.ChatNotificationWorker.schedule(this)
     }
 
     companion object {

@@ -86,6 +86,20 @@ fun ChatConversationRoute(
         }
     }
 
+    // While this conversation is visible, new messages in it must not raise a notification; opening it also
+    // clears any notification already shown for it.
+    val conversationId = uiState.conversationId
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.DisposableEffect(conversationId) {
+        com.shorashim.core.notifications.ChatMessageNotifier.activeConversationId = conversationId
+        if (conversationId != null) com.shorashim.core.notifications.ChatMessageNotifier.cancel(context, conversationId)
+        onDispose {
+            if (com.shorashim.core.notifications.ChatMessageNotifier.activeConversationId == conversationId) {
+                com.shorashim.core.notifications.ChatMessageNotifier.activeConversationId = null
+            }
+        }
+    }
+
     ChatConversationScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
