@@ -69,18 +69,22 @@ object ChatMessageNotifier {
     suspend fun checkAndNotify(context: Context, chatRepository: ChatRepository) = mutex.withLock {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val lastSeen = prefs.getString(KEY_LAST_SEEN, null)
+        if (lastSeen == null) {
+            // First run on this device: start from "now" so a backlog of old unread messages doesn't flood the user.
+            prefs.edit().putString(KEY_LAST_SEEN, java.time.Instant.now().toString()).apply()
+            return@withLock
+        }
+        // Normalise to "...Z" so the value is safe inside the PostgREST query string (a "+00:00" offset is not).
+        val since = com.shorashim.core.common.TimeFormat.parseInstant(lastSeen)?.toString() ?: lastSeen
 
-        val incoming = chatRepository.getIncomingUnreadSince(lastSeen).getOrElse {
+        val incoming = chatRepository.getIncomingUnreadSince(since).getOrElse {
             Log.w(TAG, "Could not fetch new messages: ${it.message}")
             return@withLock
         }
-        if (incoming.isEmpty()) {
-            // First run ever: start from "now" so a backlog of old unread messages doesn't flood the user.
-            if (lastSeen == null) prefs.edit().putString(KEY_LAST_SEEN, java.time.Instant.now().toString()).apply()
-            return@withLock
-        }
+        if (incoming.isEmpty()) return@withLock
 
-        val newest = incoming.mapNotNull { it.message.createdAt }.maxOrNull()
+        val newest = incoming.mapNotNull { it.message.createdAt }
+            .maxByOrNull { com.shorashim.core.common.TimeFormat.parseInstant(it) ?: java.time.Instant.EPOCH }
         if (newest != null) prefs.edit().putString(KEY_LAST_SEEN, newest).apply()
 
         ensureChannel(context)

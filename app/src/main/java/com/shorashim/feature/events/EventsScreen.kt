@@ -119,16 +119,6 @@ fun EventsScreen(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize(),
-        floatingActionButton = {
-            androidx.compose.material3.ExtendedFloatingActionButton(
-                onClick = onAddMemorial,
-                shape = RoundedCornerShape(18.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                text = { Text("הוספת אזכרה", fontWeight = FontWeight.Bold) },
-            )
-        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -194,7 +184,7 @@ fun EventsScreen(
                                 start = Spacing.md,
                                 end = Spacing.md,
                                 top = Spacing.xs,
-                                bottom = 104.dp,
+                                bottom = Spacing.md,
                             ),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {

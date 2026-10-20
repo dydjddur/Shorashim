@@ -94,25 +94,8 @@ class EventsViewModel(
     }
 
     private fun scheduleAllNotifications(events: List<CalendarEvent>) {
-        if (notificationScheduler == null) return
-        for (event in events) {
-            when (event) {
-                is CalendarEvent.Birthday -> {
-                    notificationScheduler.scheduleBirthdayNotification(
-                        personId = event.personId,
-                        personName = event.personName,
-                        targetDate = event.targetDate,
-                    )
-                }
-                is CalendarEvent.Memorial -> {
-                    notificationScheduler.scheduleMemorialReminder(
-                        eventId = event.memorialId,
-                        personName = event.personName,
-                        targetDate = event.targetDate,
-                    )
-                }
-            }
-        }
+        val scheduler = notificationScheduler ?: return
+        com.shorashim.core.notifications.EventReminderSync.scheduleAll(scheduler, events)
     }
 
     fun onSelectEvent(event: CalendarEvent?) {

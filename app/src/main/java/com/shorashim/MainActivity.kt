@@ -125,6 +125,14 @@ class MainActivity : ComponentActivity() {
                         // Publish this device's E2EE public key as soon as the user is signed in, so friends can
                         // message them even before they ever open the chat tab.
                         androidx.compose.runtime.LaunchedEffect(state.user.uid) {
+                            // Schedule birthday / memorial reminders even if the Events tab is never opened.
+                            appContainer.notificationScheduler?.let { scheduler ->
+                                launch {
+                                    com.shorashim.core.notifications.EventReminderSync.sync(
+                                        this@MainActivity, appContainer.eventsRepository, scheduler, force = true,
+                                    )
+                                }
+                            }
                             appContainer.chatRepository.ensurePublicKeyPublished()
                         }
                         val navController = rememberNavController()
